@@ -1,0 +1,22 @@
+ECHO is on.
+# Ignore Visual Studio files
+.vscode/
+.vs/
+.idea/
+
+# Ignore build output
+bin/
+obj/
+
+# Ignore log files
+*.log
+
+
+# file json
+*.json
+!config.json
+
+# Thư viện cục bộ và file lock
+*.nupkg
+project.lock.json
+project.fragment.lock.json
