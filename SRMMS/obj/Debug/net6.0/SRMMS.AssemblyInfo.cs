@@ -14,7 +14,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("SRMMS")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Debug")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+14e7b0e2fb128188c88aa16972e03afc0dff5dda")]
 [assembly: System.Reflection.AssemblyProductAttribute("SRMMS")]
 [assembly: System.Reflection.AssemblyTitleAttribute("SRMMS")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]

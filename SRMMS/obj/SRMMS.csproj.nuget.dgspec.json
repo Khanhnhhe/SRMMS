@@ -1,17 +1,17 @@
 {
   "format": 1,
   "restore": {
-    "C:\\FPT\\Ki9\\SEP490_G68\\Code\\SRMMS\\SRMMS\\SRMMS\\SRMMS.csproj": {}
+    "C:\\FPT\\Ki9\\SEP490_G68\\Code\\ProjectSRMMS\\SRMMS\\SRMMS\\SRMMS.csproj": {}
   },
   "projects": {
-    "C:\\FPT\\Ki9\\SEP490_G68\\Code\\SRMMS\\SRMMS\\SRMMS\\SRMMS.csproj": {
+    "C:\\FPT\\Ki9\\SEP490_G68\\Code\\ProjectSRMMS\\SRMMS\\SRMMS\\SRMMS.csproj": {
       "version": "1.0.0",
       "restore": {
-        "projectUniqueName": "C:\\FPT\\Ki9\\SEP490_G68\\Code\\SRMMS\\SRMMS\\SRMMS\\SRMMS.csproj",
+        "projectUniqueName": "C:\\FPT\\Ki9\\SEP490_G68\\Code\\ProjectSRMMS\\SRMMS\\SRMMS\\SRMMS.csproj",
         "projectName": "SRMMS",
-        "projectPath": "C:\\FPT\\Ki9\\SEP490_G68\\Code\\SRMMS\\SRMMS\\SRMMS\\SRMMS.csproj",
+        "projectPath": "C:\\FPT\\Ki9\\SEP490_G68\\Code\\ProjectSRMMS\\SRMMS\\SRMMS\\SRMMS.csproj",
         "packagesPath": "C:\\Users\\LEGION\\.nuget\\packages\\",
-        "outputPath": "C:\\FPT\\Ki9\\SEP490_G68\\Code\\SRMMS\\SRMMS\\SRMMS\\obj\\",
+        "outputPath": "C:\\FPT\\Ki9\\SEP490_G68\\Code\\ProjectSRMMS\\SRMMS\\SRMMS\\obj\\",
         "projectStyle": "PackageReference",
         "configFilePaths": [
           "C:\\Users\\LEGION\\AppData\\Roaming\\NuGet\\NuGet.Config",
@@ -40,6 +40,24 @@
         "net6.0": {
           "targetAlias": "net6.0",
           "dependencies": {
+            "Microsoft.AspNetCore.Authentication.JwtBearer": {
+              "target": "Package",
+              "version": "[6.0.30, )"
+            },
+            "Microsoft.AspNetCore.Identity.EntityFrameworkCore": {
+              "target": "Package",
+              "version": "[6.0.32, )"
+            },
+            "Microsoft.EntityFrameworkCore.Design": {
+              "include": "Runtime, Build, Native, ContentFiles, Analyzers, BuildTransitive",
+              "suppressParent": "All",
+              "target": "Package",
+              "version": "[6.0.32, )"
+            },
+            "Microsoft.EntityFrameworkCore.SqlServer": {
+              "target": "Package",
+              "version": "[6.0.32, )"
+            },
             "Swashbuckle.AspNetCore": {
               "target": "Package",
               "version": "[6.5.0, )"
