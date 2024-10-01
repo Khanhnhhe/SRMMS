@@ -12,7 +12,7 @@ using SRMMS.Models;
 namespace SRMMS.Controllers
 {
     [ApiController]
-    [Route("api/[controller]")]
+    [Route("api")]
     public class LoginController : ControllerBase
     {
         private readonly IConfiguration _configuration;
