@@ -7,6 +7,14 @@
   },
   "AllowedHosts": "*",
   "ConnectionStrings": {
-    "SRMMS_SQL": "server=(local);database=SRMMS;uid=sa;pwd=123456;TrustServerCertificate=True"
+
+    "DB": "server=DESKTOP-Q5D4AD1\\SQLEXPRESS;database=SRMMS;Trusted_Connection=SSPI;Encrypt=false;TrustServerCertificate=true"
+
+  },
+  "Jwt": {
+    "Key": "ThisIsASecretKeyGroupCodeSRMMS2024232420242024",
+    "Issuer": "https://localhost:7024",
+    "Audience": "https://localhost:7024"
   }
+
 }
