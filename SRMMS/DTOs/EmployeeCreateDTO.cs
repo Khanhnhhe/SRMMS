@@ -9,9 +9,7 @@
         public int? EmpPhoneNumber { get; set; } // Optional
         public string? EmpEmail { get; set; } // Required (email is usually unique)
         public string? EmpPassword { get; set; } // Required
-        public string? EmpAddress { get; set; } // Optional
-        public string? EmpDistrict { get; set; } // Optional
-        public string? EmpCity { get; set; } // Optional
+        public string? EmpAddress { get; set; } // Optional  
         public string? EmpWard { get; set; } // Optional
         public DateTime? EmpStartDate { get; set; } // Optional, default to DateTime.Now
         public bool? EmpStatus { get; set; } // Optional, default to true

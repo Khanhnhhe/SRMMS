@@ -28,18 +28,20 @@ namespace SRMMS.Controllers
             try
             {
                 var employees = await _context.Employees
-               .Include(e => e.EmpRole) // Include related role if needed
+               .Include(e => e.EmpRole) 
                .Select(e => new EmployeeDTO
                {
                    EmpId = e.EmpId,
                    EmpFirstName = e.EmpFirstName,
                    EmpLastName = e.EmpLastName,
-                   EmpDob = e.EmpDob,
+                   EmpDob = e.EmpDob.Value.ToString("yyyy-MM-dd"),
+                   EmpGender = e.EmpGender ? "Male" : "Female" ,
+                  EmpAdress = e.EmpAdress,
                    EmpPhoneNumber = e.EmpPhoneNumber,
                    EmpEmail = e.EmpEmail,
-                   EmpStartDate = e.EmpStartDate,
+                   EmpStartDate = e.EmpStartDate.ToString("yyyy-MM-dd"),
                    EmpStatus = e.EmpStatus,
-                   RoleName = e.EmpRole.RoleName // Map the role name if needed
+                   RoleName = e.EmpRole.RoleName 
                })
                .ToListAsync();
 
@@ -59,18 +61,18 @@ namespace SRMMS.Controllers
         [HttpPost("/api/addEmployee")]
         public async Task<ActionResult<EmployeeDTO>> AddEmployee(EmployeeCreateDTO employeeDto)
         {
-            // Check if the employee already exists (optional, based on unique email or other fields)
+            
             if (await _context.Employees.AnyAsync(e => e.EmpEmail == employeeDto.EmpEmail))
             {
                 return BadRequest("An employee with this email already exists.");
             }
 
-            // Set default values for role, status, and start date
-            employeeDto.RoleName = employeeDto.RoleName ?? "Staff"; // Default RoleName to "Staff" if not provided
-            employeeDto.EmpStatus = employeeDto.EmpStatus ?? true; // Default EmpStatus to true if not provided
-            employeeDto.EmpStartDate = employeeDto.EmpStartDate ?? DateTime.Now; // Default EmpStartDate to current time if not provided
+           
+            employeeDto.RoleName = employeeDto.RoleName ?? "Staff"; 
+            employeeDto.EmpStatus = employeeDto.EmpStatus ?? true; 
+            employeeDto.EmpStartDate = employeeDto.EmpStartDate ?? DateTime.Now; 
 
-            // Create a new Employee entity from the DTO
+            
             var newEmployee = new Employee
             {
                 EmpFirstName = employeeDto.EmpFirstName,
@@ -79,36 +81,35 @@ namespace SRMMS.Controllers
                 EmpPhoneNumber = (int)employeeDto.EmpPhoneNumber,
                 EmpEmail = employeeDto.EmpEmail,
                 EmpPassword = employeeDto.EmpPassword,
-                EmpStartDate = employeeDto.EmpStartDate.Value, // EmpStartDate should be a DateTime
-                EmpStatus = employeeDto.EmpStatus.Value // EmpStatus should be a boolean
+                EmpStartDate = employeeDto.EmpStartDate.Value, 
+                EmpStatus = employeeDto.EmpStatus.Value 
             };
 
-            // Handle role linking
             var role = await _context.Roles.FirstOrDefaultAsync(r => r.RoleName == employeeDto.RoleName);
             if (role != null)
             {
-                newEmployee.EmpRoleId = role.RoleId; // Assign correct role ID
-                newEmployee.EmpRole = role; // Link the role entity
+                newEmployee.EmpRoleId = role.RoleId; 
+                newEmployee.EmpRole = role; 
             }
             else
             {
                 return BadRequest("Invalid role provided.");
             }
 
-            // Add the new employee to the database
+            
             _context.Employees.Add(newEmployee);
             await _context.SaveChangesAsync();
 
-            // Return the newly created employee data as a DTO
+          
             var employeeResult = new EmployeeDTO
             {
                 EmpId = newEmployee.EmpId,
                 EmpFirstName = newEmployee.EmpFirstName,
                 EmpLastName = newEmployee.EmpLastName,
-                EmpDob = newEmployee.EmpDob,
+                EmpDob = newEmployee.EmpDob.Value.ToString("yyyy-MM-dd"),
                 EmpPhoneNumber = newEmployee.EmpPhoneNumber,
                 EmpEmail = newEmployee.EmpEmail,
-                EmpStartDate = newEmployee.EmpStartDate,
+                EmpStartDate = newEmployee.EmpStartDate.ToString("yyyy-MM-dd"),
                 EmpStatus = newEmployee.EmpStatus,
                 RoleName = newEmployee.EmpRole?.RoleName
             };
@@ -118,7 +119,7 @@ namespace SRMMS.Controllers
 
 
 
-        [HttpGet("/api/getEmployee/{id}")]
+        [HttpGet("/api/getEmployeeByID/{id}")]
         public async Task<ActionResult<EmployeeDTO>> GetEmployeeById(int id)
         {
             var employee = await _context.Employees
@@ -128,10 +129,10 @@ namespace SRMMS.Controllers
                     EmpId = e.EmpId,
                     EmpFirstName = e.EmpFirstName,
                     EmpLastName = e.EmpLastName,
-                    EmpDob = e.EmpDob,
+                    EmpDob = e.EmpDob.Value.ToString("yyyy-MM-dd"),
                     EmpPhoneNumber = e.EmpPhoneNumber,
                     EmpEmail = e.EmpEmail,
-                    EmpStartDate = e.EmpStartDate,
+                    EmpStartDate = e.EmpStartDate.ToString("yyyy-MM-dd"),
                     EmpStatus = e.EmpStatus,
                     RoleName = e.EmpRole.RoleName
                 })
@@ -148,7 +149,6 @@ namespace SRMMS.Controllers
         [HttpPut("{id}")]
         public async Task<IActionResult> PutEmployee(int id, EmployeeUpdateDTO employeeDto)
         {
-            // Fetch the existing employee by ID
             var existingEmployee = await _context.Employees
                 .Include(e => e.EmpRole)
                 .FirstOrDefaultAsync(e => e.EmpId == id);
@@ -158,7 +158,6 @@ namespace SRMMS.Controllers
                 return NotFound();
             }
 
-            // Update fields only if they are provided (not null or default)
             if (!string.IsNullOrEmpty(employeeDto.EmpFirstName))
             {
                 existingEmployee.EmpFirstName = employeeDto.EmpFirstName;
@@ -199,7 +198,7 @@ namespace SRMMS.Controllers
                 existingEmployee.EmpStatus = employeeDto.EmpStatus.Value;
             }
 
-            // Handle role update, only if a role is provided
+            
             if (!string.IsNullOrEmpty(employeeDto.RoleName))
             {
                 var roleName = employeeDto.RoleName;
@@ -207,8 +206,8 @@ namespace SRMMS.Controllers
 
                 if (role != null)
                 {
-                    existingEmployee.EmpRoleId = role.RoleId; // Assign correct role ID
-                    existingEmployee.EmpRole = role; // Update role
+                    existingEmployee.EmpRoleId = role.RoleId; 
+                    existingEmployee.EmpRole = role; 
                 }
                 else
                 {
