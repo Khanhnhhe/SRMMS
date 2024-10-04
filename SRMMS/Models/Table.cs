@@ -7,13 +7,13 @@ namespace SRMMS.Models
     {
         public Table()
         {
-            Customers = new HashSet<Customer>();
+            Accounts = new HashSet<Account>();
         }
 
         public int TableId { get; set; }
         public string TableName { get; set; } = null!;
         public string TableQrcode { get; set; } = null!;
 
-        public virtual ICollection<Customer> Customers { get; set; }
+        public virtual ICollection<Account> Accounts { get; set; }
     }
 }

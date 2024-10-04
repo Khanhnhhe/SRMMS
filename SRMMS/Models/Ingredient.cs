@@ -7,12 +7,12 @@ namespace SRMMS.Models
     {
         public Ingredient()
         {
-            Menus = new HashSet<Menu>();
+            Products = new HashSet<Product>();
         }
 
         public int IngId { get; set; }
         public string IngName { get; set; } = null!;
-        public string Discription { get; set; } = null!;
+        public string? Discription { get; set; }
         public int CateId { get; set; }
         public int IngQuantity { get; set; }
         public DateTime ExpirationDate { get; set; }
@@ -20,6 +20,6 @@ namespace SRMMS.Models
         public decimal IngPrice { get; set; }
 
         public virtual IngCategory Cate { get; set; } = null!;
-        public virtual ICollection<Menu> Menus { get; set; }
+        public virtual ICollection<Product> Products { get; set; }
     }
 }

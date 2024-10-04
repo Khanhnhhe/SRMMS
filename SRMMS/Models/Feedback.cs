@@ -13,6 +13,6 @@ namespace SRMMS.Models
         public DateTime? UpdatedAt { get; set; }
 
         public virtual Account Acc { get; set; } = null!;
-        public virtual Menu Pro { get; set; } = null!;
+        public virtual Product Pro { get; set; } = null!;
     }
 }

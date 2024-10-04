@@ -21,18 +21,18 @@ namespace SRMMS.Models
         public virtual DbSet<Combo> Combos { get; set; } = null!;
         public virtual DbSet<ComboDetail> ComboDetails { get; set; } = null!;
         public virtual DbSet<Customer> Customers { get; set; } = null!;
+        public virtual DbSet<DiscountCode> DiscountCodes { get; set; } = null!;
         public virtual DbSet<Employee> Employees { get; set; } = null!;
         public virtual DbSet<Feedback> Feedbacks { get; set; } = null!;
         public virtual DbSet<IngCategory> IngCategories { get; set; } = null!;
         public virtual DbSet<Ingredient> Ingredients { get; set; } = null!;
-        public virtual DbSet<Menu> Menus { get; set; } = null!;
         public virtual DbSet<Order> Orders { get; set; } = null!;
         public virtual DbSet<OrderDetail> OrderDetails { get; set; } = null!;
         public virtual DbSet<Post> Posts { get; set; } = null!;
+        public virtual DbSet<Product> Products { get; set; } = null!;
         public virtual DbSet<RestaurantInformation> RestaurantInformations { get; set; } = null!;
         public virtual DbSet<Role> Roles { get; set; } = null!;
         public virtual DbSet<Status> Statuses { get; set; } = null!;
-        public virtual DbSet<Stock> Stocks { get; set; } = null!;
         public virtual DbSet<Table> Tables { get; set; } = null!;
         public virtual DbSet<TopicOfPost> TopicOfPosts { get; set; } = null!;
 
@@ -40,10 +40,8 @@ namespace SRMMS.Models
         {
             if (!optionsBuilder.IsConfigured)
             {
-                var config = new ConfigurationBuilder().AddJsonFile("appsettings.json").Build();
-                string ConnectionStr = config.GetConnectionString("DB");
-
-                optionsBuilder.UseSqlServer(ConnectionStr);
+#warning To protect potentially sensitive information in your connection string, you should move it out of source code. You can avoid scaffolding the connection string by using the Name= syntax to read it from configuration - see https://go.microsoft.com/fwlink/?linkid=2131148. For more guidance on storing connection strings, see http://go.microsoft.com/fwlink/?LinkId=723263.
+                optionsBuilder.UseSqlServer("server=(local);database=SRMMS;Trusted_Connection=SSPI;Encrypt=false;TrustServerCertificate=true");
             }
         }
 
@@ -59,6 +57,8 @@ namespace SRMMS.Models
 
                 entity.Property(e => e.EmpId).HasColumnName("emp_id");
 
+                entity.Property(e => e.TableId).HasColumnName("table_id");
+
                 entity.HasOne(d => d.Cus)
                     .WithMany(p => p.Accounts)
                     .HasForeignKey(d => d.CusId)
@@ -70,6 +70,11 @@ namespace SRMMS.Models
                     .HasForeignKey(d => d.EmpId)
                     .OnDelete(DeleteBehavior.ClientSetNull)
                     .HasConstraintName("FK_Accounts_Employees");
+
+                entity.HasOne(d => d.Table)
+                    .WithMany(p => p.Accounts)
+                    .HasForeignKey(d => d.TableId)
+                    .HasConstraintName("FK_Accounts_Tables");
             });
 
             modelBuilder.Entity<Category>(entity =>
@@ -108,7 +113,7 @@ namespace SRMMS.Models
             {
                 entity.HasNoKey();
 
-                entity.ToTable("Combo Detail");
+                entity.ToTable("Combo_Detail");
 
                 entity.Property(e => e.ComboId).HasColumnName("combo_id");
 
@@ -138,14 +143,40 @@ namespace SRMMS.Models
                     .HasColumnName("cus_fullname");
 
                 entity.Property(e => e.CusPhone).HasColumnName("cus_phone");
+            });
 
-                entity.Property(e => e.CusTableId).HasColumnName("cus_table_id");
+            modelBuilder.Entity<DiscountCode>(entity =>
+            {
+                entity.HasKey(e => e.CodeId);
 
-                entity.HasOne(d => d.CusTable)
-                    .WithMany(p => p.Customers)
-                    .HasForeignKey(d => d.CusTableId)
-                    .OnDelete(DeleteBehavior.ClientSetNull)
-                    .HasConstraintName("FK_Customers_Tables");
+                entity.ToTable("Discount_code");
+
+                entity.Property(e => e.CodeId)
+                    .ValueGeneratedNever()
+                    .HasColumnName("code_id");
+
+                entity.Property(e => e.CodeDetail)
+                    .HasMaxLength(250)
+                    .HasColumnName("code_detail");
+
+                entity.Property(e => e.DiscountValue).HasColumnName("discount_value");
+
+                entity.Property(e => e.EndDate)
+                    .HasColumnType("date")
+                    .HasColumnName("end_date");
+
+                entity.Property(e => e.OrderId).HasColumnName("order_id");
+
+                entity.Property(e => e.StartDate)
+                    .HasColumnType("date")
+                    .HasColumnName("start_date");
+
+                entity.Property(e => e.Status).HasColumnName("status");
+
+                entity.HasOne(d => d.Order)
+                    .WithMany(p => p.DiscountCodes)
+                    .HasForeignKey(d => d.OrderId)
+                    .HasConstraintName("FK_Discount_code_Order");
             });
 
             modelBuilder.Entity<Employee>(entity =>
@@ -155,16 +186,8 @@ namespace SRMMS.Models
                 entity.Property(e => e.EmpId).HasColumnName("emp_id");
 
                 entity.Property(e => e.EmpAdress)
-                    .HasMaxLength(50)
+                    .HasMaxLength(150)
                     .HasColumnName("emp_adress");
-
-                entity.Property(e => e.EmpCity)
-                    .HasMaxLength(50)
-                    .HasColumnName("emp_city");
-
-                entity.Property(e => e.EmpDistrict)
-                    .HasMaxLength(50)
-                    .HasColumnName("emp_district");
 
                 entity.Property(e => e.EmpDob)
                     .HasColumnType("date")
@@ -189,14 +212,12 @@ namespace SRMMS.Models
                     .HasColumnName("emp_last_name");
 
                 entity.Property(e => e.EmpPassword)
-                    .HasMaxLength(50)
+                    .HasMaxLength(30)
                     .HasColumnName("emp_password");
 
                 entity.Property(e => e.EmpPhoneNumber).HasColumnName("emp_phoneNumber");
 
                 entity.Property(e => e.EmpRoleId).HasColumnName("emp_role_id");
-
-                entity.Property(e => e.EmpSalaryId).HasColumnName("emp_salary_id");
 
                 entity.Property(e => e.EmpStartDate)
                     .HasColumnType("date")
@@ -300,52 +321,6 @@ namespace SRMMS.Models
                     .HasConstraintName("FK_Ingredients_Ing_Categories");
             });
 
-            modelBuilder.Entity<Menu>(entity =>
-            {
-                entity.HasKey(e => e.ProId);
-
-                entity.ToTable("Menu");
-
-                entity.Property(e => e.ProId).HasColumnName("pro_id");
-
-                entity.Property(e => e.CatId).HasColumnName("cat_id");
-
-                entity.Property(e => e.IngId).HasColumnName("ing_id");
-
-                entity.Property(e => e.ProCalories)
-                    .HasMaxLength(250)
-                    .HasColumnName("pro_calories");
-
-                entity.Property(e => e.ProCookingTime).HasColumnName("pro_cooking_time");
-
-                entity.Property(e => e.ProDiscription).HasColumnName("pro_discription");
-
-                entity.Property(e => e.ProImg).HasColumnName("pro_img");
-
-                entity.Property(e => e.ProName)
-                    .HasMaxLength(200)
-                    .HasColumnName("pro_name");
-
-                entity.Property(e => e.ProPrice)
-                    .HasColumnType("money")
-                    .HasColumnName("pro_price");
-
-                entity.Property(e => e.ProStatus).HasColumnName("pro_status");
-
-                entity.Property(e => e.ProWarning).HasColumnName("pro_warning");
-
-                entity.HasOne(d => d.Cat)
-                    .WithMany(p => p.Menus)
-                    .HasForeignKey(d => d.CatId)
-                    .OnDelete(DeleteBehavior.ClientSetNull)
-                    .HasConstraintName("FK_Menu_Categories");
-
-                entity.HasOne(d => d.Ing)
-                    .WithMany(p => p.Menus)
-                    .HasForeignKey(d => d.IngId)
-                    .HasConstraintName("FK_Menu_Ingredients");
-            });
-
             modelBuilder.Entity<Order>(entity =>
             {
                 entity.ToTable("Order");
@@ -360,7 +335,9 @@ namespace SRMMS.Models
 
                 entity.Property(e => e.OrderStatusId).HasColumnName("order_status_id");
 
-                entity.Property(e => e.TotalMoney).HasColumnName("totalMoney");
+                entity.Property(e => e.TotalMoney)
+                    .HasColumnType("money")
+                    .HasColumnName("totalMoney");
 
                 entity.HasOne(d => d.Acc)
                     .WithMany(p => p.Orders)
@@ -377,16 +354,17 @@ namespace SRMMS.Models
 
             modelBuilder.Entity<OrderDetail>(entity =>
             {
-                entity.HasKey(e => new { e.OrderId, e.StockId })
-                    .HasName("PK_Order Detail");
+                entity.ToTable("Order_Details");
 
-                entity.ToTable("Order Details");
+                entity.Property(e => e.OrderDetailId).HasColumnName("order_detail_id");
 
                 entity.Property(e => e.OrderId).HasColumnName("order_id");
 
-                entity.Property(e => e.StockId).HasColumnName("stock_id");
+                entity.Property(e => e.Price)
+                    .HasColumnType("money")
+                    .HasColumnName("price");
 
-                entity.Property(e => e.Price).HasColumnName("price");
+                entity.Property(e => e.ProId).HasColumnName("pro_id");
 
                 entity.Property(e => e.Quantiity).HasColumnName("quantiity");
 
@@ -394,13 +372,12 @@ namespace SRMMS.Models
                     .WithMany(p => p.OrderDetails)
                     .HasForeignKey(d => d.OrderId)
                     .OnDelete(DeleteBehavior.ClientSetNull)
-                    .HasConstraintName("FK_Order Details_Order");
+                    .HasConstraintName("FK_Order_Details_Order");
 
-                entity.HasOne(d => d.Stock)
+                entity.HasOne(d => d.Pro)
                     .WithMany(p => p.OrderDetails)
-                    .HasForeignKey(d => d.StockId)
-                    .OnDelete(DeleteBehavior.ClientSetNull)
-                    .HasConstraintName("FK_Order Details_Stock");
+                    .HasForeignKey(d => d.ProId)
+                    .HasConstraintName("FK_Order_Details_Products");
             });
 
             modelBuilder.Entity<Post>(entity =>
@@ -440,11 +417,56 @@ namespace SRMMS.Models
                     .HasConstraintName("FK_Post_TopicOfPost");
             });
 
+            modelBuilder.Entity<Product>(entity =>
+            {
+                entity.HasKey(e => e.ProId)
+                    .HasName("PK_Menu");
+
+                entity.Property(e => e.ProId).HasColumnName("pro_id");
+
+                entity.Property(e => e.CatId).HasColumnName("cat_id");
+
+                entity.Property(e => e.IngId).HasColumnName("ing_id");
+
+                entity.Property(e => e.ProCalories)
+                    .HasMaxLength(250)
+                    .HasColumnName("pro_calories");
+
+                entity.Property(e => e.ProCookingTime).HasColumnName("pro_cooking_time");
+
+                entity.Property(e => e.ProDiscription).HasColumnName("pro_discription");
+
+                entity.Property(e => e.ProImg).HasColumnName("pro_img");
+
+                entity.Property(e => e.ProName)
+                    .HasMaxLength(200)
+                    .HasColumnName("pro_name");
+
+                entity.Property(e => e.ProPrice)
+                    .HasColumnType("money")
+                    .HasColumnName("pro_price");
+
+                entity.Property(e => e.ProStatus).HasColumnName("pro_status");
+
+                entity.Property(e => e.ProWarning).HasColumnName("pro_warning");
+
+                entity.HasOne(d => d.Cat)
+                    .WithMany(p => p.Products)
+                    .HasForeignKey(d => d.CatId)
+                    .OnDelete(DeleteBehavior.ClientSetNull)
+                    .HasConstraintName("FK_Menu_Categories");
+
+                entity.HasOne(d => d.Ing)
+                    .WithMany(p => p.Products)
+                    .HasForeignKey(d => d.IngId)
+                    .HasConstraintName("FK_Menu_Ingredients");
+            });
+
             modelBuilder.Entity<RestaurantInformation>(entity =>
             {
                 entity.HasNoKey();
 
-                entity.ToTable("Restaurant Information");
+                entity.ToTable("Restaurant_Information");
 
                 entity.Property(e => e.ResAdress)
                     .HasMaxLength(200)
@@ -479,25 +501,6 @@ namespace SRMMS.Models
                 entity.Property(e => e.StatusName)
                     .HasMaxLength(50)
                     .HasColumnName("status_name");
-            });
-
-            modelBuilder.Entity<Stock>(entity =>
-            {
-                entity.ToTable("Stock");
-
-                entity.Property(e => e.StockId).HasColumnName("stock_id");
-
-                entity.Property(e => e.ProId).HasColumnName("pro_id");
-
-                entity.Property(e => e.Quantity).HasColumnName("quantity");
-
-                entity.Property(e => e.StockStatus).HasColumnName("stock_status");
-
-                entity.HasOne(d => d.Pro)
-                    .WithMany(p => p.Stocks)
-                    .HasForeignKey(d => d.ProId)
-                    .OnDelete(DeleteBehavior.ClientSetNull)
-                    .HasConstraintName("FK_Stock_Menu");
             });
 
             modelBuilder.Entity<Table>(entity =>
