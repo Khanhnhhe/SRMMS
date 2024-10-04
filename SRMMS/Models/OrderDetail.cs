@@ -5,12 +5,13 @@ namespace SRMMS.Models
 {
     public partial class OrderDetail
     {
+        public int OrderDetailId { get; set; }
         public int OrderId { get; set; }
-        public int StockId { get; set; }
+        public int? ProId { get; set; }
         public int Quantiity { get; set; }
-        public double Price { get; set; }
+        public decimal Price { get; set; }
 
         public virtual Order Order { get; set; } = null!;
-        public virtual Stock Stock { get; set; } = null!;
+        public virtual Product? Pro { get; set; }
     }
 }

@@ -7,12 +7,12 @@ namespace SRMMS.Models
     {
         public Category()
         {
-            Menus = new HashSet<Menu>();
+            Products = new HashSet<Product>();
         }
 
         public int CatId { get; set; }
         public string CatName { get; set; } = null!;
 
-        public virtual ICollection<Menu> Menus { get; set; }
+        public virtual ICollection<Product> Products { get; set; }
     }
 }

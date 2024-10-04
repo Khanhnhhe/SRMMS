@@ -9,6 +9,6 @@ namespace SRMMS.Models
         public int ProId { get; set; }
 
         public virtual Combo Combo { get; set; } = null!;
-        public virtual Menu Pro { get; set; } = null!;
+        public virtual Product Pro { get; set; } = null!;
     }
 }
