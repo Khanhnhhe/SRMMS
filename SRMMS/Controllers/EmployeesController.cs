@@ -36,7 +36,7 @@ namespace SRMMS.Controllers
                    EmpLastName = e.EmpLastName,
                    EmpDob = e.EmpDob.Value.ToString("yyyy-MM-dd"),
                    EmpGender = e.EmpGender ? "Male" : "Female" ,
-                  EmpAdress = e.EmpAdress,
+                    EmpAddress = e.EmpAddress,
                    EmpPhoneNumber = e.EmpPhoneNumber,
                    EmpEmail = e.EmpEmail,
                    EmpStartDate = e.EmpStartDate.ToString("yyyy-MM-dd"),

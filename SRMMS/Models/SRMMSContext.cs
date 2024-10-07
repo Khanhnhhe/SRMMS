@@ -41,7 +41,7 @@ namespace SRMMS.Models
             if (!optionsBuilder.IsConfigured)
             {
 #warning To protect potentially sensitive information in your connection string, you should move it out of source code. You can avoid scaffolding the connection string by using the Name= syntax to read it from configuration - see https://go.microsoft.com/fwlink/?linkid=2131148. For more guidance on storing connection strings, see http://go.microsoft.com/fwlink/?LinkId=723263.
-                optionsBuilder.UseSqlServer("server=(local);database=SRMMS;Trusted_Connection=SSPI;Encrypt=false;TrustServerCertificate=true");
+                optionsBuilder.UseSqlServer("server=(local);database=SRMMS;uid=sa;pwd=sa123;TrustServerCertificate=true");
             }
         }
 
@@ -185,9 +185,9 @@ namespace SRMMS.Models
 
                 entity.Property(e => e.EmpId).HasColumnName("emp_id");
 
-                entity.Property(e => e.EmpAdress)
+                entity.Property(e => e.EmpAddress)
                     .HasMaxLength(150)
-                    .HasColumnName("emp_adress");
+                    .HasColumnName("emp_address");
 
                 entity.Property(e => e.EmpDob)
                     .HasColumnType("date")
@@ -486,6 +486,10 @@ namespace SRMMS.Models
                 entity.ToTable("Role");
 
                 entity.Property(e => e.RoleId).HasColumnName("role_id");
+
+                entity.Property(e => e.Description)
+                    .HasMaxLength(150)
+                    .HasColumnName("description");
 
                 entity.Property(e => e.RoleName)
                     .HasMaxLength(50)
