@@ -36,12 +36,17 @@ namespace SRMMS.Controllers
                    EmpLastName = e.EmpLastName,
                    EmpDob = e.EmpDob.Value.ToString("yyyy-MM-dd"),
                    EmpGender = e.EmpGender ? "Male" : "Female" ,
-                  EmpAdress = e.EmpAdress,
+                  EmpAdress = e.EmpAddress,
                    EmpPhoneNumber = e.EmpPhoneNumber,
                    EmpEmail = e.EmpEmail,
                    EmpStartDate = e.EmpStartDate.ToString("yyyy-MM-dd"),
                    EmpStatus = e.EmpStatus,
-                   RoleName = e.EmpRole.RoleName 
+                   EmpRole = new RoleDTO
+                   {
+                       RoleId = e.EmpRole.RoleId,
+                       RoleName = e.EmpRole.RoleName,
+                       Description = e.EmpRole.Description
+                   }
                })
                .ToListAsync();
 
@@ -111,7 +116,12 @@ namespace SRMMS.Controllers
                 EmpEmail = newEmployee.EmpEmail,
                 EmpStartDate = newEmployee.EmpStartDate.ToString("yyyy-MM-dd"),
                 EmpStatus = newEmployee.EmpStatus,
-                RoleName = newEmployee.EmpRole?.RoleName
+                EmpRole = new RoleDTO
+                {
+                    RoleId = newEmployee.EmpRole.RoleId,
+                    RoleName = newEmployee.EmpRole.RoleName,
+                    Description = newEmployee.EmpRole.Description
+                }
             };
 
             return CreatedAtAction(nameof(GetEmployeeById), new { id = newEmployee.EmpId }, employeeResult);
@@ -134,7 +144,12 @@ namespace SRMMS.Controllers
                     EmpEmail = e.EmpEmail,
                     EmpStartDate = e.EmpStartDate.ToString("yyyy-MM-dd"),
                     EmpStatus = e.EmpStatus,
-                    RoleName = e.EmpRole.RoleName
+                    EmpRole = new RoleDTO
+                    {
+                        RoleId = e.EmpRole.RoleId,
+                        RoleName = e.EmpRole.RoleName,
+                        Description = e.EmpRole.Description
+                    }
                 })
                 .FirstOrDefaultAsync(e => e.EmpId == id);
 

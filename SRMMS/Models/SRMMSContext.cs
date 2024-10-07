@@ -185,9 +185,9 @@ namespace SRMMS.Models
 
                 entity.Property(e => e.EmpId).HasColumnName("emp_id");
 
-                entity.Property(e => e.EmpAdress)
+                entity.Property(e => e.EmpAddress)
                     .HasMaxLength(150)
-                    .HasColumnName("emp_adress");
+                    .HasColumnName("emp_address");
 
                 entity.Property(e => e.EmpDob)
                     .HasColumnType("date")
@@ -486,6 +486,10 @@ namespace SRMMS.Models
                 entity.ToTable("Role");
 
                 entity.Property(e => e.RoleId).HasColumnName("role_id");
+
+                entity.Property(e => e.Description)
+                    .HasMaxLength(150)
+                    .HasColumnName("description");
 
                 entity.Property(e => e.RoleName)
                     .HasMaxLength(50)

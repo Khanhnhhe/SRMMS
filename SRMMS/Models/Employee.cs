@@ -19,7 +19,7 @@ namespace SRMMS.Models
         public int EmpPhoneNumber { get; set; }
         public string EmpEmail { get; set; } = null!;
         public string EmpPassword { get; set; } = null!;
-        public string? EmpAdress { get; set; }
+        public string? EmpAddress { get; set; }
         public string? EmpWard { get; set; }
         public DateTime EmpStartDate { get; set; }
         public DateTime? EmpEndDate { get; set; }
