@@ -37,8 +37,10 @@ public class Program
                 };
             });
 
+        builder.Services.AddCors();
+
         // Add CORS policy
-        builder.Services.AddCors(options =>
+        /*builder.Services.AddCors(options =>
         {
             options.AddPolicy("AllowAll", builder =>
             {
@@ -47,6 +49,7 @@ public class Program
                        .AllowAnyHeader();
             });
         });
+*/
 
         builder.Services.AddSwaggerGen(c =>
         {
@@ -86,6 +89,8 @@ public class Program
         }
 
         app.UseHttpsRedirection();
+
+        app.UseCors(c => c.AllowAnyMethod().AllowAnyHeader().AllowAnyOrigin());
 
         app.UseCors("AllowSpecificOrigins"); // Enable CORS
 

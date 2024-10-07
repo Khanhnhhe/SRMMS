@@ -7,7 +7,7 @@
         public string? EmpLastName { get; set; }
         public string? EmpDob { get; set; }
         public string? EmpGender { get; set; }
-        public string? EmpAdress { get; set; }
+        public string? EmpAddress { get; set; }
         public int? EmpPhoneNumber { get; set; }
         public string? EmpEmail { get; set; }
         public string? EmpStartDate { get; set; }
