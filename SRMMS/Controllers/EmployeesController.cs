@@ -36,7 +36,7 @@ namespace SRMMS.Controllers
                    EmpLastName = e.EmpLastName,
                    EmpDob = e.EmpDob.Value.ToString("yyyy-MM-dd"),
                    EmpGender = e.EmpGender ? "Male" : "Female" ,
-                    EmpAddress = e.EmpAddress,
+                   EmpAddress = e.EmpAddress,
                    EmpPhoneNumber = e.EmpPhoneNumber,
                    EmpEmail = e.EmpEmail,
                    EmpStartDate = e.EmpStartDate.ToString("yyyy-MM-dd"),
@@ -50,7 +50,7 @@ namespace SRMMS.Controllers
                })
                .ToListAsync();
 
-                if (employees == null || employees.Count == 0)
+                if (employees == null  || employees.Count == 0)
                 {
                     return NotFound();
                 }
@@ -84,8 +84,10 @@ namespace SRMMS.Controllers
                 EmpLastName = employeeDto.EmpLastName,
                 EmpDob = (DateTime)employeeDto.EmpDob,
                 EmpPhoneNumber = (int)employeeDto.EmpPhoneNumber,
+                EmpGender = (bool)employeeDto.EmpGender,
                 EmpEmail = employeeDto.EmpEmail,
                 EmpPassword = employeeDto.EmpPassword,
+                EmpAddress = employeeDto.EmpAddress,
                 EmpStartDate = employeeDto.EmpStartDate.Value, 
                 EmpStatus = employeeDto.EmpStatus.Value 
             };
@@ -116,7 +118,7 @@ namespace SRMMS.Controllers
                 EmpEmail = newEmployee.EmpEmail,
                 EmpStartDate = newEmployee.EmpStartDate.ToString("yyyy-MM-dd"),
                 EmpStatus = newEmployee.EmpStatus,
-                RoleId = newEmployee.EmpRoleId,
+                EmpRoleId = newEmployee.EmpRoleId,
             };
 
             return CreatedAtAction(nameof(GetEmployeeById), new { id = newEmployee.EmpId }, employeeResult);
