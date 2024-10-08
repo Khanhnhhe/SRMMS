@@ -36,7 +36,7 @@ namespace SRMMS.Controllers
                    EmpLastName = e.EmpLastName,
                    EmpDob = e.EmpDob.Value.ToString("yyyy-MM-dd"),
                    EmpGender = e.EmpGender ? "Male" : "Female" ,
-                    EmpAddress = e.EmpAddress,
+                   EmpAddress = e.EmpAddress,
                    EmpPhoneNumber = e.EmpPhoneNumber,
                    EmpEmail = e.EmpEmail,
                    EmpStartDate = e.EmpStartDate.ToString("yyyy-MM-dd"),
@@ -50,7 +50,7 @@ namespace SRMMS.Controllers
                })
                .ToListAsync();
 
-                if (employees == null || employees.Count == 0)
+                if (employees == null  || employees.Count == 0)
                 {
                     return NotFound();
                 }
@@ -73,7 +73,7 @@ namespace SRMMS.Controllers
             }
 
            
-            employeeDto.RoleName = employeeDto.RoleName ?? "Staff"; 
+            employeeDto.RoleId = employeeDto.RoleId; 
             employeeDto.EmpStatus = employeeDto.EmpStatus ?? true; 
             employeeDto.EmpStartDate = employeeDto.EmpStartDate ?? DateTime.Now; 
 
@@ -84,13 +84,15 @@ namespace SRMMS.Controllers
                 EmpLastName = employeeDto.EmpLastName,
                 EmpDob = (DateTime)employeeDto.EmpDob,
                 EmpPhoneNumber = (int)employeeDto.EmpPhoneNumber,
+                EmpGender = (bool)employeeDto.EmpGender,
                 EmpEmail = employeeDto.EmpEmail,
                 EmpPassword = employeeDto.EmpPassword,
+                EmpAddress = employeeDto.EmpAddress,
                 EmpStartDate = employeeDto.EmpStartDate.Value, 
                 EmpStatus = employeeDto.EmpStatus.Value 
             };
 
-            var role = await _context.Roles.FirstOrDefaultAsync(r => r.RoleName == employeeDto.RoleName);
+            var role = await _context.Roles.FirstOrDefaultAsync(r => r.RoleId == employeeDto.RoleId);
             if (role != null)
             {
                 newEmployee.EmpRoleId = role.RoleId; 
@@ -116,12 +118,7 @@ namespace SRMMS.Controllers
                 EmpEmail = newEmployee.EmpEmail,
                 EmpStartDate = newEmployee.EmpStartDate.ToString("yyyy-MM-dd"),
                 EmpStatus = newEmployee.EmpStatus,
-                EmpRole = new RoleDTO
-                {
-                    RoleId = newEmployee.EmpRole.RoleId,
-                    RoleName = newEmployee.EmpRole.RoleName,
-                    Description = newEmployee.EmpRole.Description
-                }
+                EmpRoleId = newEmployee.EmpRoleId,
             };
 
             return CreatedAtAction(nameof(GetEmployeeById), new { id = newEmployee.EmpId }, employeeResult);
@@ -130,26 +127,25 @@ namespace SRMMS.Controllers
 
 
         [HttpGet("/api/getEmployeeByID/{id}")]
-        public async Task<ActionResult<EmployeeDTO>> GetEmployeeById(int id)
+        public async Task<ActionResult<EmployeeCreateDTO>> GetEmployeeById(int id)
         {
             var employee = await _context.Employees
                 .Include(e => e.EmpRole)
-                .Select(e => new EmployeeDTO
+                .Select(e => new EmployeeCreateDTO
                 {
                     EmpId = e.EmpId,
                     EmpFirstName = e.EmpFirstName,
                     EmpLastName = e.EmpLastName,
-                    EmpDob = e.EmpDob.Value.ToString("yyyy-MM-dd"),
+                    EmpGender = e.EmpGender,
+                    EmpDob = e.EmpDob,  // Return as DateTime? instead of converting to string
                     EmpPhoneNumber = e.EmpPhoneNumber,
                     EmpEmail = e.EmpEmail,
-                    EmpStartDate = e.EmpStartDate.ToString("yyyy-MM-dd"),
+                    EmpPassword = e.EmpPassword, // Ensure that password is not returned for security reasons
+                    EmpAddress = e.EmpAddress,
+                    EmpWard = e.EmpWard,
+                    EmpStartDate = e.EmpStartDate,  // Return as DateTime? instead of converting to string
                     EmpStatus = e.EmpStatus,
-                    EmpRole = new RoleDTO
-                    {
-                        RoleId = e.EmpRole.RoleId,
-                        RoleName = e.EmpRole.RoleName,
-                        Description = e.EmpRole.Description
-                    }
+                    RoleId = e.EmpRole.RoleId  // RoleId should match the RoleId property in EmployeeCreateDTO
                 })
                 .FirstOrDefaultAsync(e => e.EmpId == id);
 
@@ -161,7 +157,7 @@ namespace SRMMS.Controllers
             return Ok(employee);
         }
 
-        [HttpPut("{id}")]
+        [HttpPut("/api/updateEmployee/{id}")]
         public async Task<IActionResult> PutEmployee(int id, EmployeeUpdateDTO employeeDto)
         {
             var existingEmployee = await _context.Employees

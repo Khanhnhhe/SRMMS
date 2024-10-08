@@ -2,6 +2,7 @@
 {
     public class EmployeeCreateDTO
     {
+        public int EmpId { get; set; }
         public string EmpFirstName { get; set; } // Required
         public string EmpLastName { get; set; } // Required
         public DateTime? EmpDob { get; set; } // Optional
@@ -13,6 +14,6 @@
         public string? EmpWard { get; set; } // Optional
         public DateTime? EmpStartDate { get; set; } // Optional, default to DateTime.Now
         public bool? EmpStatus { get; set; } // Optional, default to true
-        public string? RoleName { get; set; } // Optional, default to "Staff"
+        public int RoleId { get; set; } // Optional, default to "Staff"
     }
 }
