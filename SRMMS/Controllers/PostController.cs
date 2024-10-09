@@ -126,8 +126,67 @@ namespace SRMMS.Controllers
         }
 
 
+        [HttpGet("ByCategory/{categoryId}")]
+        public async Task<ActionResult<IEnumerable<PostDTO>>> GetPostsByCategory(int categoryId)
+        {
+            var posts = await _context.Posts
+                .Where(p => p.PostToppicId == categoryId)
+                .Select(p => new PostDTO
+                {
+                    PostId = p.PostId,
+                    PostTitle = p.PostTitle,
+                    EmpName = p.EmpPost.EmpFirstName + " " + p.EmpPost.EmpLastName,
+                    PostToppicId = p.PostToppicId,
+                    PostImg = p.PostImg,
+                    PostDetail = p.PostDetail,
+                    PostDate = p.PostDate,
+                    PostToppicName = p.PostToppic.TopicName
+                })
+                .ToListAsync();
 
-       
+            if (posts == null || !posts.Any())
+            {
+                return NotFound("No posts found for the given category.");
+            }
+
+            return Ok(posts);
+        }
+
+        [HttpGet("ByTitle/{postTitle}")]
+        public async Task<ActionResult<IEnumerable<PostDTO>>> GetPostsByTitle(string postTitle)
+        {
+            if (string.IsNullOrWhiteSpace(postTitle))
+            {
+                return BadRequest("Post title is required.");
+            }
+
+            var posts = await _context.Posts
+                .Where(p => p.PostTitle.Contains(postTitle)) 
+                .Select(p => new PostDTO
+                {
+                    PostId = p.PostId,
+                    PostTitle = p.PostTitle,
+                    EmpName = p.EmpPost.EmpFirstName + " " + p.EmpPost.EmpLastName,
+                    PostToppicId = p.PostToppicId,
+                    PostImg = p.PostImg,
+                    PostDetail = p.PostDetail,
+                    PostDate = p.PostDate,
+                    PostToppicName = p.PostToppic.TopicName
+                })
+                .ToListAsync();
+
+            if (posts == null || !posts.Any())
+            {
+                return NotFound("No posts found for the given title.");
+            }
+
+            return Ok(posts);
+        }
+
+
+
+
+
         [HttpDelete("DeletePost/{id}")]
         public async Task<ActionResult> DeletePost(int id)
         {
@@ -147,6 +206,10 @@ namespace SRMMS.Controllers
         {
             return _context.Posts.Any(e => e.PostId == id);
         }
+
+
+
+
     }
 
 
