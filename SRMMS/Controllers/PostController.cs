@@ -152,6 +152,8 @@ namespace SRMMS.Controllers
             return Ok(posts);
         }
 
+
+
         [HttpGet("ByTitle/{postTitle}")]
         public async Task<ActionResult<IEnumerable<PostDTO>>> GetPostsByTitle(string postTitle)
         {
@@ -183,7 +185,24 @@ namespace SRMMS.Controllers
             return Ok(posts);
         }
 
+        [HttpGet("ListTopicsOfPost")]
+        public async Task<ActionResult<IEnumerable<TopicOfPostDTO>>> GetTopics()
+        {
+            var topics = await _context.TopicOfPosts
+                .Select(t => new TopicOfPostDTO
+                {
+                    TopicId = t.TopicId,
+                    TopicName = t.TopicName
+                })
+                .ToListAsync();
 
+            if (topics == null || !topics.Any())
+            {
+                return NotFound("No topics found.");
+            }
+
+            return Ok(topics);
+        }
 
 
 
