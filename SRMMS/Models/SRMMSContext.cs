@@ -41,7 +41,7 @@ namespace SRMMS.Models
             if (!optionsBuilder.IsConfigured)
             {
 #warning To protect potentially sensitive information in your connection string, you should move it out of source code. You can avoid scaffolding the connection string by using the Name= syntax to read it from configuration - see https://go.microsoft.com/fwlink/?linkid=2131148. For more guidance on storing connection strings, see http://go.microsoft.com/fwlink/?LinkId=723263.
-                optionsBuilder.UseSqlServer("server=(local);database=SRMMS;uid=sa;pwd=sa123;TrustServerCertificate=true");
+                optionsBuilder.UseSqlServer("Server=DESKTOP-Q5D4AD1\\SQLEXPRESS;database=SRMMS;Trusted_Connection=SSPI;Encrypt=false;TrustServerCertificate=true");
             }
         }
 
@@ -386,9 +386,7 @@ namespace SRMMS.Models
 
                 entity.Property(e => e.PostId).HasColumnName("post_id");
 
-                entity.Property(e => e.EmpPostId)
-                    .HasMaxLength(50)
-                    .HasColumnName("emp_post_id");
+                entity.Property(e => e.EmpPostId).HasColumnName("emp_post_id");
 
                 entity.Property(e => e.PostDate)
                     .HasColumnType("date")
@@ -404,13 +402,13 @@ namespace SRMMS.Models
 
                 entity.Property(e => e.PostToppicId).HasColumnName("post_toppic_id");
 
-                entity.HasOne(d => d.PostToppic)
+                entity.HasOne(d => d.EmpPost)
                     .WithMany(p => p.Posts)
-                    .HasForeignKey(d => d.PostToppicId)
+                    .HasForeignKey(d => d.EmpPostId)
                     .OnDelete(DeleteBehavior.ClientSetNull)
-                    .HasConstraintName("FK_Post_Employees");
+                    .HasConstraintName("FK_Post_Employees1");
 
-                entity.HasOne(d => d.PostToppicNavigation)
+                entity.HasOne(d => d.PostToppic)
                     .WithMany(p => p.Posts)
                     .HasForeignKey(d => d.PostToppicId)
                     .OnDelete(DeleteBehavior.ClientSetNull)

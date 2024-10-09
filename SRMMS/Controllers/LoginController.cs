@@ -46,7 +46,14 @@ namespace SRMMS.Controllers
 
             // Create token 
             var token = GenerateJwtToken(user.EmpEmail, user.EmpRole.RoleName);
-            return Ok(new { token });
+
+            return Ok(new
+            {
+                token = token,
+                email = user.EmpEmail,
+                roleName = user.EmpRole.RoleName,
+                EmpName = user.EmpFirstName, EmpLastName = user.EmpLastName
+            });
         }
 
         // check passwork
@@ -78,6 +85,30 @@ namespace SRMMS.Controllers
             );
 
             return new JwtSecurityTokenHandler().WriteToken(token);
+        }
+
+        [HttpPost("Change-password")]
+        public IActionResult ChangePassword([FromBody] ChangePasswordDTO model)
+        {
+            var user = _context.Employees
+                .FirstOrDefault(u => u.EmpEmail == model.EmpEmail);
+
+            if (user == null)
+            {
+                return NotFound("User not found");
+            }
+
+            if (!VerifyPassword(model.OldPassword, user.EmpPassword))
+            {
+                return BadRequest("Old password is incorrect");
+            }
+
+            user.EmpPassword = model.NewPassword;
+
+            _context.Employees.Update(user);
+            _context.SaveChanges();
+
+            return Ok("Password changed successfully");
         }
     }
 }
