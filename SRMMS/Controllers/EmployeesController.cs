@@ -210,10 +210,10 @@ namespace SRMMS.Controllers
             }
 
             
-            if (!string.IsNullOrEmpty(employeeDto.RoleName))
+            if (employeeDto.RoleId == null)
             {
-                var roleName = employeeDto.RoleName;
-                var role = await _context.Roles.FirstOrDefaultAsync(r => r.RoleName == roleName);
+                var roleId = employeeDto.RoleId;
+                var role = await _context.Roles.FirstOrDefaultAsync(r => r.RoleId == roleId);
 
                 if (role != null)
                 {

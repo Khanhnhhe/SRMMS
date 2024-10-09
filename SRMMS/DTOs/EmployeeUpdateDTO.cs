@@ -9,6 +9,6 @@ public class EmployeeUpdateDTO
     public string? EmpEmail { get; set; }
     public string? EmpPassword { get; set; }
     public DateTime? EmpStartDate { get; set; }
-    public string? RoleName { get; set; } = "staff"; // Default role is "staff"
-    public bool? EmpStatus { get; set; } 
+    public bool? EmpStatus { get; set; }
+    public int RoleId { get; set; }
 }
