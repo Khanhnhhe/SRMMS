@@ -137,15 +137,15 @@ namespace SRMMS.Controllers
                     EmpFirstName = e.EmpFirstName,
                     EmpLastName = e.EmpLastName,
                     EmpGender = e.EmpGender,
-                    EmpDob = e.EmpDob,  // Return as DateTime? instead of converting to string
+                    EmpDob = e.EmpDob,  
                     EmpPhoneNumber = e.EmpPhoneNumber,
                     EmpEmail = e.EmpEmail,
-                    EmpPassword = e.EmpPassword, // Ensure that password is not returned for security reasons
+                    EmpPassword = e.EmpPassword, 
                     EmpAddress = e.EmpAddress,
                     EmpWard = e.EmpWard,
-                    EmpStartDate = e.EmpStartDate,  // Return as DateTime? instead of converting to string
+                    EmpStartDate = e.EmpStartDate,  
                     EmpStatus = e.EmpStatus,
-                    RoleId = e.EmpRole.RoleId  // RoleId should match the RoleId property in EmployeeCreateDTO
+                    RoleId = e.EmpRole.RoleId  
                 })
                 .FirstOrDefaultAsync(e => e.EmpId == id);
 
