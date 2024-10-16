@@ -2,14 +2,15 @@
 {
     public class addProductDTO
     {
-        public string ProName { get; set; } = null!;
-        public string ProDiscription { get; set; } = null!;
-        public string ProWarning { get; set; } = null!;
-        public decimal ProPrice { get; set; }
-        public int cateId  { get; set; } 
-        public IFormFile Image { get; set; } = null!; 
-        public string ProCalories { get; set; } = null!;
-        public string ProCookingTime { get; set; } = null!;
-        public bool ProStatus { get; set; }
+        public string ProductName { get; set; } = null!;
+        public string Description { get; set; } = null!;
+        public string Warning { get; set; } = null!;
+        public decimal Price { get; set; }
+        public int Category { get; set; } 
+        public string Image { get; set; } = null!;
+        public string Calories { get; set; } = null!;
+        public string CookingTime { get; set; } = null!;
+        public bool Status { get; set; }
     }
 }
+
