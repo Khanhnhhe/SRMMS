@@ -161,7 +161,7 @@
                 return NotFound();
             }
 
-            // Kiểm tra tên sản phẩm trùng lặp
+            
             if (!string.IsNullOrEmpty(updateProductDto.ProductName))
             {
                 var productWithSameName = await _context.Products
@@ -176,7 +176,7 @@
                 existingProduct.ProName = updateProductDto.ProductName;
             }
 
-            // Cập nhật thông tin sản phẩm từ DTO
+            
             if (!string.IsNullOrEmpty(updateProductDto.Description))
             {
                 existingProduct.ProDiscription = updateProductDto.Description;
