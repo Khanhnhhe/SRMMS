@@ -22,35 +22,49 @@
             }
 
             [HttpGet("getAllProducts")]
-            public async Task<IActionResult> GetAllProducts()
-            {
-                var products = await _context.Products
-                    .Include(p => p.Cat)
-                    .Select(p => new ListProductDTO
-                    {
-                        ProId = p.ProId,
-                        ProName = p.ProName,
-                        ProDiscription = p.ProDiscription,
-                        ProWarning = p.ProWarning,
-                        ProPrice = p.ProPrice,
-                        CatName = p.Cat.CatName,
-                        ProImg = p.ProImg,
-                        ProCalories = p.ProCalories,
-                        ProCookingTime = p.ProCookingTime.ToString(),
-                        ProStatus = p.ProStatus
-                    })
-                    .ToListAsync();
+        [HttpGet("getAllProducts")]
+        public async Task<IActionResult> GetAllProducts(int pageNumber = 1, int pageSize = 10)
+        {
+            var totalProducts = await _context.Products.CountAsync(); 
 
-                if (products == null || products.Count == 0)
+            var products = await _context.Products
+                .Include(p => p.Cat)
+                .Skip((pageNumber - 1) * pageSize) 
+                .Take(pageSize) 
+                .Select(p => new ListProductDTO
                 {
-                    return NotFound("No products found.");
-                }
+                    ProId = p.ProId,
+                    ProName = p.ProName,
+                    ProDiscription = p.ProDiscription,
+                    ProWarning = p.ProWarning,
+                    ProPrice = p.ProPrice,
+                    CatName = p.Cat.CatName,
+                    ProImg = p.ProImg,
+                    ProCalories = p.ProCalories,
+                    ProCookingTime = p.ProCookingTime.ToString(),
+                    ProStatus = p.ProStatus
+                })
+                .ToListAsync();
 
-                return Ok(products);
+            if (products == null || products.Count == 0)
+            {
+                return NotFound("No products found.");
             }
 
-           
-        
+            
+            var result = new
+            {
+                TotalProducts = totalProducts,
+                PageNumber = pageNumber,
+                PageSize = pageSize,
+                Products = products
+            };
+
+            return Ok(result);
+        }
+
+
+
 
     }
 }
