@@ -16,9 +16,9 @@ namespace SRMMS.Models
         public int AccId { get; set; }
         public decimal TotalMoney { get; set; }
         public int OrderStatusId { get; set; }
+        public bool? Staus { get; set; }
 
         public virtual Account Acc { get; set; } = null!;
-        public virtual Status OrderStatus { get; set; } = null!;
         public virtual ICollection<DiscountCode> DiscountCodes { get; set; }
         public virtual ICollection<OrderDetail> OrderDetails { get; set; }
     }
