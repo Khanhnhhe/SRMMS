@@ -8,7 +8,6 @@ namespace SRMMS.Models
         public Employee()
         {
             Accounts = new HashSet<Account>();
-            Posts = new HashSet<Post>();
         }
 
         public int EmpId { get; set; }
@@ -28,6 +27,5 @@ namespace SRMMS.Models
 
         public virtual Role EmpRole { get; set; } = null!;
         public virtual ICollection<Account> Accounts { get; set; }
-        public virtual ICollection<Post> Posts { get; set; }
     }
 }

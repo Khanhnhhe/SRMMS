@@ -17,6 +17,7 @@ namespace SRMMS.Models
         }
 
         public virtual DbSet<Account> Accounts { get; set; } = null!;
+        public virtual DbSet<BookingTable> BookingTables { get; set; } = null!;
         public virtual DbSet<Category> Categories { get; set; } = null!;
         public virtual DbSet<Combo> Combos { get; set; } = null!;
         public virtual DbSet<ComboDetail> ComboDetails { get; set; } = null!;
@@ -24,24 +25,19 @@ namespace SRMMS.Models
         public virtual DbSet<DiscountCode> DiscountCodes { get; set; } = null!;
         public virtual DbSet<Employee> Employees { get; set; } = null!;
         public virtual DbSet<Feedback> Feedbacks { get; set; } = null!;
-        public virtual DbSet<IngCategory> IngCategories { get; set; } = null!;
-        public virtual DbSet<Ingredient> Ingredients { get; set; } = null!;
         public virtual DbSet<Order> Orders { get; set; } = null!;
         public virtual DbSet<OrderDetail> OrderDetails { get; set; } = null!;
-        public virtual DbSet<Post> Posts { get; set; } = null!;
         public virtual DbSet<Product> Products { get; set; } = null!;
         public virtual DbSet<RestaurantInformation> RestaurantInformations { get; set; } = null!;
         public virtual DbSet<Role> Roles { get; set; } = null!;
-        public virtual DbSet<Status> Statuses { get; set; } = null!;
         public virtual DbSet<Table> Tables { get; set; } = null!;
-        public virtual DbSet<TopicOfPost> TopicOfPosts { get; set; } = null!;
 
         protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
         {
             if (!optionsBuilder.IsConfigured)
             {
 #warning To protect potentially sensitive information in your connection string, you should move it out of source code. You can avoid scaffolding the connection string by using the Name= syntax to read it from configuration - see https://go.microsoft.com/fwlink/?linkid=2131148. For more guidance on storing connection strings, see http://go.microsoft.com/fwlink/?LinkId=723263.
-                optionsBuilder.UseSqlServer("Server=DESKTOP-Q5D4AD1\\SQLEXPRESS;database=SRMMS;Trusted_Connection=SSPI;Encrypt=false;TrustServerCertificate=true");
+                optionsBuilder.UseSqlServer("Server=localhost;Database=SRMMS;User Id=SA;Password=Admin2002@;");
             }
         }
 
@@ -57,8 +53,6 @@ namespace SRMMS.Models
 
                 entity.Property(e => e.EmpId).HasColumnName("emp_id");
 
-                entity.Property(e => e.TableId).HasColumnName("table_id");
-
                 entity.HasOne(d => d.Cus)
                     .WithMany(p => p.Accounts)
                     .HasForeignKey(d => d.CusId)
@@ -70,11 +64,37 @@ namespace SRMMS.Models
                     .HasForeignKey(d => d.EmpId)
                     .OnDelete(DeleteBehavior.ClientSetNull)
                     .HasConstraintName("FK_Accounts_Employees");
+            });
+
+            modelBuilder.Entity<BookingTable>(entity =>
+            {
+                entity.HasKey(e => e.BookId);
+
+                entity.ToTable("Booking_table");
+
+                entity.Property(e => e.BookId).HasColumnName("book_id");
+
+                entity.Property(e => e.AccId).HasColumnName("acc_id");
+
+                entity.Property(e => e.TableId).HasColumnName("table_id");
+
+                entity.Property(e => e.TimeBooking)
+                    .HasColumnType("date")
+                    .HasColumnName("time_booking");
+
+                entity.Property(e => e.TimeOut)
+                    .HasColumnType("date")
+                    .HasColumnName("time_out");
+
+                entity.HasOne(d => d.Acc)
+                    .WithMany(p => p.BookingTables)
+                    .HasForeignKey(d => d.AccId)
+                    .HasConstraintName("FK_Booking_table_Accounts");
 
                 entity.HasOne(d => d.Table)
-                    .WithMany(p => p.Accounts)
+                    .WithMany(p => p.BookingTables)
                     .HasForeignKey(d => d.TableId)
-                    .HasConstraintName("FK_Accounts_Tables");
+                    .HasConstraintName("FK_Booking_table_Table");
             });
 
             modelBuilder.Entity<Category>(entity =>
@@ -273,54 +293,6 @@ namespace SRMMS.Models
                     .HasConstraintName("FK_Feedback_Menu");
             });
 
-            modelBuilder.Entity<IngCategory>(entity =>
-            {
-                entity.HasKey(e => e.CateId);
-
-                entity.ToTable("Ing_Categories");
-
-                entity.Property(e => e.CateId).HasColumnName("cate_id");
-
-                entity.Property(e => e.CateName)
-                    .HasMaxLength(50)
-                    .HasColumnName("cate_name");
-            });
-
-            modelBuilder.Entity<Ingredient>(entity =>
-            {
-                entity.HasKey(e => e.IngId);
-
-                entity.Property(e => e.IngId).HasColumnName("ing_id");
-
-                entity.Property(e => e.CateId).HasColumnName("cate_id");
-
-                entity.Property(e => e.Discription).HasColumnName("discription");
-
-                entity.Property(e => e.ExpirationDate)
-                    .HasColumnType("date")
-                    .HasColumnName("expiration_date");
-
-                entity.Property(e => e.IngInsertDate)
-                    .HasColumnType("date")
-                    .HasColumnName("ing_insert_date");
-
-                entity.Property(e => e.IngName)
-                    .HasMaxLength(50)
-                    .HasColumnName("ing_name");
-
-                entity.Property(e => e.IngPrice)
-                    .HasColumnType("money")
-                    .HasColumnName("ing_price");
-
-                entity.Property(e => e.IngQuantity).HasColumnName("ing_quantity");
-
-                entity.HasOne(d => d.Cate)
-                    .WithMany(p => p.Ingredients)
-                    .HasForeignKey(d => d.CateId)
-                    .OnDelete(DeleteBehavior.ClientSetNull)
-                    .HasConstraintName("FK_Ingredients_Ing_Categories");
-            });
-
             modelBuilder.Entity<Order>(entity =>
             {
                 entity.ToTable("Order");
@@ -335,6 +307,8 @@ namespace SRMMS.Models
 
                 entity.Property(e => e.OrderStatusId).HasColumnName("order_status_id");
 
+                entity.Property(e => e.Staus).HasColumnName("staus");
+
                 entity.Property(e => e.TotalMoney)
                     .HasColumnType("money")
                     .HasColumnName("totalMoney");
@@ -344,12 +318,6 @@ namespace SRMMS.Models
                     .HasForeignKey(d => d.AccId)
                     .OnDelete(DeleteBehavior.ClientSetNull)
                     .HasConstraintName("FK_Order_Accounts");
-
-                entity.HasOne(d => d.OrderStatus)
-                    .WithMany(p => p.Orders)
-                    .HasForeignKey(d => d.OrderStatusId)
-                    .OnDelete(DeleteBehavior.ClientSetNull)
-                    .HasConstraintName("FK_Order_Status");
             });
 
             modelBuilder.Entity<OrderDetail>(entity =>
@@ -380,41 +348,6 @@ namespace SRMMS.Models
                     .HasConstraintName("FK_Order_Details_Products");
             });
 
-            modelBuilder.Entity<Post>(entity =>
-            {
-                entity.ToTable("Post");
-
-                entity.Property(e => e.PostId).HasColumnName("post_id");
-
-                entity.Property(e => e.EmpPostId).HasColumnName("emp_post_id");
-
-                entity.Property(e => e.PostDate)
-                    .HasColumnType("date")
-                    .HasColumnName("post_date");
-
-                entity.Property(e => e.PostDetail).HasColumnName("post_detail");
-
-                entity.Property(e => e.PostImg).HasColumnName("post_img");
-
-                entity.Property(e => e.PostTitle)
-                    .HasMaxLength(50)
-                    .HasColumnName("post_title");
-
-                entity.Property(e => e.PostToppicId).HasColumnName("post_toppic_id");
-
-                entity.HasOne(d => d.EmpPost)
-                    .WithMany(p => p.Posts)
-                    .HasForeignKey(d => d.EmpPostId)
-                    .OnDelete(DeleteBehavior.ClientSetNull)
-                    .HasConstraintName("FK_Post_Employees1");
-
-                entity.HasOne(d => d.PostToppic)
-                    .WithMany(p => p.Posts)
-                    .HasForeignKey(d => d.PostToppicId)
-                    .OnDelete(DeleteBehavior.ClientSetNull)
-                    .HasConstraintName("FK_Post_TopicOfPost");
-            });
-
             modelBuilder.Entity<Product>(entity =>
             {
                 entity.HasKey(e => e.ProId)
@@ -424,13 +357,13 @@ namespace SRMMS.Models
 
                 entity.Property(e => e.CatId).HasColumnName("cat_id");
 
-                entity.Property(e => e.IngId).HasColumnName("ing_id");
-
                 entity.Property(e => e.ProCalories)
                     .HasMaxLength(250)
                     .HasColumnName("pro_calories");
 
-                entity.Property(e => e.ProCookingTime).HasColumnName("pro_cooking_time");
+                entity.Property(e => e.ProCookingTime)
+                    .HasMaxLength(200)
+                    .HasColumnName("pro_cooking_time");
 
                 entity.Property(e => e.ProDiscription).HasColumnName("pro_discription");
 
@@ -453,11 +386,6 @@ namespace SRMMS.Models
                     .HasForeignKey(d => d.CatId)
                     .OnDelete(DeleteBehavior.ClientSetNull)
                     .HasConstraintName("FK_Menu_Categories");
-
-                entity.HasOne(d => d.Ing)
-                    .WithMany(p => p.Products)
-                    .HasForeignKey(d => d.IngId)
-                    .HasConstraintName("FK_Menu_Ingredients");
             });
 
             modelBuilder.Entity<RestaurantInformation>(entity =>
@@ -494,39 +422,23 @@ namespace SRMMS.Models
                     .HasColumnName("role_name");
             });
 
-            modelBuilder.Entity<Status>(entity =>
-            {
-                entity.ToTable("Status");
-
-                entity.Property(e => e.StatusId).HasColumnName("status_id");
-
-                entity.Property(e => e.StatusName)
-                    .HasMaxLength(50)
-                    .HasColumnName("status_name");
-            });
-
             modelBuilder.Entity<Table>(entity =>
             {
-                entity.Property(e => e.TableId).HasColumnName("table_id");
+                entity.ToTable("Table");
+
+                entity.Property(e => e.TableId)
+                    .ValueGeneratedNever()
+                    .HasColumnName("table_id");
+
+                entity.Property(e => e.QrCode)
+                    .HasMaxLength(50)
+                    .HasColumnName("QR_code");
+
+                entity.Property(e => e.Status).HasColumnName("status");
 
                 entity.Property(e => e.TableName)
                     .HasMaxLength(50)
                     .HasColumnName("table_name");
-
-                entity.Property(e => e.TableQrcode).HasColumnName("table_QRCode");
-            });
-
-            modelBuilder.Entity<TopicOfPost>(entity =>
-            {
-                entity.HasKey(e => e.TopicId);
-
-                entity.ToTable("TopicOfPost");
-
-                entity.Property(e => e.TopicId).HasColumnName("topic_id");
-
-                entity.Property(e => e.TopicName)
-                    .HasMaxLength(50)
-                    .HasColumnName("topic_name");
             });
 
             OnModelCreatingPartial(modelBuilder);

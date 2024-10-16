@@ -7,13 +7,14 @@ namespace SRMMS.Models
     {
         public Table()
         {
-            Accounts = new HashSet<Account>();
+            BookingTables = new HashSet<BookingTable>();
         }
 
         public int TableId { get; set; }
         public string TableName { get; set; } = null!;
-        public string TableQrcode { get; set; } = null!;
+        public string QrCode { get; set; } = null!;
+        public bool Status { get; set; }
 
-        public virtual ICollection<Account> Accounts { get; set; }
+        public virtual ICollection<BookingTable> BookingTables { get; set; }
     }
 }
