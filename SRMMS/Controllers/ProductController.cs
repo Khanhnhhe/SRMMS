@@ -64,38 +64,45 @@
 
 
 
-        [HttpPost("add")]
+        
+        [HttpPost("addNewProduct")]
         public async Task<ActionResult<addProductDTO>> AddProduct(addProductDTO productDto)
         {
-
+            
             var categoryExists = await _context.Categories.AnyAsync(c => c.CatId == productDto.Category);
             if (!categoryExists)
             {
                 return BadRequest("Category does not exist.");
             }
 
+           
+            var productExists = await _context.Products.AnyAsync(p => p.ProName == productDto.ProductName);
+            if (productExists)
+            {
+                return BadRequest("A product with this name already exists.");
+            }
 
+          
             var newProduct = new Product
             {
                 ProName = productDto.ProductName,
                 ProDiscription = productDto.Description,
                 ProWarning = productDto.Warning,
-                ProPrice = productDto.Price,
-                CatId = productDto.Category,
+                ProPrice = productDto.Price,  
+                CatId = productDto.Category, 
                 ProImg = productDto.Image,
                 ProCalories = productDto.Calories,
                 ProCookingTime = productDto.CookingTime,
-                ProStatus = productDto.Status
+                ProStatus = productDto.Status  
             };
 
-
+           
             _context.Products.Add(newProduct);
             await _context.SaveChangesAsync();
 
-
+           
             var productResult = new addProductDTO
             {
-
                 ProductName = newProduct.ProName,
                 Description = newProduct.ProDiscription,
                 Warning = newProduct.ProWarning,
@@ -107,6 +114,7 @@
                 Status = newProduct.ProStatus
             };
 
+           
             return CreatedAtAction(nameof(GetProductById), new { id = newProduct.ProId }, productResult);
         }
 
@@ -139,5 +147,7 @@
             return Ok(product);
 
         }
+
+        
     }
 }
