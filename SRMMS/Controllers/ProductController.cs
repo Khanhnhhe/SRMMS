@@ -64,38 +64,45 @@
 
 
 
-        [HttpPost("add")]
+        
+        [HttpPost("addNewProduct")]
         public async Task<ActionResult<addProductDTO>> AddProduct(addProductDTO productDto)
         {
-
+            
             var categoryExists = await _context.Categories.AnyAsync(c => c.CatId == productDto.Category);
             if (!categoryExists)
             {
                 return BadRequest("Category does not exist.");
             }
 
+           
+            var productExists = await _context.Products.AnyAsync(p => p.ProName == productDto.ProductName);
+            if (productExists)
+            {
+                return BadRequest("A product with this name already exists.");
+            }
 
+          
             var newProduct = new Product
             {
                 ProName = productDto.ProductName,
                 ProDiscription = productDto.Description,
                 ProWarning = productDto.Warning,
-                ProPrice = productDto.Price,
-                CatId = productDto.Category,
+                ProPrice = productDto.Price,  
+                CatId = productDto.Category, 
                 ProImg = productDto.Image,
                 ProCalories = productDto.Calories,
                 ProCookingTime = productDto.CookingTime,
-                ProStatus = productDto.Status
+                ProStatus = productDto.Status  
             };
 
-
+           
             _context.Products.Add(newProduct);
             await _context.SaveChangesAsync();
 
-
+           
             var productResult = new addProductDTO
             {
-
                 ProductName = newProduct.ProName,
                 Description = newProduct.ProDiscription,
                 Warning = newProduct.ProWarning,
@@ -107,6 +114,7 @@
                 Status = newProduct.ProStatus
             };
 
+           
             return CreatedAtAction(nameof(GetProductById), new { id = newProduct.ProId }, productResult);
         }
 
@@ -138,6 +146,112 @@
 
             return Ok(product);
 
+        }
+
+        [HttpPut("updateProduct/{id}")]
+        public async Task<IActionResult> UpdateProduct(int id,updateProduct updateProductDto)
+        {
+           
+            var existingProduct = await _context.Products
+                .Include(p => p.Cat)
+                .FirstOrDefaultAsync(p => p.ProId == id);
+
+            if (existingProduct == null)
+            {
+                return NotFound();
+            }
+
+            // Kiểm tra tên sản phẩm trùng lặp
+            if (!string.IsNullOrEmpty(updateProductDto.ProductName))
+            {
+                var productWithSameName = await _context.Products
+                    .Where(p => p.ProName == updateProductDto.ProductName && p.ProId != id) 
+                    .FirstOrDefaultAsync();
+
+                if (productWithSameName != null)
+                {
+                    return BadRequest("Product name already exists.");
+                }
+
+                existingProduct.ProName = updateProductDto.ProductName;
+            }
+
+            // Cập nhật thông tin sản phẩm từ DTO
+            if (!string.IsNullOrEmpty(updateProductDto.Description))
+            {
+                existingProduct.ProDiscription = updateProductDto.Description;
+            }
+
+            if (!string.IsNullOrEmpty(updateProductDto.Warning))
+            {
+                existingProduct.ProWarning = updateProductDto.Warning;
+            }
+
+            if (updateProductDto.Price.HasValue)
+            {
+                existingProduct.ProPrice = updateProductDto.Price.Value;
+            }
+
+            if (!string.IsNullOrEmpty(updateProductDto.Image))
+            {
+                existingProduct.ProImg = updateProductDto.Image;
+            }
+
+            if (!string.IsNullOrEmpty(updateProductDto.Calories))
+            {
+                existingProduct.ProCalories = updateProductDto.Calories;
+            }
+
+            if (!string.IsNullOrEmpty(updateProductDto.CookingTime))
+            {
+                existingProduct.ProCookingTime = updateProductDto.CookingTime;
+            }
+
+            if (updateProductDto.Status.HasValue)
+            {
+                existingProduct.ProStatus = updateProductDto.Status.Value;
+            }
+
+            
+            if (updateProductDto.Category.HasValue)
+            {
+                var category = await _context.Categories.FindAsync(updateProductDto.Category.Value);
+                if (category != null)
+                {
+                    existingProduct.CatId = category.CatId;
+                    existingProduct.Cat = category; 
+                }
+                else
+                {
+                    return BadRequest("Invalid category provided.");
+                }
+            }
+
+            
+            _context.Entry(existingProduct).State = EntityState.Modified;
+
+            try
+            {
+                
+                await _context.SaveChangesAsync();
+            }
+            catch (DbUpdateConcurrencyException)
+            {
+                if (!ProductExists(id))
+                {
+                    return NotFound();
+                }
+                else
+                {
+                    throw;
+                }
+            }
+
+            return NoContent(); 
+        }
+        private bool ProductExists(int id)
+        {
+            return _context.Products.Any(p => p.ProId == id);
         }
     }
 }
