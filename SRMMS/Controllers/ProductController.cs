@@ -21,11 +21,15 @@
             _context = context;
         }
 
-        [HttpGet("getAllProducts")]
-        public async Task<IActionResult> GetAllProducts()
+       [HttpGet("getAllProducts")]
+        public async Task<IActionResult> GetAllProducts(int pageNumber = 1, int pageSize = 10)
         {
+            var totalProducts = await _context.Products.CountAsync(); 
+
             var products = await _context.Products
                 .Include(p => p.Cat)
+                .Skip((pageNumber - 1) * pageSize) 
+                .Take(pageSize) 
                 .Select(p => new ListProductDTO
                 {
                     ProId = p.ProId,
@@ -46,8 +50,18 @@
                 return NotFound("No products found.");
             }
 
-            return Ok(products);
+            
+            var result = new
+            {
+                TotalProducts = totalProducts,
+                PageNumber = pageNumber,
+                PageSize = pageSize,
+                Products = products
+            };
+
+            return Ok(result);
         }
+
 
 
         [HttpPost("add")]
