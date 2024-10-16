@@ -253,5 +253,61 @@
         {
             return _context.Products.Any(p => p.ProId == id);
         }
+
+        [HttpGet("filterByCategoryName/{categoryName}")]
+        public async Task<IActionResult> FilterByCategoryName(string categoryName, int pageNumber = 1, int pageSize = 10)
+        {
+            
+            var categories = await _context.Categories.ToListAsync();
+
+            
+            var category = categories
+                .FirstOrDefault(c => c.CatName.Equals(categoryName, StringComparison.OrdinalIgnoreCase));
+
+            if (category == null)
+            {
+                return NotFound("Category not found.");
+            }
+
+            var totalProducts = await _context.Products.CountAsync(p => p.CatId == category.CatId);
+
+            var products = await _context.Products
+                .Include(p => p.Cat)
+                .Where(p => p.CatId == category.CatId)
+                .Skip((pageNumber - 1) * pageSize)
+                .Take(pageSize)
+                .Select(p => new ListProductDTO
+                {
+                    ProId = p.ProId,
+                    ProName = p.ProName,
+                    ProDiscription = p.ProDiscription,
+                    ProWarning = p.ProWarning,
+                    ProPrice = p.ProPrice,
+                    CatName = p.Cat.CatName,
+                    ProImg = p.ProImg,
+                    ProCalories = p.ProCalories,
+                    ProCookingTime = p.ProCookingTime.ToString(),
+                    ProStatus = p.ProStatus
+                })
+                .ToListAsync();
+
+            if (products == null || products.Count == 0)
+            {
+                return NotFound("No products found in this category.");
+            }
+
+            var result = new
+            {
+                TotalProducts = totalProducts,
+                PageNumber = pageNumber,
+                PageSize = pageSize,
+                Products = products
+            };
+
+            return Ok(result);
+        }
+
+
+
     }
 }
