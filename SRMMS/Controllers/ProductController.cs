@@ -10,19 +10,18 @@
 
     namespace SRMMS.Controllers
     {
-        [Route("api/[controller]")]
-        [ApiController]
-        public class ProductController : ControllerBase
+    [Route("api/[controller]")]
+    [ApiController]
+    public class ProductController : ControllerBase
+    {
+        private readonly SRMMSContext _context;
+
+        public ProductController(SRMMSContext context)
         {
-            private readonly SRMMSContext _context;
+            _context = context;
+        }
 
-            public ProductController(SRMMSContext context)
-            {
-                _context = context;
-            }
-
-            [HttpGet("getAllProducts")]
-        [HttpGet("getAllProducts")]
+       [HttpGet("getAllProducts")]
         public async Task<IActionResult> GetAllProducts(int pageNumber = 1, int pageSize = 10)
         {
             var totalProducts = await _context.Products.CountAsync(); 
@@ -65,6 +64,80 @@
 
 
 
+        [HttpPost("add")]
+        public async Task<ActionResult<addProductDTO>> AddProduct(addProductDTO productDto)
+        {
 
+            var categoryExists = await _context.Categories.AnyAsync(c => c.CatId == productDto.Category);
+            if (!categoryExists)
+            {
+                return BadRequest("Category does not exist.");
+            }
+
+
+            var newProduct = new Product
+            {
+                ProName = productDto.ProductName,
+                ProDiscription = productDto.Description,
+                ProWarning = productDto.Warning,
+                ProPrice = productDto.Price,
+                CatId = productDto.Category,
+                ProImg = productDto.Image,
+                ProCalories = productDto.Calories,
+                ProCookingTime = productDto.CookingTime,
+                ProStatus = productDto.Status
+            };
+
+
+            _context.Products.Add(newProduct);
+            await _context.SaveChangesAsync();
+
+
+            var productResult = new addProductDTO
+            {
+
+                ProductName = newProduct.ProName,
+                Description = newProduct.ProDiscription,
+                Warning = newProduct.ProWarning,
+                Price = newProduct.ProPrice,
+                Category = newProduct.CatId,
+                Image = newProduct.ProImg,
+                Calories = newProduct.ProCalories,
+                CookingTime = newProduct.ProCookingTime,
+                Status = newProduct.ProStatus
+            };
+
+            return CreatedAtAction(nameof(GetProductById), new { id = newProduct.ProId }, productResult);
+        }
+
+        [HttpGet("getProductById/{proId}")]
+        public async Task<ActionResult<ListProductDTO>> GetProductById(int proId)
+        {
+            var product = await _context.Products
+        .Include(c => c.Cat)
+        .Where(p => p.ProId == proId) 
+        .Select(p => new ListProductDTO
+        {
+            ProId = p.ProId,
+            ProName = p.ProName,
+            ProDiscription = p.ProDiscription,
+            ProWarning = p.ProWarning,
+            ProPrice = p.ProPrice,
+            CatName = p.Cat.CatName,
+            ProImg = p.ProImg,
+            ProCalories = p.ProCalories,
+            ProCookingTime = p.ProCookingTime,
+            ProStatus = p.ProStatus
+        })
+        .FirstOrDefaultAsync();
+
+            if (product == null)
+            {
+                return NotFound();
+            }
+
+            return Ok(product);
+
+        }
     }
 }
