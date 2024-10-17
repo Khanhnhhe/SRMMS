@@ -115,7 +115,7 @@
             };
 
            
-            return CreatedAtAction(nameof(GetProductById), new { id = newProduct.ProId }, productResult);
+            return CreatedAtAction(nameof(GetProductById), new { proId = newProduct.ProId }, productResult);
         }
 
         [HttpGet("getProductById/{proId}")]
@@ -308,6 +308,66 @@
         }
 
 
+        [HttpGet("/api/searchProductByProductName")]
+        public async Task<ActionResult<IEnumerable<ListProductDTO>>> SearchByProductName(string? productName = "", int pageNumber = 1, int pageSize = 10)
+        {
+            
+            var skip = (pageNumber - 1) * pageSize;
 
+            
+            var query = _context.Products.Include(p => p.Cat).AsQueryable();
+
+            
+            if (!string.IsNullOrWhiteSpace(productName))
+            {
+                query = query.Where(p => p.ProName.Contains(productName));
+            }
+
+            
+            var products = await query
+                                 .Skip(skip)
+                                 .Take(pageSize)
+                                 .Select(p => new ListProductDTO
+                                 {
+                                     ProName = p.ProName,
+                                     ProDiscription = p.ProDiscription,
+                                     ProPrice = p.ProPrice,
+                                     ProCalories = p.ProCalories,
+                                     ProCookingTime = p.ProCookingTime,
+                                     ProStatus = p.ProStatus,
+                                     CatName = p.Cat.CatName
+                                 }).ToListAsync();
+
+            
+            if (products == null || !products.Any())
+            {
+                return NotFound("No products found.");
+            }
+
+            
+            return Ok(products);
+        }
+
+        [HttpDelete("deleteProduct/{id}")]
+        public async Task<IActionResult> DeleteProduct(int id)
+        {
+            
+            var product = await _context.Products.FindAsync(id);
+
+            
+            if (product == null)
+            {
+                return NotFound("Product not found.");
+            }
+
+            
+            _context.Products.Remove(product);
+
+            
+            await _context.SaveChangesAsync();
+
+            
+            return NoContent();
+        }
     }
 }
