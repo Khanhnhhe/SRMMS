@@ -91,6 +91,27 @@ public class CategoryController : ControllerBase
         return Ok(category);
     }
 
+    [HttpDelete("deleteCategoryById/{catId}")]
+    public async Task<IActionResult> DeleteCategoryById(int catId)
+    {
+        
+        var category = await _context.Categories.FindAsync(catId);
+
+        
+        if (category == null)
+        {
+            return NotFound("Category not found.");
+        }
+
+        
+        _context.Categories.Remove(category);
+        await _context.SaveChangesAsync();
+
+        
+        return NoContent(); 
+    }
+
+
 }
 
 
