@@ -115,7 +115,7 @@
             };
 
            
-            return CreatedAtAction(nameof(GetProductById), new { id = newProduct.ProId }, productResult);
+            return CreatedAtAction(nameof(GetProductById), new { proId = newProduct.ProId }, productResult);
         }
 
         [HttpGet("getProductById/{proId}")]
