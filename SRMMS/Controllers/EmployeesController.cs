@@ -251,5 +251,27 @@ namespace SRMMS.Controllers
         {
             return (_context.Employees?.Any(e => e.EmpId == id)).GetValueOrDefault();
         }
+        [HttpDelete("/api/deleteEmployee/{id}")]
+        public async Task<IActionResult> DeleteEmployee(int id)
+        {
+            try
+            {
+                var employee = await _context.Employees.FindAsync(id);
+
+                if (employee == null)
+                {
+                    return NotFound($"Employee with ID = {id} not found.");
+                }
+
+                _context.Employees.Remove(employee);
+                await _context.SaveChangesAsync();
+
+                return Ok($"Employee with ID = {id} deleted successfully.");
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, ex.Message);
+            }
+        }
     }
 }
