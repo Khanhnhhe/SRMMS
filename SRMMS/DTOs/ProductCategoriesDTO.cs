@@ -1,7 +1,7 @@
 ﻿using System;
 namespace SRMMS.DTOs
 {
-	public class CategoriesDTO
+	public class ProductCategoriesDTO
 	{
         public int CatId { get; set; }
         public string CatName { get; set; } = null!;
