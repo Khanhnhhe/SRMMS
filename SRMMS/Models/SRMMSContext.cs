@@ -162,6 +162,10 @@ namespace SRMMS.Models
                     .HasMaxLength(50)
                     .HasColumnName("cus_fullname");
 
+                entity.Property(e => e.CusPassword)
+                    .HasMaxLength(30)
+                    .HasColumnName("cus_password");
+
                 entity.Property(e => e.CusPhone).HasColumnName("cus_phone");
             });
 
