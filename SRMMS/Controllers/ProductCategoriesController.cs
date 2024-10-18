@@ -14,8 +14,8 @@ public class CategoryController : ControllerBase
         _context = context;
     }
 
-    [HttpGet("listCategories")]
-    public async Task<ActionResult<IEnumerable<CategoriesDTO>>> GetCategories(int pageNumber = 1, int pageSize = 10)
+    [HttpGet("listCategoriesOfProduct")]
+    public async Task<ActionResult<IEnumerable<ProductCategoriesDTO>>> GetCategories(int pageNumber = 1, int pageSize = 10)
     {
         
         var skip = (pageNumber - 1) * pageSize;
@@ -25,7 +25,7 @@ public class CategoryController : ControllerBase
                                        .OrderBy(c => c.CatId) 
                                        .Skip(skip) 
                                        .Take(pageSize) 
-                                       .Select(c => new CategoriesDTO
+                                       .Select(c => new ProductCategoriesDTO
                                        {
                                            CatId = c.CatId,
                                            CatName = c.CatName
@@ -41,8 +41,8 @@ public class CategoryController : ControllerBase
         return Ok(categories);
     }
 
-    [HttpPost("addCategory")]
-    public async Task<ActionResult<CategoriesDTO>> AddCategory(CategoriesDTO categoryDto)
+    [HttpPost("addCategoriesOfProduct")]
+    public async Task<ActionResult<ProductCategoriesDTO>> AddCategory(ProductCategoriesDTO categoryDto)
     {
         
         if (await _context.Categories.AnyAsync(c => c.CatName == categoryDto.CatName))
@@ -61,7 +61,7 @@ public class CategoryController : ControllerBase
         await _context.SaveChangesAsync();
 
         
-        var categoryResult = new CategoriesDTO
+        var categoryResult = new ProductCategoriesDTO
         {
             CatId = newCategory.CatId,
             CatName = newCategory.CatName
@@ -71,12 +71,12 @@ public class CategoryController : ControllerBase
         return CreatedAtAction(nameof(GetCategoryById), new { catId = newCategory.CatId }, categoryResult);
     }
 
-    [HttpGet("getCategoryById/{catId}")]
-    public async Task<ActionResult<CategoriesDTO>> GetCategoryById(int catId)
+    [HttpGet("getProductCategoryById/{catId}")]
+    public async Task<ActionResult<ProductCategoriesDTO>> GetCategoryById(int catId)
     {
         var category = await _context.Categories
             .Where(c => c.CatId == catId)
-            .Select(c => new CategoriesDTO
+            .Select(c => new ProductCategoriesDTO
             {
                 CatId = c.CatId,
                 CatName = c.CatName
@@ -91,7 +91,7 @@ public class CategoryController : ControllerBase
         return Ok(category);
     }
 
-    [HttpDelete("deleteCategoryById/{catId}")]
+    [HttpDelete("deleteProductCategoryById/{catId}")]
     public async Task<IActionResult> DeleteCategoryById(int catId)
     {
         
@@ -111,6 +111,35 @@ public class CategoryController : ControllerBase
         return NoContent(); 
     }
 
+    [HttpGet("searchProductCategoryByName")]
+    public async Task<ActionResult<IEnumerable<ProductCategoriesDTO>>> SearchCategoryByName(string? categoryName = "", int pageNumber = 1, int pageSize = 10)
+    {
+        var skip = (pageNumber - 1) * pageSize;
+
+        var query = _context.Categories.AsQueryable();
+
+        if (!string.IsNullOrWhiteSpace(categoryName))
+        {
+            query = query.Where(c => c.CatName.Contains(categoryName));
+        }
+
+        var categories = await query
+                               .OrderBy(c => c.CatId)
+                               .Skip(skip)
+                               .Take(pageSize)
+                               .Select(c => new ProductCategoriesDTO
+                               {
+                                   CatId = c.CatId,
+                                   CatName = c.CatName
+                               }).ToListAsync();
+
+        if (categories == null || !categories.Any())
+        {
+            return NotFound("No categories found.");
+        }
+
+        return Ok(categories);
+    }
 
 }
 
