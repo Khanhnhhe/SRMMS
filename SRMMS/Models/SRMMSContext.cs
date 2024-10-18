@@ -37,7 +37,7 @@ namespace SRMMS.Models
             if (!optionsBuilder.IsConfigured)
             {
 #warning To protect potentially sensitive information in your connection string, you should move it out of source code. You can avoid scaffolding the connection string by using the Name= syntax to read it from configuration - see https://go.microsoft.com/fwlink/?linkid=2131148. For more guidance on storing connection strings, see http://go.microsoft.com/fwlink/?LinkId=723263.
-                optionsBuilder.UseSqlServer("Server=localhost;Database=SRMMS;User Id=SA;Password=Admin2002@;");
+                optionsBuilder.UseSqlServer("server =(local); database = SRMMS;uid=sa;pwd=sa123;TrustServerCertificate=true");
             }
         }
 
@@ -106,6 +106,10 @@ namespace SRMMS.Models
                 entity.Property(e => e.CatName)
                     .HasMaxLength(50)
                     .HasColumnName("cat_name");
+
+                entity.Property(e => e.Description)
+                    .HasMaxLength(150)
+                    .HasColumnName("description");
             });
 
             modelBuilder.Entity<Combo>(entity =>
@@ -163,6 +167,8 @@ namespace SRMMS.Models
                     .HasColumnName("cus_fullname");
 
                 entity.Property(e => e.CusPhone).HasColumnName("cus_phone");
+
+                entity.Property(e => e.Ponit).HasColumnName("ponit");
             });
 
             modelBuilder.Entity<DiscountCode>(entity =>
@@ -361,9 +367,7 @@ namespace SRMMS.Models
                     .HasMaxLength(250)
                     .HasColumnName("pro_calories");
 
-                entity.Property(e => e.ProCookingTime)
-                    .HasMaxLength(200)
-                    .HasColumnName("pro_cooking_time");
+                entity.Property(e => e.ProCookingTime).HasColumnName("pro_cooking_time");
 
                 entity.Property(e => e.ProDiscription).HasColumnName("pro_discription");
 
@@ -378,8 +382,6 @@ namespace SRMMS.Models
                     .HasColumnName("pro_price");
 
                 entity.Property(e => e.ProStatus).HasColumnName("pro_status");
-
-                entity.Property(e => e.ProWarning).HasColumnName("pro_warning");
 
                 entity.HasOne(d => d.Cat)
                     .WithMany(p => p.Products)

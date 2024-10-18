@@ -7,6 +7,13 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <Compile Remove="ImageProducts\**" />
+    <Content Remove="ImageProducts\**" />
+    <EmbeddedResource Remove="ImageProducts\**" />
+    <None Remove="ImageProducts\**" />
+  </ItemGroup>
+
+  <ItemGroup>
 	  <PackageReference Include="Microsoft.AspNetCore.Authentication.JwtBearer" Version="6.0.30" />
     <PackageReference Include="Microsoft.EntityFrameworkCore.Design" Version="6.0.33">
       <PrivateAssets>all</PrivateAssets>
@@ -25,9 +32,6 @@
 
   <ItemGroup>
     <None Remove="ImageProducts\" />
-  </ItemGroup>
-  <ItemGroup>
-    <Folder Include="ImageProducts\" />
   </ItemGroup>
   <ProjectExtensions><VisualStudio><UserProperties /></VisualStudio></ProjectExtensions>
 

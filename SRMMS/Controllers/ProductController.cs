@@ -10,7 +10,7 @@
 
     namespace SRMMS.Controllers
     {
-    [Route("api/[controller]")]
+    [Route("/")]
     [ApiController]
     public class ProductController : ControllerBase
     {
@@ -21,7 +21,7 @@
             _context = context;
         }
 
-       [HttpGet("getAllProducts")]
+       [HttpGet("api/product/list")]
         public async Task<IActionResult> GetAllProducts(int pageNumber = 1, int pageSize = 10)
         {
             var totalProducts = await _context.Products.CountAsync(); 
@@ -35,12 +35,11 @@
                     ProId = p.ProId,
                     ProName = p.ProName,
                     ProDiscription = p.ProDiscription,
-                    ProWarning = p.ProWarning,
                     ProPrice = p.ProPrice,
                     CatName = p.Cat.CatName,
                     ProImg = p.ProImg,
                     ProCalories = p.ProCalories,
-                    ProCookingTime = p.ProCookingTime.ToString(),
+                    ProCookingTime = p.ProCookingTime,
                     ProStatus = p.ProStatus
                 })
                 .ToListAsync();
@@ -65,7 +64,7 @@
 
 
         
-        [HttpPost("addNewProduct")]
+        [HttpPost("api/product/create")]
         public async Task<ActionResult<addProductDTO>> AddProduct(addProductDTO productDto)
         {
             
@@ -87,7 +86,6 @@
             {
                 ProName = productDto.ProductName,
                 ProDiscription = productDto.Description,
-                ProWarning = productDto.Warning,
                 ProPrice = productDto.Price,  
                 CatId = productDto.Category, 
                 ProImg = productDto.Image,
@@ -105,7 +103,6 @@
             {
                 ProductName = newProduct.ProName,
                 Description = newProduct.ProDiscription,
-                Warning = newProduct.ProWarning,
                 Price = newProduct.ProPrice,
                 Category = newProduct.CatId,
                 Image = newProduct.ProImg,
@@ -118,7 +115,7 @@
             return CreatedAtAction(nameof(GetProductById), new { proId = newProduct.ProId }, productResult);
         }
 
-        [HttpGet("getProductById/{proId}")]
+        [HttpGet("api/product/{proId}")]
         public async Task<ActionResult<ListProductDTO>> GetProductById(int proId)
         {
             var product = await _context.Products
@@ -129,7 +126,6 @@
             ProId = p.ProId,
             ProName = p.ProName,
             ProDiscription = p.ProDiscription,
-            ProWarning = p.ProWarning,
             ProPrice = p.ProPrice,
             CatName = p.Cat.CatName,
             ProImg = p.ProImg,
@@ -148,7 +144,7 @@
 
         }
 
-        [HttpPut("updateProduct/{id}")]
+        [HttpPut("api/product/update/{id}")]
         public async Task<IActionResult> UpdateProduct(int id,updateProduct updateProductDto)
         {
            
@@ -182,11 +178,6 @@
                 existingProduct.ProDiscription = updateProductDto.Description;
             }
 
-            if (!string.IsNullOrEmpty(updateProductDto.Warning))
-            {
-                existingProduct.ProWarning = updateProductDto.Warning;
-            }
-
             if (updateProductDto.Price.HasValue)
             {
                 existingProduct.ProPrice = updateProductDto.Price.Value;
@@ -200,11 +191,6 @@
             if (!string.IsNullOrEmpty(updateProductDto.Calories))
             {
                 existingProduct.ProCalories = updateProductDto.Calories;
-            }
-
-            if (!string.IsNullOrEmpty(updateProductDto.CookingTime))
-            {
-                existingProduct.ProCookingTime = updateProductDto.CookingTime;
             }
 
             if (updateProductDto.Status.HasValue)
@@ -281,12 +267,11 @@
                     ProId = p.ProId,
                     ProName = p.ProName,
                     ProDiscription = p.ProDiscription,
-                    ProWarning = p.ProWarning,
                     ProPrice = p.ProPrice,
                     CatName = p.Cat.CatName,
                     ProImg = p.ProImg,
                     ProCalories = p.ProCalories,
-                    ProCookingTime = p.ProCookingTime.ToString(),
+                    ProCookingTime = p.ProCookingTime,
                     ProStatus = p.ProStatus
                 })
                 .ToListAsync();
@@ -348,7 +333,7 @@
             return Ok(products);
         }
 
-        [HttpDelete("deleteProduct/{id}")]
+        [HttpDelete("/api/product/delete/{id}")]
         public async Task<IActionResult> DeleteProduct(int id)
         {
             

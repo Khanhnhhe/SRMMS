@@ -15,7 +15,7 @@ namespace SRMMS.DTOs
         public string CatName { get; set; }
         public string ProImg { get; set; } = null!;
         public string ProCalories { get; set; } = null!;
-        public string ProCookingTime { get; set; } = null!;
+        public int ProCookingTime { get; set; }
         public bool ProStatus { get; set; }
     }
 	

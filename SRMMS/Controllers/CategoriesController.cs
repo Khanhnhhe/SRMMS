@@ -14,7 +14,7 @@ public class CategoryController : ControllerBase
         _context = context;
     }
 
-    [HttpGet("listCategories")]
+    [HttpGet("/api/category/list")]
     public async Task<ActionResult<IEnumerable<CategoriesDTO>>> GetCategories(int pageNumber = 1, int pageSize = 10)
     {
         
@@ -28,7 +28,8 @@ public class CategoryController : ControllerBase
                                        .Select(c => new CategoriesDTO
                                        {
                                            CatId = c.CatId,
-                                           CatName = c.CatName
+                                           CatName = c.CatName,
+                                           Description = c.Description,
                                        }).ToListAsync();
 
         
@@ -41,7 +42,7 @@ public class CategoryController : ControllerBase
         return Ok(categories);
     }
 
-    [HttpPost("addCategory")]
+    [HttpPost("/api/category/create")]
     public async Task<ActionResult<CategoriesDTO>> AddCategory(CategoriesDTO categoryDto)
     {
         
@@ -53,7 +54,9 @@ public class CategoryController : ControllerBase
         
         var newCategory = new Category
         {
-            CatName = categoryDto.CatName
+            CatName = categoryDto.CatName,
+            Description = categoryDto.Description,
+            
         };
 
         
@@ -64,14 +67,15 @@ public class CategoryController : ControllerBase
         var categoryResult = new CategoriesDTO
         {
             CatId = newCategory.CatId,
-            CatName = newCategory.CatName
+            CatName = newCategory.CatName,
+            Description = newCategory.Description,
         };
 
         
         return CreatedAtAction(nameof(GetCategoryById), new { catId = newCategory.CatId }, categoryResult);
     }
 
-    [HttpGet("getCategoryById/{catId}")]
+    [HttpGet("/api/category/{catId}")]
     public async Task<ActionResult<CategoriesDTO>> GetCategoryById(int catId)
     {
         var category = await _context.Categories
@@ -79,7 +83,8 @@ public class CategoryController : ControllerBase
             .Select(c => new CategoriesDTO
             {
                 CatId = c.CatId,
-                CatName = c.CatName
+                CatName = c.CatName,
+                Description= c.Description,
             })
             .FirstOrDefaultAsync();
 
@@ -91,7 +96,7 @@ public class CategoryController : ControllerBase
         return Ok(category);
     }
 
-    [HttpDelete("deleteCategoryById/{catId}")]
+    [HttpDelete("/api/category/delete/{catId}")]
     public async Task<IActionResult> DeleteCategoryById(int catId)
     {
         
