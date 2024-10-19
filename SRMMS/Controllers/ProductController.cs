@@ -8,18 +8,31 @@
     using System.Linq;
     using System.Threading.Tasks;
 using Microsoft.IdentityModel.Tokens;
+using CloudinaryDotNet;
+using CloudinaryDotNet.Actions;
+using Account = CloudinaryDotNet.Account;
 
-    namespace SRMMS.Controllers
+
+namespace SRMMS.Controllers
     {
     [Route("api/product")]
     [ApiController]
+
+    
     public class ProductController : ControllerBase
     {
         private readonly SRMMSContext _context;
 
+        private readonly Cloudinary _clouddinary;
+
+        
+
         public ProductController(SRMMSContext context)
         {
+             Account account = new Account("dt92oc9xc", "548166873787419", "-8KA1HUjyTe6J4aHq4DGPXflJiw");
             _context = context;
+            _clouddinary = new Cloudinary(account);
+
         }
 
         [HttpGet("list")]
@@ -79,6 +92,7 @@ using Microsoft.IdentityModel.Tokens;
         }
 
 
+        
 
         [HttpPost("create")]
         public async Task<ActionResult<addProductDTO>> AddProduct(addProductDTO productDto)
@@ -97,6 +111,19 @@ using Microsoft.IdentityModel.Tokens;
                 return BadRequest("A product with this name already exists.");
             }
 
+            if(productDto.Image == null || productDto.Image.Length == 0)
+            {
+                return BadRequest("Image not found");
+            }
+
+            var uploadParam = new ImageUploadParams()
+            {
+                File = new FileDescription(productDto.Image.FileName, productDto.Image.OpenReadStream()),
+
+                PublicId = System.Guid.NewGuid().ToString(),
+                
+            };
+            var imageURL = await _clouddinary.UploadAsync(uploadParam);
         
             var newProduct = new Product
             {
@@ -104,7 +131,7 @@ using Microsoft.IdentityModel.Tokens;
                 ProDiscription = productDto.Description,
                 ProPrice = productDto.Price.Value,
                 CatId = productDto.Category.Value,
-                ProImg = productDto.Image,
+                ProImg = imageURL.Url.ToString(),
                 ProCalories = productDto.Calories,
                 ProCookingTime = productDto.CookingTime.Value, 
                 ProStatus = productDto.Status.Value
@@ -115,19 +142,11 @@ using Microsoft.IdentityModel.Tokens;
             await _context.SaveChangesAsync();
 
            
-            var productResult = new addProductDTO
-            {
-                ProductName = newProduct.ProName,
-                Description = newProduct.ProDiscription,
-                Price = newProduct.ProPrice,
-                Category = newProduct.CatId,
-                Image = newProduct.ProImg,
-                Calories = newProduct.ProCalories,
-                CookingTime = newProduct.ProCookingTime, 
-                Status = newProduct.ProStatus
-            };
+            
 
-            return CreatedAtAction(nameof(GetProductById), new { proId = newProduct.ProId }, productResult);
+            return CreatedAtAction(nameof(GetProductById), new { proId = newProduct.ProId }, newProduct);
+
+          
         }
 
         [HttpGet("getProductById/{proId}")]
