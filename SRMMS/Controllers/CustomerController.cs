@@ -16,7 +16,7 @@ using SRMMS.Models;
 namespace SRMMS.Controllers
 {
     [ApiController]
-    [Route("api")]
+    [Route("api/customer")]
     public class CustomerLoginController : ControllerBase
     {
         private readonly IConfiguration _configuration;
@@ -112,7 +112,7 @@ namespace SRMMS.Controllers
     
 
 
-    [HttpGet("listCustomer")]
+    [HttpGet("list")]
         public IActionResult GetCustomerList()
         {
             
@@ -122,7 +122,7 @@ namespace SRMMS.Controllers
             return Ok(customers);
         }
 
-        [HttpDelete("deleteCustomer/{id}")]
+        [HttpDelete("delete/{id}")]
         public IActionResult DeleteCustomer(int id)
         {
             var customer = _context.Customers.FirstOrDefault(c => c.CusId == id);
