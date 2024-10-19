@@ -106,6 +106,10 @@ namespace SRMMS.Models
                 entity.Property(e => e.CatName)
                     .HasMaxLength(50)
                     .HasColumnName("cat_name");
+
+                entity.Property(e => e.Description)
+                    .HasMaxLength(150)
+                    .HasColumnName("description");
             });
 
             modelBuilder.Entity<Combo>(entity =>
@@ -162,11 +166,9 @@ namespace SRMMS.Models
                     .HasMaxLength(50)
                     .HasColumnName("cus_fullname");
 
-                entity.Property(e => e.CusPassword)
-                    .HasMaxLength(30)
-                    .HasColumnName("cus_password");
-
                 entity.Property(e => e.CusPhone).HasColumnName("cus_phone");
+
+                entity.Property(e => e.Ponit).HasColumnName("ponit");
             });
 
             modelBuilder.Entity<DiscountCode>(entity =>
@@ -365,9 +367,7 @@ namespace SRMMS.Models
                     .HasMaxLength(250)
                     .HasColumnName("pro_calories");
 
-                entity.Property(e => e.ProCookingTime)
-                    .HasMaxLength(200)
-                    .HasColumnName("pro_cooking_time");
+                entity.Property(e => e.ProCookingTime).HasColumnName("pro_cooking_time");
 
                 entity.Property(e => e.ProDiscription).HasColumnName("pro_discription");
 
@@ -382,8 +382,6 @@ namespace SRMMS.Models
                     .HasColumnName("pro_price");
 
                 entity.Property(e => e.ProStatus).HasColumnName("pro_status");
-
-                entity.Property(e => e.ProWarning).HasColumnName("pro_warning");
 
                 entity.HasOne(d => d.Cat)
                     .WithMany(p => p.Products)
