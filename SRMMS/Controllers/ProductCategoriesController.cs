@@ -3,7 +3,7 @@ using Microsoft.EntityFrameworkCore;
 using SRMMS.DTOs;
 using SRMMS.Models;
 
-[Route("api/[controller]")]
+[Route("api/catergory")]
 [ApiController]
 public class CategoryController : ControllerBase
 {
@@ -14,7 +14,7 @@ public class CategoryController : ControllerBase
         _context = context;
     }
 
-    [HttpGet("listCategoriesOfProduct")]
+    [HttpGet("list")]
     public async Task<ActionResult<IEnumerable<ProductCategoriesDTO>>> GetCategories(int pageNumber = 1, int pageSize = 10)
     {
         
@@ -28,7 +28,8 @@ public class CategoryController : ControllerBase
                                        .Select(c => new ProductCategoriesDTO
                                        {
                                            CatId = c.CatId,
-                                           CatName = c.CatName
+                                           CatName = c.CatName,
+                                           Description = c.Description
                                        }).ToListAsync();
 
         
@@ -41,7 +42,7 @@ public class CategoryController : ControllerBase
         return Ok(categories);
     }
 
-    [HttpPost("addCategoriesOfProduct")]
+    [HttpPost("create")]
     public async Task<ActionResult<ProductCategoriesDTO>> AddCategory(ProductCategoriesDTO categoryDto)
     {
         
@@ -53,7 +54,9 @@ public class CategoryController : ControllerBase
         
         var newCategory = new Category
         {
-            CatName = categoryDto.CatName
+            CatName = categoryDto.CatName,
+            Description = categoryDto.Description
+
         };
 
         
@@ -64,14 +67,16 @@ public class CategoryController : ControllerBase
         var categoryResult = new ProductCategoriesDTO
         {
             CatId = newCategory.CatId,
-            CatName = newCategory.CatName
+            CatName = newCategory.CatName,
+            Description = newCategory.Description
+
         };
 
         
         return CreatedAtAction(nameof(GetCategoryById), new { catId = newCategory.CatId }, categoryResult);
     }
 
-    [HttpGet("getProductCategoryById/{catId}")]
+    [HttpGet("getCategoryById/{catId}")]
     public async Task<ActionResult<ProductCategoriesDTO>> GetCategoryById(int catId)
     {
         var category = await _context.Categories
@@ -79,7 +84,9 @@ public class CategoryController : ControllerBase
             .Select(c => new ProductCategoriesDTO
             {
                 CatId = c.CatId,
-                CatName = c.CatName
+                CatName = c.CatName,
+                Description = c.Description
+                
             })
             .FirstOrDefaultAsync();
 
@@ -91,27 +98,45 @@ public class CategoryController : ControllerBase
         return Ok(category);
     }
 
-    [HttpDelete("deleteProductCategoryById/{catId}")]
+    [HttpDelete("delete/{catId}")]
     public async Task<IActionResult> DeleteCategoryById(int catId)
     {
-        
+ 
         var category = await _context.Categories.FindAsync(catId);
 
-        
+
         if (category == null)
         {
             return NotFound("Category not found.");
         }
 
-        
-        _context.Categories.Remove(category);
-        await _context.SaveChangesAsync();
+        try
+        {
+      
+            var products = await _context.Products
+                .Where(p => p.CatId == category.CatId)
+                .ToListAsync();
+
+           
+            _context.Products.RemoveRange(products);
+
+          
+            _context.Categories.Remove(category);
+            await _context.SaveChangesAsync();
+        }
+        catch (DbUpdateException)
+        {
+            
+            return BadRequest("Could not delete the category and its products.");
+        }
 
         
-        return NoContent(); 
+        return NoContent();
     }
 
-    [HttpGet("searchProductCategoryByName")]
+
+
+    [HttpGet("search")]
     public async Task<ActionResult<IEnumerable<ProductCategoriesDTO>>> SearchCategoryByName(string? categoryName = "", int pageNumber = 1, int pageSize = 10)
     {
         var skip = (pageNumber - 1) * pageSize;
@@ -130,7 +155,8 @@ public class CategoryController : ControllerBase
                                .Select(c => new ProductCategoriesDTO
                                {
                                    CatId = c.CatId,
-                                   CatName = c.CatName
+                                   CatName = c.CatName,
+                                   Description = c.Description
                                }).ToListAsync();
 
         if (categories == null || !categories.Any())
@@ -139,6 +165,64 @@ public class CategoryController : ControllerBase
         }
 
         return Ok(categories);
+    }
+
+    [HttpPut("update/{catId}")]
+    public async Task<IActionResult> UpdateCategory(int catId, ProductCategoriesDTO categoryDto)
+    {
+        
+        var existingCategory = await _context.Categories.FindAsync(catId);
+        if (existingCategory == null)
+        {
+            return NotFound("Category not found.");
+        }
+
+        if (!string.IsNullOrEmpty(categoryDto.CatName) &&
+            existingCategory.CatName != categoryDto.CatName)
+        {
+            var categoryWithSameName = await _context.Categories
+                .AnyAsync(c => c.CatName == categoryDto.CatName);
+
+            if (categoryWithSameName)
+            {
+                return BadRequest("A category with this name already exists.");
+            }
+
+            existingCategory.CatName = categoryDto.CatName;
+        }
+
+        if (!string.IsNullOrEmpty(categoryDto.Description))
+        {
+            existingCategory.Description = categoryDto.Description;
+        }
+
+        
+        _context.Entry(existingCategory).State = EntityState.Modified;
+
+        try
+        {
+           
+            await _context.SaveChangesAsync();
+        }
+        catch (DbUpdateConcurrencyException)
+        {
+           
+            if (!CategoryExists(catId))
+            {
+                return NotFound();
+            }
+            else
+            {
+                throw;
+            }
+        }
+
+        return NoContent();
+    }
+
+    private bool CategoryExists(int id)
+    {
+        return _context.Categories.Any(c => c.CatId == id);
     }
 
 }

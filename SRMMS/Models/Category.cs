@@ -12,6 +12,7 @@ namespace SRMMS.Models
 
         public int CatId { get; set; }
         public string CatName { get; set; } = null!;
+        public string? Description { get; set; }
 
         public virtual ICollection<Product> Products { get; set; }
     }

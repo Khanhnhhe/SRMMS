@@ -14,6 +14,7 @@ namespace SRMMS.Models
         public string CusFullname { get; set; } = null!;
         public int CusPhone { get; set; }
         public string CusPassword { get; set; } = null!;
+        public double? Ponit { get; set; }
 
         public virtual ICollection<Account> Accounts { get; set; }
     }

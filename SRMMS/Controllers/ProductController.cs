@@ -7,10 +7,11 @@
     using System.IO;
     using System.Linq;
     using System.Threading.Tasks;
+using Microsoft.IdentityModel.Tokens;
 
     namespace SRMMS.Controllers
     {
-    [Route("api/[controller]")]
+    [Route("api/product")]
     [ApiController]
     public class ProductController : ControllerBase
     {
@@ -21,26 +22,41 @@
             _context = context;
         }
 
-       [HttpGet("getAllProducts")]
-        public async Task<IActionResult> GetAllProducts(int pageNumber = 1, int pageSize = 10)
+        [HttpGet("list")]
+        public async Task<IActionResult> GetAllProducts(int pageNumber = 1, int pageSize = 10, string name = null, int? categoryId = null)
         {
-            var totalProducts = await _context.Products.CountAsync(); 
+                
+            var totalProductsQuery = _context.Products.AsQueryable();
 
-            var products = await _context.Products
+            
+            if (!string.IsNullOrEmpty(name))
+            {
+                totalProductsQuery = totalProductsQuery.Where(p => p.ProName.Contains(name));
+            }
+
+           
+            if (categoryId.HasValue)
+            {
+                totalProductsQuery = totalProductsQuery.Where(p => p.CatId == categoryId.Value);
+            }
+
+            var totalProducts = await totalProductsQuery.CountAsync();
+
+           
+            var products = await totalProductsQuery
                 .Include(p => p.Cat)
-                .Skip((pageNumber - 1) * pageSize) 
-                .Take(pageSize) 
+                .Skip((pageNumber - 1) * pageSize)
+                .Take(pageSize)
                 .Select(p => new ListProductDTO
                 {
                     ProId = p.ProId,
                     ProName = p.ProName,
                     ProDiscription = p.ProDiscription,
-                    ProWarning = p.ProWarning,
                     ProPrice = p.ProPrice,
                     CatName = p.Cat.CatName,
                     ProImg = p.ProImg,
                     ProCalories = p.ProCalories,
-                    ProCookingTime = p.ProCookingTime.ToString(),
+                    ProCookingTime = p.ProCookingTime,
                     ProStatus = p.ProStatus
                 })
                 .ToListAsync();
@@ -50,7 +66,7 @@
                 return NotFound("No products found.");
             }
 
-            
+      
             var result = new
             {
                 TotalProducts = totalProducts,
@@ -64,39 +80,37 @@
 
 
 
-        
-        [HttpPost("addNewProduct")]
+        [HttpPost("create")]
         public async Task<ActionResult<addProductDTO>> AddProduct(addProductDTO productDto)
         {
-            
+           
             var categoryExists = await _context.Categories.AnyAsync(c => c.CatId == productDto.Category);
             if (!categoryExists)
             {
                 return BadRequest("Category does not exist.");
             }
 
-           
+            
             var productExists = await _context.Products.AnyAsync(p => p.ProName == productDto.ProductName);
             if (productExists)
             {
                 return BadRequest("A product with this name already exists.");
             }
 
-          
+        
             var newProduct = new Product
             {
                 ProName = productDto.ProductName,
                 ProDiscription = productDto.Description,
-                ProWarning = productDto.Warning,
-                ProPrice = productDto.Price,  
-                CatId = productDto.Category, 
+                ProPrice = productDto.Price,
+                CatId = productDto.Category,
                 ProImg = productDto.Image,
                 ProCalories = productDto.Calories,
-                ProCookingTime = productDto.CookingTime,
-                ProStatus = productDto.Status  
+                ProCookingTime = productDto.CookingTime, 
+                ProStatus = productDto.Status
             };
 
-           
+            
             _context.Products.Add(newProduct);
             await _context.SaveChangesAsync();
 
@@ -105,16 +119,14 @@
             {
                 ProductName = newProduct.ProName,
                 Description = newProduct.ProDiscription,
-                Warning = newProduct.ProWarning,
                 Price = newProduct.ProPrice,
                 Category = newProduct.CatId,
                 Image = newProduct.ProImg,
                 Calories = newProduct.ProCalories,
-                CookingTime = newProduct.ProCookingTime,
+                CookingTime = newProduct.ProCookingTime, 
                 Status = newProduct.ProStatus
             };
 
-           
             return CreatedAtAction(nameof(GetProductById), new { proId = newProduct.ProId }, productResult);
         }
 
@@ -129,7 +141,6 @@
             ProId = p.ProId,
             ProName = p.ProName,
             ProDiscription = p.ProDiscription,
-            ProWarning = p.ProWarning,
             ProPrice = p.ProPrice,
             CatName = p.Cat.CatName,
             ProImg = p.ProImg,
@@ -148,10 +159,10 @@
 
         }
 
-        [HttpPut("updateProduct/{id}")]
-        public async Task<IActionResult> UpdateProduct(int id,updateProduct updateProductDto)
+        [HttpPut("update/{id}")]
+        public async Task<IActionResult> UpdateProduct(int id, updateProduct updateProductDto)
         {
-           
+
             var existingProduct = await _context.Products
                 .Include(p => p.Cat)
                 .FirstOrDefaultAsync(p => p.ProId == id);
@@ -161,11 +172,11 @@
                 return NotFound();
             }
 
-            
+
             if (!string.IsNullOrEmpty(updateProductDto.ProductName))
             {
                 var productWithSameName = await _context.Products
-                    .Where(p => p.ProName == updateProductDto.ProductName && p.ProId != id) 
+                    .Where(p => p.ProName == updateProductDto.ProductName && p.ProId != id)
                     .FirstOrDefaultAsync();
 
                 if (productWithSameName != null)
@@ -176,15 +187,10 @@
                 existingProduct.ProName = updateProductDto.ProductName;
             }
 
-            
+
             if (!string.IsNullOrEmpty(updateProductDto.Description))
             {
                 existingProduct.ProDiscription = updateProductDto.Description;
-            }
-
-            if (!string.IsNullOrEmpty(updateProductDto.Warning))
-            {
-                existingProduct.ProWarning = updateProductDto.Warning;
             }
 
             if (updateProductDto.Price.HasValue)
@@ -202,9 +208,9 @@
                 existingProduct.ProCalories = updateProductDto.Calories;
             }
 
-            if (!string.IsNullOrEmpty(updateProductDto.CookingTime))
+            if (updateProductDto.CookingTime.HasValue)
             {
-                existingProduct.ProCookingTime = updateProductDto.CookingTime;
+                existingProduct.ProCookingTime = updateProductDto.CookingTime.Value;
             }
 
             if (updateProductDto.Status.HasValue)
@@ -212,14 +218,14 @@
                 existingProduct.ProStatus = updateProductDto.Status.Value;
             }
 
-            
+
             if (updateProductDto.Category.HasValue)
             {
                 var category = await _context.Categories.FindAsync(updateProductDto.Category.Value);
                 if (category != null)
                 {
                     existingProduct.CatId = category.CatId;
-                    existingProduct.Cat = category; 
+                    existingProduct.Cat = category;
                 }
                 else
                 {
@@ -227,12 +233,12 @@
                 }
             }
 
-            
+
             _context.Entry(existingProduct).State = EntityState.Modified;
 
             try
             {
-                
+
                 await _context.SaveChangesAsync();
             }
             catch (DbUpdateConcurrencyException)
@@ -247,14 +253,14 @@
                 }
             }
 
-            return NoContent(); 
+            return NoContent();
         }
         private bool ProductExists(int id)
         {
             return _context.Products.Any(p => p.ProId == id);
         }
 
-        [HttpGet("filterByCategoryName/{categoryName}")]
+        [HttpGet("filter/{categoryName}")]
         public async Task<IActionResult> FilterByCategoryName(string categoryName, int pageNumber = 1, int pageSize = 10)
         {
             
@@ -281,12 +287,11 @@
                     ProId = p.ProId,
                     ProName = p.ProName,
                     ProDiscription = p.ProDiscription,
-                    ProWarning = p.ProWarning,
                     ProPrice = p.ProPrice,
                     CatName = p.Cat.CatName,
                     ProImg = p.ProImg,
                     ProCalories = p.ProCalories,
-                    ProCookingTime = p.ProCookingTime.ToString(),
+                    ProCookingTime = p.ProCookingTime,
                     ProStatus = p.ProStatus
                 })
                 .ToListAsync();
@@ -308,7 +313,7 @@
         }
 
 
-        [HttpGet("/api/searchProductByProductName")]
+        [HttpGet("searchProductName")]
         public async Task<ActionResult<IEnumerable<ListProductDTO>>> SearchByProductName(string? productName = "", int pageNumber = 1, int pageSize = 10)
         {
             
@@ -348,7 +353,7 @@
             return Ok(products);
         }
 
-        [HttpDelete("deleteProduct/{id}")]
+        [HttpDelete("delete/{id}")]
         public async Task<IActionResult> DeleteProduct(int id)
         {
             

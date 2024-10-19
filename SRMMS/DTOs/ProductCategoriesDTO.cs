@@ -5,6 +5,8 @@ namespace SRMMS.DTOs
 	{
         public int CatId { get; set; }
         public string CatName { get; set; } = null!;
+        public string? Description { get; set; }
+
     }
 }
 
