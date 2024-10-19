@@ -51,7 +51,7 @@ using Microsoft.IdentityModel.Tokens;
                 {
                     ProId = p.ProId,
                     ProName = p.ProName,
-                    ProDiscription = p.ProDiscription,
+                    ProDescription = p.ProDiscription,
                     ProPrice = p.ProPrice,
                     CatName = p.Cat.CatName,
                     ProImg = p.ProImg,
@@ -102,12 +102,12 @@ using Microsoft.IdentityModel.Tokens;
             {
                 ProName = productDto.ProductName,
                 ProDiscription = productDto.Description,
-                ProPrice = productDto.Price,
-                CatId = productDto.Category,
+                ProPrice = productDto.Price.Value,
+                CatId = productDto.Category.Value,
                 ProImg = productDto.Image,
                 ProCalories = productDto.Calories,
-                ProCookingTime = productDto.CookingTime, 
-                ProStatus = productDto.Status
+                ProCookingTime = productDto.CookingTime.Value, 
+                ProStatus = productDto.Status.Value
             };
 
             
@@ -140,7 +140,7 @@ using Microsoft.IdentityModel.Tokens;
         {
             ProId = p.ProId,
             ProName = p.ProName,
-            ProDiscription = p.ProDiscription,
+            ProDescription = p.ProDiscription,
             ProPrice = p.ProPrice,
             CatName = p.Cat.CatName,
             ProImg = p.ProImg,
@@ -286,7 +286,7 @@ using Microsoft.IdentityModel.Tokens;
                 {
                     ProId = p.ProId,
                     ProName = p.ProName,
-                    ProDiscription = p.ProDiscription,
+                    ProDescription = p.ProDiscription,
                     ProPrice = p.ProPrice,
                     CatName = p.Cat.CatName,
                     ProImg = p.ProImg,
@@ -335,7 +335,7 @@ using Microsoft.IdentityModel.Tokens;
                                  .Select(p => new ListProductDTO
                                  {
                                      ProName = p.ProName,
-                                     ProDiscription = p.ProDiscription,
+                                     ProDescription = p.ProDiscription,
                                      ProPrice = p.ProPrice,
                                      ProCalories = p.ProCalories,
                                      ProCookingTime = p.ProCookingTime,
