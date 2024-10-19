@@ -23,7 +23,7 @@ using Microsoft.IdentityModel.Tokens;
         }
 
         [HttpGet("list")]
-        public async Task<IActionResult> GetAllProducts(int pageNumber = 1, int pageSize = 10, string name = null, int? categoryId = null)
+        public async Task<IActionResult> GetAllProducts(int pageNumber = 1, int pageSize = 10, string? name = null, int? categoryId = null)
         {
                 
             var totalProductsQuery = _context.Products.AsQueryable();
