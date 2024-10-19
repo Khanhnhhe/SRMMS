@@ -12,7 +12,7 @@ namespace SRMMS.DTOs
         public string ProDescription { get; set; } = null!;
         public decimal? ProPrice { get; set; }
         public string CatName { get; set; }
-        public string ProImg { get; set; } = null!;
+        public IFormFile ProImg { get; set; } 
         public string? ProCalories { get; set; } = null!;
         public int? ProCookingTime { get; set; } 
         public bool? ProStatus { get; set; }
