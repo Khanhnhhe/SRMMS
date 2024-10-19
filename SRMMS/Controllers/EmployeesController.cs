@@ -11,7 +11,7 @@ using SRMMS.Models;
 
 namespace SRMMS.Controllers
 {
-    [Route("api/[controller]")]
+    [Route("api/employee")]
     [ApiController]
     public class EmployeesController : ControllerBase
     {
@@ -22,7 +22,7 @@ namespace SRMMS.Controllers
             _context = context;
         }
 
-        [HttpGet("/api/getAllEmployees")]
+        [HttpGet("list")]
         public async Task<ActionResult<IEnumerable<EmployeeDTO>>> GetEmployees(int pageNumber = 1, int pageSize = 10)
         {
             try
@@ -63,7 +63,7 @@ namespace SRMMS.Controllers
             }
         }
 
-        [HttpPost("/api/addEmployee")]
+        [HttpPost("create")]
         public async Task<ActionResult<EmployeeDTO>> AddEmployee(EmployeeCreateDTO employeeDto)
         {
             
@@ -126,7 +126,7 @@ namespace SRMMS.Controllers
 
 
 
-        [HttpGet("/api/getEmployeeByID/{id}")]
+        [HttpGet("getEmployee/{id}")]
         public async Task<ActionResult<EmployeeCreateDTO>> GetEmployeeById(int id)
         {
             var employee = await _context.Employees
@@ -157,7 +157,7 @@ namespace SRMMS.Controllers
             return Ok(employee);
         }
 
-        [HttpPut("/api/updateEmployee/{id}")]
+        [HttpPut("update/{id}")]
         public async Task<IActionResult> PutEmployee(int id, EmployeeUpdateDTO employeeDto)
         {
             var existingEmployee = await _context.Employees
@@ -251,7 +251,7 @@ namespace SRMMS.Controllers
         {
             return (_context.Employees?.Any(e => e.EmpId == id)).GetValueOrDefault();
         }
-        [HttpDelete("/api/deleteEmployee/{id}")]
+        [HttpDelete("delete/{id}")]
         public async Task<IActionResult> DeleteEmployee(int id)
         {
             try

@@ -3,7 +3,7 @@ using Microsoft.EntityFrameworkCore;
 using SRMMS.DTOs;
 using SRMMS.Models;
 
-[Route("api/catergory")]
+[Route("api/category")]
 [ApiController]
 public class CategoryController : ControllerBase
 {
