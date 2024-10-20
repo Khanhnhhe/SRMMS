@@ -135,7 +135,7 @@ namespace SRMMS.Controllers
                 ProImg = imageURL.Url.ToString(),
                 ProCalories = productDto.Calories,
                 ProCookingTime = productDto.CookingTime ?? 0, 
-                ProStatus = productDto.Status ?? false 
+                ProStatus = productDto.Status ?? false
             };
 
             _context.Products.Add(newProduct);
@@ -176,7 +176,7 @@ namespace SRMMS.Controllers
 
         }
         [HttpPut("update/{id}")]
-        public async Task<IActionResult> UpdateProduct(int id, updateProduct updateProductDto)
+        public async Task<IActionResult> UpdateProduct(int id, [FromForm] updateProduct updateProductDto)
         {
             var existingProduct = await _context.Products
                 .Include(p => p.Cat)
@@ -272,8 +272,6 @@ namespace SRMMS.Controllers
 
             return NoContent();
         }
-
-        // Thêm phương thức ProductExists
         private bool ProductExists(int id)
         {
             return _context.Products.Any(p => p.ProId == id);
