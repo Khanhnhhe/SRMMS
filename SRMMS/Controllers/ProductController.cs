@@ -86,13 +86,8 @@ namespace SRMMS.Controllers
             return Ok(result);
         }
 
-
-
-
-
-
         [HttpPost("create")]
-        public async Task<ActionResult<addProductDTO>> AddProduct(addProductDTO productDto)
+        public async Task<ActionResult<addProductDTO>> AddProduct([FromForm] addProductDTO productDto)
         {
             var categoryExists = await _context.Categories.AnyAsync(c => c.CatId == productDto.Category);
             if (!categoryExists)
@@ -106,42 +101,41 @@ namespace SRMMS.Controllers
                 return BadRequest("A product with this name already exists.");
             }
 
-            if (string.IsNullOrEmpty(productDto.Image))
+            if (productDto.Image == null || productDto.Image.Length == 0)
             {
                 return BadRequest("Image not found");
             }
 
-            // Giải mã chuỗi base64
-            var imageData = productDto.Image.Split(',')[1]; 
-            var imageBytes = Convert.FromBase64String(imageData);
+            
+            var tempFilePath = Path.Combine(Path.GetTempPath(), Guid.NewGuid().ToString() + Path.GetExtension(productDto.Image.FileName));
 
-            // Tạo đường dẫn tệp tạm thời
-            var tempFilePath = Path.Combine(Path.GetTempPath(), Guid.NewGuid().ToString() + ".png");
-
-            // Lưu tệp hình ảnh vào đĩa
-            await System.IO.File.WriteAllBytesAsync(tempFilePath, imageBytes);
+            
+            using (var stream = new FileStream(tempFilePath, FileMode.Create))
+            {
+                await productDto.Image.CopyToAsync(stream);
+            }
 
             var uploadParams = new ImageUploadParams()
             {
-                File = new FileDescription(tempFilePath), 
-                PublicId = System.Guid.NewGuid().ToString(),
+                File = new FileDescription(tempFilePath),
+                PublicId = Guid.NewGuid().ToString(),
             };
 
             var imageURL = await _clouddinary.UploadAsync(uploadParams);
 
-            // Xóa tệp tạm thời sau khi upload thành công
+            // Xóa file tạm
             System.IO.File.Delete(tempFilePath);
 
             var newProduct = new Product
             {
                 ProName = productDto.ProductName,
                 ProDiscription = productDto.Description,
-                ProPrice = productDto.Price.Value,
-                CatId = productDto.Category.Value,
+                ProPrice = productDto.Price ?? 0,
+                CatId = productDto.Category.Value, 
                 ProImg = imageURL.Url.ToString(),
                 ProCalories = productDto.Calories,
-                ProCookingTime = productDto.CookingTime.Value,
-                ProStatus = productDto.Status.Value
+                ProCookingTime = productDto.CookingTime ?? 0, 
+                ProStatus = productDto.Status ?? false 
             };
 
             _context.Products.Add(newProduct);
@@ -149,6 +143,8 @@ namespace SRMMS.Controllers
 
             return CreatedAtAction(nameof(GetProductById), new { proId = newProduct.ProId }, newProduct);
         }
+
+
 
 
         [HttpGet("getProductById/{proId}")]
