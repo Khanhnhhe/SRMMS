@@ -38,16 +38,13 @@ namespace SRMMS.Controllers
         [HttpGet("list")]
         public async Task<IActionResult> GetAllProducts(int pageNumber = 1, int pageSize = 10, string? name = null, int? categoryId = null)
         {
-                
             var totalProductsQuery = _context.Products.AsQueryable();
 
-            
             if (!string.IsNullOrEmpty(name))
             {
                 totalProductsQuery = totalProductsQuery.Where(p => p.ProName.Contains(name));
             }
 
-           
             if (categoryId.HasValue)
             {
                 totalProductsQuery = totalProductsQuery.Where(p => p.CatId == categoryId.Value);
@@ -55,22 +52,21 @@ namespace SRMMS.Controllers
 
             var totalProducts = await totalProductsQuery.CountAsync();
 
-           
             var products = await totalProductsQuery
                 .Include(p => p.Cat)
                 .Skip((pageNumber - 1) * pageSize)
                 .Take(pageSize)
                 .Select(p => new ListProductDTO
                 {
-                    ProId = p.ProId,
-                    ProName = p.ProName,
-                    ProDescription = p.ProDiscription,
-                    ProPrice = p.ProPrice,
-                    CatName = p.Cat.CatName,
-                    ProImg = p.ProImg,
-                    ProCalories = p.ProCalories,
-                    ProCookingTime = p.ProCookingTime,
-                    ProStatus = p.ProStatus
+                    ProductId = p.ProId,
+                    ProductName = p.ProName,
+                    Description = p.ProDiscription,
+                    Price = p.ProPrice,
+                    Category = p.Cat.CatName,
+                    Image = p.ProImg, 
+                    Calories = p.ProCalories,
+                    CookingTime = p.ProCookingTime,
+                    Status = p.ProStatus
                 })
                 .ToListAsync();
 
@@ -79,7 +75,6 @@ namespace SRMMS.Controllers
                 return NotFound("No products found.");
             }
 
-      
             var result = new
             {
                 TotalProducts = totalProducts,
@@ -92,39 +87,51 @@ namespace SRMMS.Controllers
         }
 
 
-        
+
+
+
 
         [HttpPost("create")]
         public async Task<ActionResult<addProductDTO>> AddProduct(addProductDTO productDto)
         {
-           
             var categoryExists = await _context.Categories.AnyAsync(c => c.CatId == productDto.Category);
             if (!categoryExists)
             {
                 return BadRequest("Category does not exist.");
             }
 
-            
             var productExists = await _context.Products.AnyAsync(p => p.ProName == productDto.ProductName);
             if (productExists)
             {
                 return BadRequest("A product with this name already exists.");
             }
 
-            if(productDto.Image == null || productDto.Image.Length == 0)
+            if (string.IsNullOrEmpty(productDto.Image))
             {
                 return BadRequest("Image not found");
             }
 
-            var uploadParam = new ImageUploadParams()
-            {
-                File = new FileDescription(productDto.Image.FileName, productDto.Image.OpenReadStream()),
+            // Giải mã chuỗi base64
+            var imageData = productDto.Image.Split(',')[1]; 
+            var imageBytes = Convert.FromBase64String(imageData);
 
+            // Tạo đường dẫn tệp tạm thời
+            var tempFilePath = Path.Combine(Path.GetTempPath(), Guid.NewGuid().ToString() + ".png");
+
+            // Lưu tệp hình ảnh vào đĩa
+            await System.IO.File.WriteAllBytesAsync(tempFilePath, imageBytes);
+
+            var uploadParams = new ImageUploadParams()
+            {
+                File = new FileDescription(tempFilePath), 
                 PublicId = System.Guid.NewGuid().ToString(),
-                
             };
-            var imageURL = await _clouddinary.UploadAsync(uploadParam);
-        
+
+            var imageURL = await _clouddinary.UploadAsync(uploadParams);
+
+            // Xóa tệp tạm thời sau khi upload thành công
+            System.IO.File.Delete(tempFilePath);
+
             var newProduct = new Product
             {
                 ProName = productDto.ProductName,
@@ -133,21 +140,16 @@ namespace SRMMS.Controllers
                 CatId = productDto.Category.Value,
                 ProImg = imageURL.Url.ToString(),
                 ProCalories = productDto.Calories,
-                ProCookingTime = productDto.CookingTime.Value, 
+                ProCookingTime = productDto.CookingTime.Value,
                 ProStatus = productDto.Status.Value
             };
 
-            
             _context.Products.Add(newProduct);
             await _context.SaveChangesAsync();
 
-           
-            
-
             return CreatedAtAction(nameof(GetProductById), new { proId = newProduct.ProId }, newProduct);
-
-          
         }
+
 
         [HttpGet("getProductById/{proId}")]
         public async Task<ActionResult<ListProductDTO>> GetProductById(int proId)
@@ -157,15 +159,15 @@ namespace SRMMS.Controllers
         .Where(p => p.ProId == proId) 
         .Select(p => new ListProductDTO
         {
-            ProId = p.ProId,
-            ProName = p.ProName,
-            ProDescription = p.ProDiscription,
-            ProPrice = p.ProPrice,
-            CatName = p.Cat.CatName,
-            ProImg = p.ProImg,
-            ProCalories = p.ProCalories,
-            ProCookingTime = p.ProCookingTime,
-            ProStatus = p.ProStatus
+            ProductId = p.ProId,
+            ProductName = p.ProName,
+            Description = p.ProDiscription,
+            Price = p.ProPrice,
+            Category = p.Cat.CatName,
+            Image = p.ProImg,
+            Calories = p.ProCalories,
+            CookingTime = p.ProCookingTime,
+            Status = p.ProStatus
         })
         .FirstOrDefaultAsync();
 
@@ -177,11 +179,9 @@ namespace SRMMS.Controllers
             return Ok(product);
 
         }
-
         [HttpPut("update/{id}")]
         public async Task<IActionResult> UpdateProduct(int id, updateProduct updateProductDto)
         {
-
             var existingProduct = await _context.Products
                 .Include(p => p.Cat)
                 .FirstOrDefaultAsync(p => p.ProId == id);
@@ -190,7 +190,6 @@ namespace SRMMS.Controllers
             {
                 return NotFound();
             }
-
 
             if (!string.IsNullOrEmpty(updateProductDto.ProductName))
             {
@@ -206,7 +205,6 @@ namespace SRMMS.Controllers
                 existingProduct.ProName = updateProductDto.ProductName;
             }
 
-
             if (!string.IsNullOrEmpty(updateProductDto.Description))
             {
                 existingProduct.ProDiscription = updateProductDto.Description;
@@ -217,9 +215,16 @@ namespace SRMMS.Controllers
                 existingProduct.ProPrice = updateProductDto.Price.Value;
             }
 
-            if (!string.IsNullOrEmpty(updateProductDto.Image))
+            if (updateProductDto.Image != null)
             {
-                existingProduct.ProImg = updateProductDto.Image;
+                var uploadParams = new ImageUploadParams
+                {
+                    File = new FileDescription(updateProductDto.Image.FileName, updateProductDto.Image.OpenReadStream()),
+                    PublicId = System.Guid.NewGuid().ToString(),
+                };
+
+                var imageResult = await _clouddinary.UploadAsync(uploadParams);
+                existingProduct.ProImg = imageResult.Url.ToString();
             }
 
             if (!string.IsNullOrEmpty(updateProductDto.Calories))
@@ -237,7 +242,6 @@ namespace SRMMS.Controllers
                 existingProduct.ProStatus = updateProductDto.Status.Value;
             }
 
-
             if (updateProductDto.Category.HasValue)
             {
                 var category = await _context.Categories.FindAsync(updateProductDto.Category.Value);
@@ -252,12 +256,10 @@ namespace SRMMS.Controllers
                 }
             }
 
-
             _context.Entry(existingProduct).State = EntityState.Modified;
 
             try
             {
-
                 await _context.SaveChangesAsync();
             }
             catch (DbUpdateConcurrencyException)
@@ -274,10 +276,14 @@ namespace SRMMS.Controllers
 
             return NoContent();
         }
+
+        // Thêm phương thức ProductExists
         private bool ProductExists(int id)
         {
             return _context.Products.Any(p => p.ProId == id);
         }
+
+
 
         [HttpGet("filter/{categoryName}")]
         public async Task<IActionResult> FilterByCategoryName(string categoryName, int pageNumber = 1, int pageSize = 10)
@@ -303,15 +309,15 @@ namespace SRMMS.Controllers
                 .Take(pageSize)
                 .Select(p => new ListProductDTO
                 {
-                    ProId = p.ProId,
-                    ProName = p.ProName,
-                    ProDescription = p.ProDiscription,
-                    ProPrice = p.ProPrice,
-                    CatName = p.Cat.CatName,
-                    ProImg = p.ProImg,
-                    ProCalories = p.ProCalories,
-                    ProCookingTime = p.ProCookingTime,
-                    ProStatus = p.ProStatus
+                    ProductId = p.ProId,
+                    ProductName = p.ProName,
+                    Description = p.ProDiscription,
+                    Price = p.ProPrice,
+                    Category = p.Cat.CatName,
+                    Image = p.ProImg,
+                    Calories = p.ProCalories,
+                    CookingTime = p.ProCookingTime,
+                    Status = p.ProStatus
                 })
                 .ToListAsync();
 
@@ -353,13 +359,13 @@ namespace SRMMS.Controllers
                                  .Take(pageSize)
                                  .Select(p => new ListProductDTO
                                  {
-                                     ProName = p.ProName,
-                                     ProDescription = p.ProDiscription,
-                                     ProPrice = p.ProPrice,
-                                     ProCalories = p.ProCalories,
-                                     ProCookingTime = p.ProCookingTime,
-                                     ProStatus = p.ProStatus,
-                                     CatName = p.Cat.CatName
+                                     ProductName = p.ProName,
+                                     Description = p.ProDiscription,
+                                     Price = p.ProPrice,
+                                     Calories = p.ProCalories,
+                                     CookingTime = p.ProCookingTime,
+                                     Status = p.ProStatus,
+                                     Category = p.Cat.CatName
                                  }).ToListAsync();
 
             
@@ -375,23 +381,25 @@ namespace SRMMS.Controllers
         [HttpDelete("delete/{id}")]
         public async Task<IActionResult> DeleteProduct(int id)
         {
-            
             var product = await _context.Products.FindAsync(id);
 
-            
             if (product == null)
             {
                 return NotFound("Product not found.");
             }
 
             
-            _context.Products.Remove(product);
+            if (!string.IsNullOrEmpty(product.ProImg))
+            {
+                var publicId = product.ProImg.Split('/').Last().Split('.').First();
+                await _clouddinary.DestroyAsync(new DeletionParams(publicId));
+            }
 
-            
+            _context.Products.Remove(product);
             await _context.SaveChangesAsync();
 
-            
             return NoContent();
         }
+
     }
 }

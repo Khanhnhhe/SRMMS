@@ -7,7 +7,7 @@ namespace SRMMS.DTOs
         public string Description { get; set; } = null!;
         public decimal? Price { get; set; }
         public int? Category { get; set; }
-        public string Image { get; set; } = null!;
+        public IFormFile Image { get; set; } = null!;
         public string? Calories { get; set; } = null!;
         public int? CookingTime { get; set; } 
         public bool? Status { get; set; }

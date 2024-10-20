@@ -5,17 +5,16 @@ namespace SRMMS.DTOs
 {
 	public class ListProductDTO
 	{
-		
 
-        public int ProId { get; set; }
-        public string ProName { get; set; } = null!;
-        public string ProDescription { get; set; } = null!;
-        public decimal? ProPrice { get; set; }
-        public string CatName { get; set; }
-        public IFormFile ProImg { get; set; } 
-        public string? ProCalories { get; set; } = null!;
-        public int? ProCookingTime { get; set; } 
-        public bool? ProStatus { get; set; }
+        public int ProductId { get; set; }
+        public string ProductName { get; set; } = null!;
+        public string Description { get; set; } = null!;
+        public decimal? Price { get; set; }
+        public string Category { get; set; }
+        public string Image { get; set; }
+        public string Calories { get; set; } = null!;
+        public int? CookingTime { get; set; }
+        public bool? Status { get; set; }
     }
 	
 }
