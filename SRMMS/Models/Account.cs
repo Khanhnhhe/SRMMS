@@ -7,17 +7,21 @@ namespace SRMMS.Models
     {
         public Account()
         {
-            BookingTables = new HashSet<BookingTable>();
             Orders = new HashSet<Order>();
+            PointLists = new HashSet<PointList>();
+            Tables = new HashSet<Table>();
         }
 
         public int AccId { get; set; }
-        public int CusId { get; set; }
-        public int EmpId { get; set; }
+        public string? FullName { get; set; }
+        public string? Email { get; set; }
+        public string? Password { get; set; }
+        public string? Phone { get; set; }
+        public int? RoleId { get; set; }
 
-        public virtual Customer Cus { get; set; } = null!;
-        public virtual Employee Emp { get; set; } = null!;
-        public virtual ICollection<BookingTable> BookingTables { get; set; }
+        public virtual Role? Role { get; set; }
         public virtual ICollection<Order> Orders { get; set; }
+        public virtual ICollection<PointList> PointLists { get; set; }
+        public virtual ICollection<Table> Tables { get; set; }
     }
 }

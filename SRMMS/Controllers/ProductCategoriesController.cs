@@ -59,11 +59,16 @@ public class CategoryController : ControllerBase
 
         };
 
-        
-        _context.Categories.Add(newCategory);
-        await _context.SaveChangesAsync();
 
-        
+        try
+        {
+            await _context.SaveChangesAsync();
+        }
+        catch (DbUpdateException)
+        {
+            return BadRequest("Could not save the category.");
+        }
+
         var categoryResult = new ProductCategoriesDTO
         {
             CatId = newCategory.CatId,
@@ -79,6 +84,7 @@ public class CategoryController : ControllerBase
     [HttpGet("getCategoryById/{catId}")]
     public async Task<ActionResult<ProductCategoriesDTO>> GetCategoryById(int catId)
     {
+
         var category = await _context.Categories
             .Where(c => c.CatId == catId)
             .Select(c => new ProductCategoriesDTO
