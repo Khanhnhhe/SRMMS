@@ -113,5 +113,52 @@ namespace SRMMS.Controllers
                 ProductNames = comboDto.ProductNames
             });
         }
+
+        [HttpGet("list")]
+        public async Task<IActionResult> GetAllCombos(int pageNumber = 1, int pageSize = 10, string? CbName = null)
+        {
+            
+            var query = _context.Combos.AsQueryable();
+
+           
+            if (!string.IsNullOrWhiteSpace(CbName))
+            {
+                query = query.Where(c => c.ComboName.Contains(CbName));
+            }
+
+           
+            var totalCombos = await query.CountAsync();
+
+            
+            var combos = await query
+                .Skip((pageNumber - 1) * pageSize)
+                .Take(pageSize)
+                .ToListAsync();
+
+            if (combos == null || !combos.Any())
+            {
+                return NotFound("Không tìm thấy combo nào.");
+            }
+
+            
+            var comboDtos = combos.Select(combo => new ListComboProductDTO
+            {
+                ComboName = combo.ComboName,
+                ComboDescription = combo.ComboDiscription,
+                ComboImg = combo.ComboImg, 
+                ComboMoney = combo.ComboMoney,
+                ComboStatus = combo.ComboStatus
+            }).ToList();
+
+            
+            return Ok(new
+            {
+                TotalCount = totalCombos,
+                PageNumber = pageNumber,
+                PageSize = pageSize,
+                Combos = comboDtos
+            });
+        }
+
     }
 }
