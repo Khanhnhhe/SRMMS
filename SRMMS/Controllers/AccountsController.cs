@@ -17,7 +17,7 @@ using SRMMS.Models;
 namespace SRMMS.Controllers
 {
     [ApiController]
-    [Route("api/customer")]
+    [Route("api/Accounts")]
     public class CustomerLoginController : ControllerBase
     {
         private readonly IConfiguration _configuration;
