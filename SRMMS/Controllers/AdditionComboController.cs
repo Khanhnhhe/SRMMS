@@ -8,6 +8,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.IdentityModel.Tokens;
 using Account = CloudinaryDotNet.Account;
+using Microsoft.EntityFrameworkCore;
 
 namespace SRMMS.Controllers
 {
@@ -39,7 +40,13 @@ namespace SRMMS.Controllers
                 return BadRequest("Hình ảnh không tìm thấy.");
             }
 
-           
+            var existingCombo = await _context.Combos.FirstOrDefaultAsync(c => c.ComboName == comboDto.ComboName);
+            if (existingCombo != null)
+            {
+                return Conflict($"Combo với tên '{comboDto.ComboName}' đã tồn tại.");
+            }
+
+
             var tempFilePath = Path.Combine(Path.GetTempPath(), Guid.NewGuid().ToString() + Path.GetExtension(comboDto.ComboImg.FileName));
 
             using (var stream = new FileStream(tempFilePath, FileMode.Create))
