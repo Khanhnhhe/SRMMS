@@ -5,6 +5,7 @@ using System.Security.Claims;
 using System.Text;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Configuration;
 using Microsoft.IdentityModel.Tokens;
 using SRMMS.DTOs;
 using SRMMS.Models;
@@ -27,53 +28,47 @@ namespace SRMMS.Controllers
         [HttpPost("login")]
         public IActionResult Login([FromBody] LoginDTO model)
         {
-
-            var user = _context.Employees
-                .Include(e => e.EmpRole)
-                .FirstOrDefault(u => u.EmpEmail == model.EmpEmail);
-
+            var user = _context.Accounts
+                .Include(a => a.Role)
+                .FirstOrDefault(a => a.Email == model.Email);
 
             if (user == null)
             {
                 return Unauthorized("User not found");
             }
 
-
-            if (!VerifyPassword(model.EmpPassword, user.EmpPassword))
+            if (!VerifyPassword(model.Password, user.Password))
             {
                 return Unauthorized("Invalid password");
             }
 
-            // Create token 
-            var token = GenerateJwtToken(user.EmpEmail, user.EmpRole.RoleName);
+            // Generate token
+            var token = GenerateJwtToken(user.Email, user.Role?.RoleName);
 
             return Ok(new
             {
                 token = token,
-                email = user.EmpEmail,
-                roleName = user.EmpRole.RoleName,
-                EmpName = user.EmpFirstName, EmpLastName = user.EmpLastName
+                email = user.Email,
+                roleName = user.Role?.RoleName,
+                fullName = user.FullName
             });
         }
 
-        // check passwork
         private bool VerifyPassword(string enteredPassword, string storedPassword)
         {
-
             return enteredPassword == storedPassword;
         }
 
-
-        private string GenerateJwtToken(string username, string roleName)
+        private string GenerateJwtToken(string email, string roleName)
         {
             var jwtSettings = _configuration.GetSection("Jwt");
             var key = Encoding.UTF8.GetBytes(jwtSettings["Key"]);
 
             var claims = new[]
             {
-                new Claim(JwtRegisteredClaimNames.Sub, username),
+                new Claim(JwtRegisteredClaimNames.Sub, email),
                 new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString()),
-                new Claim(ClaimTypes.Role, roleName)
+                new Claim(ClaimTypes.Role, roleName ?? string.Empty)
             };
 
             var token = new JwtSecurityToken(
@@ -87,25 +82,25 @@ namespace SRMMS.Controllers
             return new JwtSecurityTokenHandler().WriteToken(token);
         }
 
-        [HttpPost("Change-password")]
+        [HttpPost("change-password")]
         public IActionResult ChangePassword([FromBody] ChangePasswordDTO model)
         {
-            var user = _context.Employees
-                .FirstOrDefault(u => u.EmpEmail == model.EmpEmail);
+            var user = _context.Accounts
+                .FirstOrDefault(a => a.Email == model.Email);
 
             if (user == null)
             {
                 return NotFound("User not found");
             }
 
-            if (!VerifyPassword(model.OldPassword, user.EmpPassword))
+            if (!VerifyPassword(model.OldPassword, user.Password))
             {
                 return BadRequest("Old password is incorrect");
             }
 
-            user.EmpPassword = model.NewPassword;
+            user.Password = model.NewPassword;
 
-            _context.Employees.Update(user);
+            _context.Accounts.Update(user);
             _context.SaveChanges();
 
             return Ok("Password changed successfully");

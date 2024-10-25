@@ -7,13 +7,13 @@ namespace SRMMS.Models
     {
         public Role()
         {
-            Employees = new HashSet<Employee>();
+            Accounts = new HashSet<Account>();
         }
 
         public int RoleId { get; set; }
-        public string RoleName { get; set; } = null!;
+        public string? RoleName { get; set; }
         public string? Description { get; set; }
 
-        public virtual ICollection<Employee> Employees { get; set; }
+        public virtual ICollection<Account> Accounts { get; set; }
     }
 }
