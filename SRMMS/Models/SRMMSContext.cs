@@ -155,6 +155,8 @@ namespace SRMMS.Models
                     .OnDelete(DeleteBehavior.ClientSetNull)
                     .HasConstraintName("FK_Combo Detail_Menu");
             });
+            modelBuilder.Entity<ComboDetail>()
+       .HasKey(cd => new { cd.ComboId, cd.ProId });
 
             modelBuilder.Entity<Customer>(entity =>
             {
