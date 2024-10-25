@@ -160,5 +160,89 @@ namespace SRMMS.Controllers
             });
         }
 
+        [HttpPut("update/{id}")]
+        public async Task<IActionResult> UpdateCombo(int id, [FromForm] UpdateComboProductDTO updateDto)
+        {
+            // Tìm combo theo ID
+            var existingCombo = await _context.Combos.FindAsync(id);
+            if (existingCombo == null)
+            {
+                return NotFound($"Combo với ID '{id}' không tìm thấy.");
+            }
+
+            
+            if (!string.IsNullOrWhiteSpace(updateDto.ComboName) &&
+                existingCombo.ComboName != updateDto.ComboName)
+            {
+                var comboExists = await _context.Combos
+                    .AnyAsync(c => c.ComboName == updateDto.ComboName);
+                if (comboExists)
+                {
+                    return BadRequest("Tên combo đã tồn tại.");
+                }
+            }
+
+           
+            existingCombo.ComboName = updateDto.ComboName;
+            existingCombo.ComboDiscription = updateDto.ComboDescription;
+            existingCombo.ComboMoney = updateDto.ComboMoney;
+            existingCombo.ComboStatus = updateDto.ComboStatus;
+
+            
+            if (updateDto.ComboImg != null && updateDto.ComboImg.Length > 0)
+            {
+                var tempFilePath = Path.Combine(Path.GetTempPath(), Guid.NewGuid().ToString() + Path.GetExtension(updateDto.ComboImg.FileName));
+                using (var stream = new FileStream(tempFilePath, FileMode.Create))
+                {
+                    await updateDto.ComboImg.CopyToAsync(stream);
+                }
+
+                var uploadParams = new ImageUploadParams
+                {
+                    File = new FileDescription(tempFilePath),
+                    PublicId = $"combo/{Guid.NewGuid()}"
+                };
+
+                var uploadResult = await _cloudinary.UploadAsync(uploadParams);
+                existingCombo.ComboImg = uploadResult.SecureUrl.ToString(); 
+            }
+
+         
+            var currentProductDetails = await _context.ComboDetails
+                .Where(cd => cd.ComboId == existingCombo.ComboId)
+                .ToListAsync();
+
+           
+            _context.ComboDetails.RemoveRange(currentProductDetails);
+
+           
+            foreach (var productName in updateDto.ProductNames)
+            {
+                var product = await _context.Products.FirstOrDefaultAsync(p => p.ProName == productName);
+                if (product != null)
+                {
+                    var comboDetail = new ComboDetail
+                    {
+                        ComboId = existingCombo.ComboId,
+                        ProId = product.ProId
+                    };
+                    _context.ComboDetails.Add(comboDetail);
+                }
+                else
+                {
+                    return NotFound($"Sản phẩm '{productName}' không tìm thấy trong cơ sở dữ liệu.");
+                }
+            }
+
+           
+            await _context.SaveChangesAsync();
+
+            return Ok(new
+            {
+                Message = $"Combo '{updateDto.ComboName}' đã được cập nhật thành công.",
+                ComboId = existingCombo.ComboId
+            });
+        }
+
     }
 }
