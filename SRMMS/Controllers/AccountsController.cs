@@ -7,6 +7,7 @@ using System.Text;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
@@ -28,111 +29,97 @@ namespace SRMMS.Controllers
             _context = context;
         }
 
-        [HttpPost("loginCustomer")]
-        public IActionResult LoginCustomer([FromBody] CustomerLoginDTO model)
+        [HttpGet("searchAccountName")]
+        public async Task<ActionResult<IEnumerable<ListAccountDTO>>> SearchByAccountName(string? accountName = "", int pageNumber = 1, int pageSize = 10)
         {
+            var skip = (pageNumber - 1) * pageSize;
 
-            var customer = _context.Customers
-                .FirstOrDefault(c => c.CusPhone == model.CusPhone);
+            
+            var query = _context.Accounts.Include(a => a.Role).AsQueryable();
 
-            if (customer == null)
+         
+            if (!string.IsNullOrWhiteSpace(accountName))
             {
-                return Unauthorized("Customer not found");
+                query = query.Where(a => a.FullName.Contains(accountName));
             }
 
+            var accounts = await query
+                                 .Skip(skip)
+                                 .Take(pageSize)
+                                 .Select(a => new ListAccountDTO
+                                 {
+                                     AccountId = a.AccId,
+                                     FullName = a.FullName,
+                                     Email = a.Email,
+                                     Phone = a.Phone,
+                                     RoleName = a.Role.RoleName
+                                 }).ToListAsync();
 
-            if (!VerifyPassword(model.CusPassword, customer.CusPassword))
+            if (accounts == null || !accounts.Any())
             {
-                return Unauthorized("Invalid password");
+                return NotFound("No accounts found.");
             }
 
-            var token = GenerateJwtToken(customer.CusPhone.ToString());
-
-            return Ok(new
-            {
-                token = token,
-                phone = customer.CusPhone,
-                fullname = customer.CusFullname
-            });
+            return Ok(accounts);
         }
 
-
-        private bool VerifyPassword(string enteredPassword, string storedPassword)
+        [HttpPost("createEmployeeAccount")]
+        public async Task<IActionResult> CreateEmployeeAccount([FromBody] CreateEmployeeAccountDTO model)
         {
- 
-            return enteredPassword == storedPassword;
-        }
-
-        private string GenerateJwtToken(string customerPhone)
-        {
-            var jwtSettings = _configuration.GetSection("Jwt");
-            var key = Encoding.UTF8.GetBytes(jwtSettings["Key"]);
-
-            var claims = new[]
+            if (model == null || string.IsNullOrWhiteSpace(model.Email) || string.IsNullOrWhiteSpace(model.Password))
             {
-                new Claim(JwtRegisteredClaimNames.Sub, customerPhone),
-                new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString()),
+                return BadRequest("Invalid account data.");
+            }
+
+            var existingAccount = await _context.Accounts.FirstOrDefaultAsync(a => a.Email == model.Email);
+            if (existingAccount != null)
+            {
+                return Conflict("Email already exists.");
+            }
+
+            var account = new Account
+            {
+                FullName = model.FullName,
+                Email = model.Email,
+                Password = model.Password, 
+                Phone = model.Phone,
+                RoleId = model.RoleId
             };
 
-            var token = new JwtSecurityToken(
-                issuer: jwtSettings["Issuer"],
-                audience: jwtSettings["Audience"],
-                claims: claims,
-                expires: DateTime.UtcNow.AddMinutes(30),
-                signingCredentials: new SigningCredentials(new SymmetricSecurityKey(key), SecurityAlgorithms.HmacSha256)
-            );
 
-            return new JwtSecurityTokenHandler().WriteToken(token);
+            _context.Accounts.Add(account);
+            await _context.SaveChangesAsync();
+
+            return Created("Account created successfully.", account);
         }
 
-        [HttpPost("changeCustomerPassword")]
-        public IActionResult ChangeCustomerPassword([FromBody] ChangeCustomerPasswordDTO model)
-        {
-
-            var customer = _context.Customers
-                .FirstOrDefault(c => c.CusPhone == model.CusPhone);
-
-            if (customer == null)
-            {
-                return NotFound("Customer not found");
-            }
-
-            if (!VerifyPassword(model.OldPassword, customer.CusPassword))
-            {
-                return BadRequest("Old password is incorrect");
-            }
-
-            customer.CusPassword = model.NewPassword;
-
-            _context.Customers.Update(customer);
-            _context.SaveChanges();
-
-            return Ok("Password changed successfully");
-        }
-    
 
 
-    [HttpGet("list")]
+
+
+
+
+        [HttpGet("list")]
         public IActionResult GetCustomerList()
         {
             
             var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
             
-            var customers = _context.Customers.ToList();
+            var customers = _context.Accounts.ToList();
             return Ok(customers);
         }
 
         [HttpDelete("delete/{id}")]
         public IActionResult DeleteCustomer(int id)
         {
-            var customer = _context.Customers.FirstOrDefault(c => c.CusId == id);
+            var customer = _context.Accounts.FirstOrDefault(c => c.AccId == id);
 
             if (customer == null)
             {
                 return NotFound(new { message = "Customer not found." });
             }
 
-            _context.Customers.Remove(customer);
+            _context.Accounts.Remove(customer);
             _context.SaveChanges();
 
             return Ok(new { message = "Customer deleted successfully." });
