@@ -69,8 +69,7 @@ namespace SRMMS.Controllers
                 ComboName = comboDto.ComboName,
                 ComboDiscription = comboDto.ComboDescription,
                 ComboImg = uploadResult.SecureUrl.ToString(),
-                ComboMoney = comboDto.ComboMoney,
-                ComboStatus = comboDto.ComboStatus
+                ComboMoney = comboDto.ComboMoney 
             };
 
             _context.Combos.Add(newCombo);
@@ -243,6 +242,35 @@ namespace SRMMS.Controllers
                 ComboId = existingCombo.ComboId
             });
         }
+
+        [HttpDelete("{comboId}")]
+        public IActionResult DeleteCombo(int comboId)
+        {
+            
+            var combo = _context.Combos
+                .Include(c => c.ComboDetails) 
+                .FirstOrDefault(c => c.ComboId == comboId);
+
+            if (combo == null)
+            {
+                return NotFound(); 
+            }
+
+            
+            if (combo.ComboDetails != null && combo.ComboDetails.Any())
+            {
+                _context.ComboDetails.RemoveRange(combo.ComboDetails);
+            }
+
+            
+            _context.Combos.Remove(combo);
+
+           
+            _context.SaveChanges();
+
+            return NoContent(); 
+        }
+
 
     }
 }
