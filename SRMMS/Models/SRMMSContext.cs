@@ -131,6 +131,11 @@ namespace SRMMS.Models
             modelBuilder.Entity<ComboDetail>()
        .HasKey(cd => new { cd.ComboId, cd.ProId });
 
+            modelBuilder.Entity<Combo>()
+        .HasMany(c => c.ComboDetails)
+        .WithOne(cd => cd.Combo)
+        .HasForeignKey(cd => cd.ComboId);
+
             modelBuilder.Entity<DiscountCode>(entity =>
             {
                 entity.HasKey(e => e.CodeId);
