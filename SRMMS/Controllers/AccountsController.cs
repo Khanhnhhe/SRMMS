@@ -34,13 +34,12 @@ namespace SRMMS.Controllers
         {
             var skip = (pageNumber - 1) * pageSize;
 
-            
             var query = _context.Accounts.Include(a => a.Role).AsQueryable();
 
-         
             if (!string.IsNullOrWhiteSpace(accountName))
             {
-                query = query.Where(a => a.FullName.Contains(accountName));
+                var trimmedAccountName = accountName.Trim();
+                query = query.Where(a => a.FullName.Contains(trimmedAccountName));
             }
 
             var accounts = await query
@@ -54,11 +53,6 @@ namespace SRMMS.Controllers
                                      Phone = a.Phone,
                                      RoleName = a.Role.RoleName
                                  }).ToListAsync();
-
-            if (accounts == null || !accounts.Any())
-            {
-                return NotFound("No accounts found.");
-            }
 
             return Ok(accounts);
         }
@@ -93,6 +87,32 @@ namespace SRMMS.Controllers
             return Created("Account created successfully.", account);
         }
 
+        [HttpPut("/api/account/update/{id}")]
+        public async Task<IActionResult> UpdateAccount(int id, [FromBody] UpdateAccountDTO model)
+        {
+            if (model == null || id <= 0)
+            {
+                return BadRequest("Invalid account data.");
+            }
+
+            var account = await _context.Accounts.FirstOrDefaultAsync(a => a.AccId == id);
+            if (account == null)
+            {
+                return NotFound(new { message = "Account not found." });
+            }
+
+            account.FullName = model.FullName ?? account.FullName;
+            account.Email = model.Email ?? account.Email;
+            account.Phone = model.Phone ?? account.Phone;
+            account.RoleId = model.RoleId ?? account.RoleId;
+
+            _context.Accounts.Update(account);
+            await _context.SaveChangesAsync();
+
+            return Ok(new { message = "Account updated successfully." });
+        }
+
+
 
         [HttpDelete("/api/account/delete/{id}")]
         public IActionResult DeleteCustomer(int id)
@@ -109,5 +129,24 @@ namespace SRMMS.Controllers
 
             return Ok(new { message = "Customer deleted successfully." });
         }
+
+        [HttpGet("/api/account/total")]
+        public async Task<IActionResult> GetAccountTotals()
+        {
+            
+            var employeeCount = await _context.Accounts
+                .CountAsync(a => a.RoleId == 2 || a.RoleId == 3 || a.RoleId == 4);
+
+            
+            var customerCount = await _context.Accounts
+                .CountAsync(a => a.RoleId == 5);
+
+            return Ok(new
+            {
+                EmployeeCount = employeeCount,
+                CustomerCount = customerCount
+            });
+        }
+
     }
 }
