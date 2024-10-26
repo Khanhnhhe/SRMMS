@@ -16,8 +16,8 @@ using SRMMS.Models;
 
 namespace SRMMS.Controllers
 {
-    [ApiController]
     [Route("api/Accounts")]
+    [ApiController]
     public class CustomerLoginController : ControllerBase
     {
         private readonly IConfiguration _configuration;
@@ -29,7 +29,7 @@ namespace SRMMS.Controllers
             _context = context;
         }
 
-        [HttpGet("searchAccountName")]
+        [HttpGet("/api/account/list")]
         public async Task<ActionResult<IEnumerable<ListAccountDTO>>> SearchByAccountName(string? accountName = "", int pageNumber = 1, int pageSize = 10)
         {
             var skip = (pageNumber - 1) * pageSize;
@@ -63,7 +63,7 @@ namespace SRMMS.Controllers
             return Ok(accounts);
         }
 
-        [HttpPost("createEmployeeAccount")]
+        [HttpPost("/api/account/create")]
         public async Task<IActionResult> CreateEmployeeAccount([FromBody] CreateEmployeeAccountDTO model)
         {
             if (model == null || string.IsNullOrWhiteSpace(model.Email) || string.IsNullOrWhiteSpace(model.Password))
@@ -94,22 +94,7 @@ namespace SRMMS.Controllers
         }
 
 
-
-
-
-
-
-        [HttpGet("list")]
-        public IActionResult GetCustomerList()
-        {
-            
-            var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-            
-            var customers = _context.Accounts.ToList();
-            return Ok(customers);
-        }
-
-        [HttpDelete("delete/{id}")]
+        [HttpDelete("/api/account/delete/{id}")]
         public IActionResult DeleteCustomer(int id)
         {
             var customer = _context.Accounts.FirstOrDefault(c => c.AccId == id);
