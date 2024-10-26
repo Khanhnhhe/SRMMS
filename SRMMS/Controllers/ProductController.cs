@@ -65,7 +65,6 @@ namespace SRMMS.Controllers
                     Category = p.Cat.CatName,
                     Image = p.ProImg, 
                     Calories = p.ProCalories,
-                    CookingTime = p.ProCookingTime,
                     Status = p.ProStatus
                 })
                 .ToListAsync();
@@ -134,7 +133,6 @@ namespace SRMMS.Controllers
                 CatId = productDto.Category.Value, 
                 ProImg = imageURL.Url.ToString(),
                 ProCalories = productDto.Calories,
-                ProCookingTime = productDto.CookingTime ?? 0, 
                 ProStatus = productDto.Status ?? false
             };
 
@@ -162,7 +160,6 @@ namespace SRMMS.Controllers
             Category = p.Cat.CatName,
             Image = p.ProImg,
             Calories = p.ProCalories,
-            CookingTime = p.ProCookingTime,
             Status = p.ProStatus
         })
         .FirstOrDefaultAsync();
@@ -226,11 +223,6 @@ namespace SRMMS.Controllers
             if (!string.IsNullOrEmpty(updateProductDto.Calories))
             {
                 existingProduct.ProCalories = updateProductDto.Calories;
-            }
-
-            if (updateProductDto.CookingTime.HasValue)
-            {
-                existingProduct.ProCookingTime = updateProductDto.CookingTime.Value;
             }
 
             if (updateProductDto.Status.HasValue)
@@ -310,7 +302,6 @@ namespace SRMMS.Controllers
                     Category = p.Cat.CatName,
                     Image = p.ProImg,
                     Calories = p.ProCalories,
-                    CookingTime = p.ProCookingTime,
                     Status = p.ProStatus
                 })
                 .ToListAsync();
@@ -357,7 +348,6 @@ namespace SRMMS.Controllers
                                      Description = p.ProDiscription,
                                      Price = p.ProPrice,
                                      Calories = p.ProCalories,
-                                     CookingTime = p.ProCookingTime,
                                      Status = p.ProStatus,
                                      Category = p.Cat.CatName
                                  }).ToListAsync();
