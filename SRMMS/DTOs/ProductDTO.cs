@@ -13,7 +13,6 @@ namespace SRMMS.DTOs
         public string Category { get; set; }
         public string Image { get; set; }
         public string Calories { get; set; } = null!;
-        public int? CookingTime { get; set; }
         public bool? Status { get; set; }
     }
 	

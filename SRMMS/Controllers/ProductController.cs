@@ -71,7 +71,7 @@ namespace SRMMS.Controllers
 
             if (products == null || products.Count == 0)
             {
-                return NotFound("No products found.");
+                return null;
             }
 
             var result = new
@@ -133,7 +133,7 @@ namespace SRMMS.Controllers
                 CatId = productDto.Category.Value, 
                 ProImg = imageURL.Url.ToString(),
                 ProCalories = productDto.Calories,
-                ProStatus = productDto.Status ?? false
+                ProStatus = productDto.Status ?? true
             };
 
             _context.Products.Add(newProduct);
@@ -198,11 +198,6 @@ namespace SRMMS.Controllers
                 existingProduct.ProName = updateProductDto.ProductName;
             }
 
-            if (!string.IsNullOrEmpty(updateProductDto.Description))
-            {
-                existingProduct.ProDiscription = updateProductDto.Description;
-            }
-
             if (updateProductDto.Price.HasValue)
             {
                 existingProduct.ProPrice = updateProductDto.Price.Value;
@@ -218,11 +213,6 @@ namespace SRMMS.Controllers
 
                 var imageResult = await _clouddinary.UploadAsync(uploadParams);
                 existingProduct.ProImg = imageResult.Url.ToString();
-            }
-
-            if (!string.IsNullOrEmpty(updateProductDto.Calories))
-            {
-                existingProduct.ProCalories = updateProductDto.Calories;
             }
 
             if (updateProductDto.Status.HasValue)

@@ -34,7 +34,7 @@ namespace SRMMS.Models
             if (!optionsBuilder.IsConfigured)
             {
 #warning To protect potentially sensitive information in your connection string, you should move it out of source code. You can avoid scaffolding the connection string by using the Name= syntax to read it from configuration - see https://go.microsoft.com/fwlink/?linkid=2131148. For more guidance on storing connection strings, see http://go.microsoft.com/fwlink/?LinkId=723263.
-                optionsBuilder.UseSqlServer("server =(local); database = SRMMS;uid=sa;pwd=sa123;TrustServerCertificate=true");
+                optionsBuilder.UseSqlServer("Server=localhost;Database=SRMMS;User Id=SA;Password=Admin2002@;");
             }
         }
 
@@ -127,6 +127,9 @@ namespace SRMMS.Models
                     .HasForeignKey(d => d.ProId)
                     .HasConstraintName("FK_Combo Detail_Menu");
             });
+
+            modelBuilder.Entity<ComboDetail>()
+       .HasKey(cd => new { cd.ComboId, cd.ProId });
 
             modelBuilder.Entity<DiscountCode>(entity =>
             {
