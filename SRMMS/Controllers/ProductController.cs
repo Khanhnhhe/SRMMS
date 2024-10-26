@@ -42,7 +42,9 @@ namespace SRMMS.Controllers
 
             if (!string.IsNullOrEmpty(name))
             {
-                totalProductsQuery = totalProductsQuery.Where(p => p.ProName.Contains(name));
+                
+                var trimmedName = name.Trim();
+                totalProductsQuery = totalProductsQuery.Where(p => p.ProName.Contains(trimmedName));
             }
 
             if (categoryId.HasValue)
@@ -63,15 +65,22 @@ namespace SRMMS.Controllers
                     Description = p.ProDiscription,
                     Price = p.ProPrice,
                     Category = p.Cat.CatName,
-                    Image = p.ProImg, 
+                    Image = p.ProImg,
                     Calories = p.ProCalories,
                     Status = p.ProStatus
                 })
                 .ToListAsync();
 
+            
             if (products == null || products.Count == 0)
             {
-                return null;
+                return Ok(new
+                {
+                    TotalProducts = totalProducts,
+                    PageNumber = pageNumber,
+                    PageSize = pageSize,
+                    Products = new List<ListProductDTO>() 
+                });
             }
 
             var result = new
@@ -84,6 +93,8 @@ namespace SRMMS.Controllers
 
             return Ok(result);
         }
+
+
 
         [HttpPost("create")]
         public async Task<ActionResult<addProductDTO>> AddProduct([FromForm] addProductDTO productDto)
