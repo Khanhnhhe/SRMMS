@@ -57,6 +57,35 @@ namespace SRMMS.Controllers
             return Ok(accounts);
         }
 
+        [HttpGet("/api/account/{id}")]
+        public async Task<IActionResult> GetAccountById(int id)
+        {
+            if (id <= 0)
+            {
+                return BadRequest("Invalid account ID.");
+            }
+
+            var account = await _context.Accounts
+                .Where(a => a.AccId == id)
+                .Select(a => new
+                {
+                    a.AccId,
+                    a.FullName,
+                    a.Email,
+                    a.Phone,
+                    a.RoleId
+                })
+                .FirstOrDefaultAsync();
+
+            if (account == null)
+            {
+                return NotFound(new { message = "Account not found." });
+            }
+
+            return Ok(account);
+        }
+
+
         [HttpPost("/api/account/create")]
         public async Task<IActionResult> CreateEmployeeAccount([FromBody] CreateEmployeeAccountDTO model)
         {
@@ -87,6 +116,8 @@ namespace SRMMS.Controllers
             return Created("Account created successfully.", account);
         }
 
+
+
         [HttpPut("/api/account/update/{id}")]
         public async Task<IActionResult> UpdateAccount(int id, [FromBody] UpdateAccountDTO model)
         {
@@ -95,22 +126,26 @@ namespace SRMMS.Controllers
                 return BadRequest("Invalid account data.");
             }
 
-            var account = await _context.Accounts.FirstOrDefaultAsync(a => a.AccId == id);
+            // Fetch account by ID
+            var account = await _context.Accounts.FindAsync(id);
             if (account == null)
             {
                 return NotFound(new { message = "Account not found." });
             }
 
+            // Update fields if provided in the model, otherwise keep existing values
             account.FullName = model.FullName ?? account.FullName;
             account.Email = model.Email ?? account.Email;
             account.Phone = model.Phone ?? account.Phone;
             account.RoleId = model.RoleId ?? account.RoleId;
 
+            // Save changes
             _context.Accounts.Update(account);
             await _context.SaveChangesAsync();
 
-            return Ok(new { message = "Account updated successfully." });
+            return Ok(new { message = "Account updated successfully.", account });
         }
+
 
 
 
