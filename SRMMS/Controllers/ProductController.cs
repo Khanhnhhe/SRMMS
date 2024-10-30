@@ -36,15 +36,16 @@ namespace SRMMS.Controllers
         }
 
         [HttpGet("list")]
-        public async Task<IActionResult> GetAllProducts(int pageNumber = 1, int pageSize = 10, string? name = null, int? categoryId = null)
+        public async Task<IActionResult> GetAllProducts(int pageNumber = 1, int pageSize = 10, string? name = null, int? categoryId = null, string? minPrice = null, string? maxPrice = null)
         {
             var totalProductsQuery = _context.Products.AsQueryable();
 
+            
+            name = name?.Trim();
+
             if (!string.IsNullOrEmpty(name))
             {
-                
-                var trimmedName = name.Trim();
-                totalProductsQuery = totalProductsQuery.Where(p => p.ProName.Contains(trimmedName));
+                totalProductsQuery = totalProductsQuery.Where(p => p.ProName.Trim().Contains(name));
             }
 
             if (categoryId.HasValue)
@@ -52,7 +53,29 @@ namespace SRMMS.Controllers
                 totalProductsQuery = totalProductsQuery.Where(p => p.CatId == categoryId.Value);
             }
 
+            if (!string.IsNullOrEmpty(minPrice) && IsNumeric(minPrice.Trim(), out decimal parsedMinPrice))
+            {
+                totalProductsQuery = totalProductsQuery.Where(p => p.ProPrice >= parsedMinPrice);
+            }
+            else if (!string.IsNullOrEmpty(minPrice))
+            {
+                return BadRequest("Invalid minPrice. Please enter a numeric value.");
+            }
+
+            if (!string.IsNullOrEmpty(maxPrice) && IsNumeric(maxPrice.Trim(), out decimal parsedMaxPrice))
+            {
+                totalProductsQuery = totalProductsQuery.Where(p => p.ProPrice <= parsedMaxPrice);
+            }
+            else if (!string.IsNullOrEmpty(maxPrice))
+            {
+                return BadRequest("Invalid maxPrice. Please enter a numeric value.");
+            }
+
+            
             var totalProducts = await totalProductsQuery.CountAsync();
+
+            
+            var totalPages = (int)Math.Ceiling((double)totalProducts / pageSize);
 
             var products = await totalProductsQuery
                 .Include(p => p.Cat)
@@ -71,27 +94,34 @@ namespace SRMMS.Controllers
                 })
                 .ToListAsync();
 
-            
             if (products == null || products.Count == 0)
             {
                 return Ok(new
                 {
                     TotalProducts = totalProducts,
+                    TotalPages = totalPages,
                     PageNumber = pageNumber,
                     PageSize = pageSize,
-                    Products = new List<ListProductDTO>() 
+                    Products = new List<ListProductDTO>()
                 });
             }
 
             var result = new
             {
                 TotalProducts = totalProducts,
+                TotalPages = totalPages,
                 PageNumber = pageNumber,
                 PageSize = pageSize,
                 Products = products
             };
 
             return Ok(result);
+        }
+
+        
+        private bool IsNumeric(string str, out decimal number)
+        {
+            return decimal.TryParse(str, out number);
         }
 
 
@@ -133,7 +163,7 @@ namespace SRMMS.Controllers
 
             var imageURL = await _clouddinary.UploadAsync(uploadParams);
 
-            // Xóa file tạm
+           
             System.IO.File.Delete(tempFilePath);
 
             var newProduct = new Product
