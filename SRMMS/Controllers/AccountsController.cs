@@ -126,20 +126,17 @@ namespace SRMMS.Controllers
                 return BadRequest("Invalid account data.");
             }
 
-            // Fetch account by ID
             var account = await _context.Accounts.FindAsync(id);
             if (account == null)
             {
                 return NotFound(new { message = "Account not found." });
             }
 
-            // Update fields if provided in the model, otherwise keep existing values
             account.FullName = model.FullName ?? account.FullName;
             account.Email = model.Email ?? account.Email;
             account.Phone = model.Phone ?? account.Phone;
             account.RoleId = model.RoleId ?? account.RoleId;
 
-            // Save changes
             _context.Accounts.Update(account);
             await _context.SaveChangesAsync();
 
