@@ -129,6 +129,11 @@ namespace SRMMS.Controllers
         [HttpPost("create")]
         public async Task<ActionResult<addProductDTO>> AddProduct([FromForm] addProductDTO productDto)
         {
+
+            productDto.ProductName = productDto.ProductName?.Trim();
+            productDto.Description = productDto.Description?.Trim();
+            productDto.Calories = productDto.Calories?.Trim();
+            
             var categoryExists = await _context.Categories.AnyAsync(c => c.CatId == productDto.Category);
             if (!categoryExists)
             {
