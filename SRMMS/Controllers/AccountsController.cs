@@ -29,31 +29,8 @@ namespace SRMMS.Controllers
             _context = context;
         }
         [HttpGet("/api/account/list")]
-        public async Task<ActionResult> SearchByAccount(int? id = null, string? accountName = "", string? phone = "", int pageNumber = 1, int pageSize = 10)
+        public async Task<ActionResult> SearchByAccount(string? accountName = "", string? phone = "", int? roleId = null, int pageNumber = 1, int pageSize = 10)
         {
-            if (id.HasValue && id > 0)
-            {
-                var account = await _context.Accounts
-                    .Where(a => a.AccId == id.Value)
-                    .Select(a => new
-                    {
-                        a.AccId,
-                        a.FullName,
-                        a.Email,
-                        a.Phone,
-                        a.RoleId,
-                        a.Status
-                    })
-                    .FirstOrDefaultAsync();
-
-                if (account == null)
-                {
-                    return NotFound(new { message = "Account not found." });
-                }
-
-                return Ok(account);
-            }
-
             var employeeCount = await _context.Accounts.CountAsync(a => a.RoleId == 2 || a.RoleId == 3 || a.RoleId == 4);
             var customerCount = await _context.Accounts.CountAsync(a => a.RoleId == 5);
 
@@ -70,6 +47,11 @@ namespace SRMMS.Controllers
             {
                 var trimmedPhone = phone.Trim();
                 query = query.Where(a => a.Phone.Contains(trimmedPhone));
+            }
+
+            if (roleId.HasValue)
+            {
+                query = query.Where(a => a.RoleId == roleId.Value);
             }
 
             var accounts = await query
