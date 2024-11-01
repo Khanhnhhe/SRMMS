@@ -28,12 +28,33 @@ namespace SRMMS.Controllers
             _configuration = configuration;
             _context = context;
         }
-
         [HttpGet("/api/account/list")]
-        public async Task<ActionResult<IEnumerable<ListAccountDTO>>> SearchByAccountName(string? accountName = "", int pageNumber = 1, int pageSize = 10)
+        public async Task<ActionResult> SearchByAccount(int? id = null, string? accountName = "", string? phone = "", int pageNumber = 1, int pageSize = 10)
         {
-            var skip = (pageNumber - 1) * pageSize;
+            if (id.HasValue && id > 0)
+            {
+                var account = await _context.Accounts
+                    .Where(a => a.AccId == id.Value)
+                    .Select(a => new
+                    {
+                        a.AccId,
+                        a.FullName,
+                        a.Email,
+                        a.Phone,
+                        a.RoleId,
+                        a.Status
+                    })
+                    .FirstOrDefaultAsync();
 
+                if (account == null)
+                {
+                    return NotFound(new { message = "Account not found." });
+                }
+
+                return Ok(account);
+            }
+
+            var skip = (pageNumber - 1) * pageSize;
             var query = _context.Accounts.Include(a => a.Role).AsQueryable();
 
             if (!string.IsNullOrWhiteSpace(accountName))
@@ -42,48 +63,28 @@ namespace SRMMS.Controllers
                 query = query.Where(a => a.FullName.Contains(trimmedAccountName));
             }
 
+            if (!string.IsNullOrWhiteSpace(phone))
+            {
+                var trimmedPhone = phone.Trim();
+                query = query.Where(a => a.Phone.Contains(trimmedPhone));
+            }
+
             var accounts = await query
                                  .Skip(skip)
                                  .Take(pageSize)
                                  .Select(a => new ListAccountDTO
                                  {
                                      AccountId = a.AccId,
-                                     FullName = a.FullName,
-                                     Email = a.Email,
-                                     Phone = a.Phone,
-                                     RoleName = a.Role.RoleName
+                                     FullName = a.FullName ?? "",
+                                     Email = a.Email ?? "",
+                                     Phone = a.Phone ?? "",
+                                     RoleName = a.Role.RoleName ?? "",
+                                     Status = a.Status 
                                  }).ToListAsync();
 
             return Ok(accounts);
         }
 
-        [HttpGet("/api/account/{id}")]
-        public async Task<IActionResult> GetAccountById(int id)
-        {
-            if (id <= 0)
-            {
-                return BadRequest("Invalid account ID.");
-            }
-
-            var account = await _context.Accounts
-                .Where(a => a.AccId == id)
-                .Select(a => new
-                {
-                    a.AccId,
-                    a.FullName,
-                    a.Email,
-                    a.Phone,
-                    a.RoleId
-                })
-                .FirstOrDefaultAsync();
-
-            if (account == null)
-            {
-                return NotFound(new { message = "Account not found." });
-            }
-
-            return Ok(account);
-        }
 
 
         [HttpPost("/api/account/create")]
@@ -106,7 +107,8 @@ namespace SRMMS.Controllers
                 Email = model.Email,
                 Password = model.Password, 
                 Phone = model.Phone,
-                RoleId = model.RoleId
+                RoleId = model.RoleId,
+                Status = model.Status
             };
 
 

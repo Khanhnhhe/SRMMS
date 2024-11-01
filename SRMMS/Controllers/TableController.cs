@@ -59,24 +59,8 @@ namespace SRMMS.Controllers
         }
 
 
-        [HttpPost("/api/table/List")]
 
-        public ActionResult<IEnumerable<ListTableDTO>> GetTables()
-        {
-            var tables = _context.Tables
-                .Select(t => new ListTableDTO
-                {
-                    Table_Id = t.TableId,
-                    Table_Name = t.TableName, 
-                    QR_Code = t.QrCode, 
-                    Acc_Id = t.AccId, 
-                    Time_Booking = t.TimeBooking, 
-                    Status = t.Status 
-                })
-                .ToList();
-
-            return Ok(tables);
-        }
+        
 
     }
 }
