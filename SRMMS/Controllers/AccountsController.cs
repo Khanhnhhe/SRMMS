@@ -54,6 +54,9 @@ namespace SRMMS.Controllers
                 return Ok(account);
             }
 
+            var employeeCount = await _context.Accounts.CountAsync(a => a.RoleId == 2 || a.RoleId == 3 || a.RoleId == 4);
+            var customerCount = await _context.Accounts.CountAsync(a => a.RoleId == 5);
+
             var skip = (pageNumber - 1) * pageSize;
             var query = _context.Accounts.Include(a => a.Role).AsQueryable();
 
@@ -79,11 +82,17 @@ namespace SRMMS.Controllers
                                      Email = a.Email ?? "",
                                      Phone = a.Phone ?? "",
                                      RoleName = a.Role.RoleName ?? "",
-                                     Status = a.Status 
+                                     Status = a.Status
                                  }).ToListAsync();
 
-            return Ok(accounts);
+            return Ok(new
+            {
+                TotalEmployees = employeeCount,
+                TotalCustomers = customerCount,
+                Accounts = accounts
+            });
         }
+
 
 
 
