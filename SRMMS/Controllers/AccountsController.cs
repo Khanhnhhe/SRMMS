@@ -87,12 +87,37 @@ namespace SRMMS.Controllers
 
             return Ok(new
             {
+                PageNumber = pageNumber,
+                PageSize = pageSize,
                 TotalEmployees = employeeCount,
                 TotalCustomers = customerCount,
                 Accounts = accounts
             });
         }
+        [HttpGet("/api/account/getByID")]
+        public async Task<ActionResult> GetAccountById(int id)
+        {
+            var account = await _context.Accounts
+                .Where(a => a.AccId == id)
+                .Select(a => new
+                {
+                    a.AccId,
+                    a.FullName,
+                    a.Email,
+                    a.Phone,
+                    a.RoleId,
+                    a.Status,
+                    RoleName = a.Role.RoleName
+                })
+                .FirstOrDefaultAsync();
 
+            if (account == null)
+            {
+                return NotFound(new { message = "Account not found." });
+            }
+
+            return Ok(account);
+        }
 
 
 
