@@ -19,6 +19,9 @@ public class Program
         builder.Services.AddEndpointsApiExplorer();
         builder.Services.AddSwaggerGen();
         builder.Services.AddSignalR();
+
+
+
         builder.Services.AddDbContext<SRMMSContext>(options =>
             options.UseSqlServer(builder.Configuration.GetConnectionString("DB")));
 
@@ -78,6 +81,8 @@ public class Program
                 }});
         });
 
+
+
         builder.Services.AddAuthorization();
 
         var app = builder.Build();
@@ -88,6 +93,8 @@ public class Program
             app.UseSwagger();
             app.UseSwaggerUI();
         }
+
+        app.MapHub<BookingHub>("/bookingHub");
 
         app.UseHttpsRedirection();
 
