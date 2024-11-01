@@ -5,13 +5,16 @@ namespace SRMMS.Models
 {
     public partial class Table
     {
+        public Table()
+        {
+            Orders = new HashSet<Order>();
+        }
+
         public int TableId { get; set; }
         public string? TableName { get; set; }
-        public string? QrCode { get; set; }
-        public int? AccId { get; set; }
-        public DateTime? TimeBooking { get; set; }
         public bool? Status { get; set; }
+        public int? BookingId { get; set; }
 
-        public virtual Account? Acc { get; set; }
+        public virtual ICollection<Order> Orders { get; set; }
     }
 }

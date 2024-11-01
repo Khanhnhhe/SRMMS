@@ -17,6 +17,7 @@ namespace SRMMS.Models
         }
 
         public virtual DbSet<Account> Accounts { get; set; } = null!;
+        public virtual DbSet<Booking> Bookings { get; set; } = null!;
         public virtual DbSet<Category> Categories { get; set; } = null!;
         public virtual DbSet<Combo> Combos { get; set; } = null!;
         public virtual DbSet<ComboDetail> ComboDetails { get; set; } = null!;
@@ -64,10 +65,40 @@ namespace SRMMS.Models
 
                 entity.Property(e => e.RoleId).HasColumnName("role_id");
 
+                entity.Property(e => e.Status).HasColumnName("status");
+
                 entity.HasOne(d => d.Role)
                     .WithMany(p => p.Accounts)
                     .HasForeignKey(d => d.RoleId)
                     .HasConstraintName("FK_Accounts_Role");
+            });
+
+            modelBuilder.Entity<Booking>(entity =>
+            {
+                entity.HasNoKey();
+
+                entity.ToTable("Booking");
+
+                entity.Property(e => e.AccId).HasColumnName("acc_id");
+
+                entity.Property(e => e.BookingId)
+                    .ValueGeneratedOnAdd()
+                    .HasColumnName("Booking_id");
+
+                entity.Property(e => e.TimeBooking)
+                    .HasColumnType("date")
+                    .HasColumnName("Time_booking");
+
+                entity.HasOne(d => d.Acc)
+                    .WithMany()
+                    .HasForeignKey(d => d.AccId)
+                    .HasConstraintName("FK_Booking_Accounts");
+
+                entity.HasOne(d => d.BookingNavigation)
+                    .WithMany()
+                    .HasForeignKey(d => d.BookingId)
+                    .OnDelete(DeleteBehavior.ClientSetNull)
+                    .HasConstraintName("FK_Booking_Table");
             });
 
             modelBuilder.Entity<Category>(entity =>
@@ -127,14 +158,6 @@ namespace SRMMS.Models
                     .HasForeignKey(d => d.ProId)
                     .HasConstraintName("FK_Combo Detail_Menu");
             });
-
-            modelBuilder.Entity<ComboDetail>()
-       .HasKey(cd => new { cd.ComboId, cd.ProId });
-
-            modelBuilder.Entity<Combo>()
-        .HasMany(c => c.ComboDetails)
-        .WithOne(cd => cd.Combo)
-        .HasForeignKey(cd => cd.ComboId);
 
             modelBuilder.Entity<DiscountCode>(entity =>
             {
@@ -201,31 +224,29 @@ namespace SRMMS.Models
 
                 entity.Property(e => e.OrderId).HasColumnName("order_id");
 
-                entity.Property(e => e.AccId).HasColumnName("acc_id");
-
                 entity.Property(e => e.CodeId).HasColumnName("code_id");
 
                 entity.Property(e => e.OrderDate)
                     .HasColumnType("date")
                     .HasColumnName("order_date");
 
-                entity.Property(e => e.OrderStatusId).HasColumnName("order_status_id");
+                entity.Property(e => e.Status).HasColumnName("status");
 
-                entity.Property(e => e.Staus).HasColumnName("staus");
+                entity.Property(e => e.TableId).HasColumnName("table_id");
 
                 entity.Property(e => e.TotalMoney)
                     .HasColumnType("money")
                     .HasColumnName("totalMoney");
 
-                entity.HasOne(d => d.Acc)
-                    .WithMany(p => p.Orders)
-                    .HasForeignKey(d => d.AccId)
-                    .HasConstraintName("FK_Order_Accounts");
-
                 entity.HasOne(d => d.Code)
                     .WithMany(p => p.Orders)
                     .HasForeignKey(d => d.CodeId)
                     .HasConstraintName("FK_Order_Discount_code");
+
+                entity.HasOne(d => d.Table)
+                    .WithMany(p => p.Orders)
+                    .HasForeignKey(d => d.TableId)
+                    .HasConstraintName("FK_Order_Table");
             });
 
             modelBuilder.Entity<OrderDetail>(entity =>
@@ -329,26 +350,13 @@ namespace SRMMS.Models
 
                 entity.Property(e => e.TableId).HasColumnName("table_id");
 
-                entity.Property(e => e.AccId).HasColumnName("acc_id");
-
-                entity.Property(e => e.QrCode)
-                    .HasMaxLength(50)
-                    .HasColumnName("QR_code");
+                entity.Property(e => e.BookingId).HasColumnName("Booking_id");
 
                 entity.Property(e => e.Status).HasColumnName("status");
 
                 entity.Property(e => e.TableName)
                     .HasMaxLength(50)
                     .HasColumnName("table_name");
-
-                entity.Property(e => e.TimeBooking)
-                    .HasColumnType("date")
-                    .HasColumnName("time_booking");
-
-                entity.HasOne(d => d.Acc)
-                    .WithMany(p => p.Tables)
-                    .HasForeignKey(d => d.AccId)
-                    .HasConstraintName("FK_Table_Accounts");
             });
 
             OnModelCreatingPartial(modelBuilder);

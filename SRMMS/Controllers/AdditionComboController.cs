@@ -243,33 +243,33 @@ namespace SRMMS.Controllers
             });
         }
 
-        [HttpDelete("{comboId}")]
-        public IActionResult DeleteCombo(int comboId)
-        {
+        //[HttpDelete("{comboId}")]
+        //public IActionResult DeleteCombo(int comboId)
+        //{
             
-            var combo = _context.Combos
-                .Include(c => c.ComboDetails) 
-                .FirstOrDefault(c => c.ComboId == comboId);
+        //    var combo = _context.Combos
+        //        .Include(c => c.ComboDetails) 
+        //        .FirstOrDefault(c => c.ComboId == comboId);
 
-            if (combo == null)
-            {
-                return NotFound(); 
-            }
-
-            
-            if (combo.ComboDetails != null && combo.ComboDetails.Any())
-            {
-                _context.ComboDetails.RemoveRange(combo.ComboDetails);
-            }
+        //    if (combo == null)
+        //    {
+        //        return NotFound(); 
+        //    }
 
             
-            _context.Combos.Remove(combo);
+        //    if (combo.ComboDetails != null && combo.ComboDetails.Any())
+        //    {
+        //        _context.ComboDetails.RemoveRange(combo.ComboDetails);
+        //    }
+
+            
+        //    _context.Combos.Remove(combo);
 
            
-            _context.SaveChanges();
+        //    _context.SaveChanges();
 
-            return NoContent(); 
-        }
+        //    return NoContent(); 
+        //}
 
 
     }

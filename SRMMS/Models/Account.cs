@@ -7,9 +7,7 @@ namespace SRMMS.Models
     {
         public Account()
         {
-            Orders = new HashSet<Order>();
             PointLists = new HashSet<PointList>();
-            Tables = new HashSet<Table>();
         }
 
         public int AccId { get; set; }
@@ -18,10 +16,9 @@ namespace SRMMS.Models
         public string? Password { get; set; }
         public string? Phone { get; set; }
         public int? RoleId { get; set; }
+        public bool Status { get; set; }
 
         public virtual Role? Role { get; set; }
-        public virtual ICollection<Order> Orders { get; set; }
         public virtual ICollection<PointList> PointLists { get; set; }
-        public virtual ICollection<Table> Tables { get; set; }
     }
 }
