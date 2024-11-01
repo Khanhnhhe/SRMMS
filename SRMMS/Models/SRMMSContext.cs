@@ -85,6 +85,8 @@ namespace SRMMS.Models
                     .ValueGeneratedOnAdd()
                     .HasColumnName("Booking_id");
 
+                entity.Property(e => e.Status).HasColumnName("status");
+
                 entity.Property(e => e.TimeBooking)
                     .HasColumnType("date")
                     .HasColumnName("Time_booking");
