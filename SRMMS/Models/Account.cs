@@ -16,7 +16,7 @@ namespace SRMMS.Models
         public string? Password { get; set; }
         public string? Phone { get; set; }
         public int? RoleId { get; set; }
-        public bool Status { get; set; }
+        public bool? Status { get; set; }
 
         public virtual Role? Role { get; set; }
         public virtual ICollection<PointList> PointLists { get; set; }

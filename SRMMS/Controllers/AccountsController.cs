@@ -147,6 +147,10 @@ namespace SRMMS.Controllers
             account.Email = model.Email ?? account.Email;
             account.Phone = model.Phone ?? account.Phone;
             account.RoleId = model.RoleId ?? account.RoleId;
+            if (model.Status.HasValue)
+            {
+                account.Status = model.Status.Value;
+            }
 
             _context.Accounts.Update(account);
             await _context.SaveChangesAsync();

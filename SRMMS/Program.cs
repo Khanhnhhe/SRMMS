@@ -18,6 +18,7 @@ public class Program
         builder.Services.AddControllers();
         builder.Services.AddEndpointsApiExplorer();
         builder.Services.AddSwaggerGen();
+        builder.Services.AddSignalR();
         builder.Services.AddDbContext<SRMMSContext>(options =>
             options.UseSqlServer(builder.Configuration.GetConnectionString("DB")));
 
