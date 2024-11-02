@@ -9,5 +9,8 @@
         public string? Phone { get; set; }
         public string? RoleName { get; set; }
         public bool? Status { get; set; }
+        public int? RoleId { get; set; }
+        public DateTime? StartDate { get; set; }
+        public DateTime? EndDate { get; set; }
     }
 }

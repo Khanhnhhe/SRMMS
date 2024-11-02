@@ -10,6 +10,7 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Metadata.Internal;
 using Microsoft.IdentityModel.Tokens;
 using SRMMS.DTOs;
 using SRMMS.Models;
@@ -41,9 +42,11 @@ namespace SRMMS.Controllers
                 return Conflict("Table name already exists.");
             }
 
-            var table = new Table
+            var table = new SRMMS.Models.Table
             {
-                TableName = model.Table_Name
+                TableName = model.Table_Name,
+                TableOfPeople = model.TableOfPeople,
+                StatusId = 1 
             };
 
             _context.Tables.Add(table);
@@ -52,17 +55,41 @@ namespace SRMMS.Controllers
             var result = new TableDTO
             {
                 Table_Id = table.TableId,
-                Table_Name = table.TableName
+                Table_Name = table.TableName,
+                TableOfPeople = table.TableOfPeople 
             };
 
             return Created("Table created successfully.", result);
+        }
+
+        [HttpGet("/api/table/list")]
+        public async Task<IActionResult> GetTables()
+        {
+            var tables = await _context.Tables
+                .Select(t => new ListTableDTO
+                {
+                    TableId = t.TableId,
+                    TableName = t.TableName,
+                    StatusName = t.StatusId != null ? _context.StatusTables
+                        .Where(s => s.StatusId == t.StatusId)
+                        .Select(s => s.StatusName)
+                        .FirstOrDefault() : null,
+
+                    BookingId = t.BookingId,
+                    TableOfPeople = t.TableOfPeople
+                })
+                .ToListAsync();
+
+            return Ok(tables);
         }
 
 
 
 
 
-        
+
+
+
 
     }
 }
