@@ -28,6 +28,7 @@ namespace SRMMS.Models
         public virtual DbSet<PointList> PointLists { get; set; } = null!;
         public virtual DbSet<Product> Products { get; set; } = null!;
         public virtual DbSet<Role> Roles { get; set; } = null!;
+        public virtual DbSet<StatusTable> StatusTables { get; set; } = null!;
         public virtual DbSet<Table> Tables { get; set; } = null!;
 
         protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
@@ -89,10 +90,14 @@ namespace SRMMS.Models
                     .ValueGeneratedOnAdd()
                     .HasColumnName("Booking_id");
 
+                entity.Property(e => e.EndDate)
+                    .HasColumnType("datetime")
+                    .HasColumnName("End_Date");
+
                 entity.Property(e => e.Status).HasColumnName("status");
 
                 entity.Property(e => e.TimeBooking)
-                    .HasColumnType("date")
+                    .HasColumnType("datetime")
                     .HasColumnName("Time_booking");
 
                 entity.HasOne(d => d.Acc)
@@ -355,6 +360,27 @@ namespace SRMMS.Models
                     .HasColumnName("role_name");
             });
 
+            modelBuilder.Entity<StatusTable>(entity =>
+            {
+                entity.HasNoKey();
+
+                entity.ToTable("StatusTable");
+
+                entity.Property(e => e.StatusId)
+                    .ValueGeneratedOnAdd()
+                    .HasColumnName("Status_id");
+
+                entity.Property(e => e.StatusName)
+                    .HasMaxLength(50)
+                    .HasColumnName("Status_name");
+
+                entity.HasOne(d => d.Status)
+                    .WithMany()
+                    .HasForeignKey(d => d.StatusId)
+                    .OnDelete(DeleteBehavior.ClientSetNull)
+                    .HasConstraintName("FK_StatusTable_Table");
+            });
+
             modelBuilder.Entity<Table>(entity =>
             {
                 entity.ToTable("Table");
@@ -363,7 +389,7 @@ namespace SRMMS.Models
 
                 entity.Property(e => e.BookingId).HasColumnName("Booking_id");
 
-                entity.Property(e => e.Status).HasColumnName("status");
+                entity.Property(e => e.StatusId).HasColumnName("status_id");
 
                 entity.Property(e => e.TableName)
                     .HasMaxLength(50)

@@ -12,8 +12,9 @@ namespace SRMMS.Models
 
         public int TableId { get; set; }
         public string? TableName { get; set; }
-        public bool? Status { get; set; }
+        public int? StatusId { get; set; }
         public int? BookingId { get; set; }
+        public int? TableOfPeople { get; set; }
 
         public virtual ICollection<Order> Orders { get; set; }
     }
