@@ -51,6 +51,8 @@ namespace SRMMS.Models
                     .HasMaxLength(50)
                     .HasColumnName("email");
 
+                entity.Property(e => e.EndDate).HasColumnType("date");
+
                 entity.Property(e => e.FullName)
                     .HasMaxLength(50)
                     .HasColumnName("full_name");
@@ -64,6 +66,8 @@ namespace SRMMS.Models
                     .HasColumnName("phone");
 
                 entity.Property(e => e.RoleId).HasColumnName("role_id");
+
+                entity.Property(e => e.StartDate).HasColumnType("date");
 
                 entity.Property(e => e.Status).HasColumnName("status");
 
