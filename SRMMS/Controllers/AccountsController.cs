@@ -64,7 +64,10 @@ namespace SRMMS.Controllers
                                      Email = a.Email ?? "",
                                      Phone = a.Phone ?? "",
                                      RoleName = a.Role.RoleName ?? "",
-                                     Status = a.Status
+                                     RoleId = a.RoleId,
+                                     Status = a.Status,
+                                     StartDate = a.StartDate,
+                                     EndDate = a.EndDate
                                  }).ToListAsync();
 
             return Ok(new
@@ -89,6 +92,8 @@ namespace SRMMS.Controllers
                     a.Phone,
                     a.RoleId,
                     a.Status,
+                    a.StartDate,
+                    a.EndDate,
                     RoleName = a.Role.RoleName
                 })
                 .FirstOrDefaultAsync();
@@ -124,7 +129,8 @@ namespace SRMMS.Controllers
                 Password = model.Password, 
                 Phone = model.Phone,
                 RoleId = model.RoleId,
-                Status = model.Status
+                Status = model.Status,
+                StartDate = DateTime.Now
             };
 
 
@@ -150,10 +156,17 @@ namespace SRMMS.Controllers
                 return NotFound(new { message = "Account not found." });
             }
 
+            if (account.Status == true && model.Status == false)
+            {
+                account.EndDate = DateTime.Now; 
+            }
+
             account.FullName = model.FullName ?? account.FullName;
             account.Email = model.Email ?? account.Email;
             account.Phone = model.Phone ?? account.Phone;
             account.RoleId = model.RoleId ?? account.RoleId;
+            account.StartDate = model.StartDate ?? account.StartDate;
+            account.EndDate = model.EndDate ?? account.EndDate;
             if (model.Status.HasValue)
             {
                 account.Status = model.Status.Value;
