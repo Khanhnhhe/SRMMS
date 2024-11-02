@@ -141,24 +141,29 @@ namespace SRMMS.Models
 
             modelBuilder.Entity<ComboDetail>(entity =>
             {
-                entity.HasNoKey();
+                // Xóa dòng này, vì bạn đã có khóa chính.
+                // entity.HasNoKey();
+
+                // Định nghĩa khóa chính hỗn hợp.
+                entity.HasKey(cd => new { cd.ComboId, cd.ProId });
 
                 entity.ToTable("Combo_Detail");
 
                 entity.Property(e => e.ComboId).HasColumnName("combo_id");
-
                 entity.Property(e => e.ProId).HasColumnName("pro_id");
 
+                // Cấu hình mối quan hệ với Combo
                 entity.HasOne(d => d.Combo)
-                    .WithMany()
+                    .WithMany(c => c.ComboDetails) // Thêm tham số để chỉ định thuộc tính navgation trên Combo
                     .HasForeignKey(d => d.ComboId)
                     .OnDelete(DeleteBehavior.ClientSetNull)
-                    .HasConstraintName("FK_Combo Detail_Combo");
+                    .HasConstraintName("FK_Combo_Detail_Combo");
 
+                // Cấu hình mối quan hệ với Product
                 entity.HasOne(d => d.Pro)
-                    .WithMany()
+                    .WithMany() // Nếu không cần thuộc tính điều hướng ngược lại
                     .HasForeignKey(d => d.ProId)
-                    .HasConstraintName("FK_Combo Detail_Menu");
+                    .HasConstraintName("FK_Combo_Detail_Menu");
             });
 
             modelBuilder.Entity<DiscountCode>(entity =>
