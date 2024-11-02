@@ -3,6 +3,7 @@ namespace SRMMS.DTOs
 {
 	public class ListComboProductDTO
 	{
+        public int ComboId { get; set; }
         public string ComboName { get; set; } = null!;
         public string? ComboDescription { get; set; }
         public string ComboImg { get; set; }
