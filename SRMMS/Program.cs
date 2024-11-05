@@ -5,6 +5,7 @@ using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
 using System.Text;
 using SRMMS.Models;
+using SRMMS.Controllers;
 
 namespace SRMMS;
 
@@ -19,7 +20,7 @@ public class Program
         builder.Services.AddEndpointsApiExplorer();
         builder.Services.AddSwaggerGen();
         builder.Services.AddSignalR();
-
+        builder.Services.AddScoped<OrderService>();
 
 
         builder.Services.AddDbContext<SRMMSContext>(options =>
@@ -54,6 +55,7 @@ public class Program
             });
         });
 */
+
 
         builder.Services.AddSwaggerGen(c =>
         {
@@ -97,6 +99,7 @@ public class Program
         app.MapHub<BookingHub>("/bookingHub");
 
         app.UseHttpsRedirection();
+        app.UseRouting();
 
         app.UseCors(c => c.AllowAnyMethod().AllowAnyHeader().AllowAnyOrigin());
 
@@ -106,6 +109,14 @@ public class Program
         app.UseAuthorization();
 
         app.MapControllers();
+
+        
+
+        app.UseEndpoints(endpoints =>
+        {
+            endpoints.MapControllers();
+            endpoints.MapHub<OrderHub>("/orderHub");
+        });
 
         app.Run();
     }
