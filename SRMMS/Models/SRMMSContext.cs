@@ -28,6 +28,7 @@ namespace SRMMS.Models
         public virtual DbSet<PointList> PointLists { get; set; } = null!;
         public virtual DbSet<Product> Products { get; set; } = null!;
         public virtual DbSet<Role> Roles { get; set; } = null!;
+        public virtual DbSet<StatusTable> StatusTables { get; set; } = null!;
         public virtual DbSet<Table> Tables { get; set; } = null!;
 
         protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
@@ -35,7 +36,7 @@ namespace SRMMS.Models
             if (!optionsBuilder.IsConfigured)
             {
 #warning To protect potentially sensitive information in your connection string, you should move it out of source code. You can avoid scaffolding the connection string by using the Name= syntax to read it from configuration - see https://go.microsoft.com/fwlink/?linkid=2131148. For more guidance on storing connection strings, see http://go.microsoft.com/fwlink/?LinkId=723263.
-                optionsBuilder.UseSqlServer("Server=DESKTOP-Q5D4AD1\\SQLEXPRESS;database=SRMMS;Trusted_Connection=SSPI;Encrypt=false;TrustServerCertificate=true");
+                optionsBuilder.UseSqlServer("Server=localhost;Database=SRMMS;User Id=SA;Password=Admin2002@;");
             }
         }
 
@@ -51,6 +52,8 @@ namespace SRMMS.Models
                     .HasMaxLength(50)
                     .HasColumnName("email");
 
+                entity.Property(e => e.EndDate).HasColumnType("date");
+
                 entity.Property(e => e.FullName)
                     .HasMaxLength(50)
                     .HasColumnName("full_name");
@@ -65,6 +68,8 @@ namespace SRMMS.Models
 
                 entity.Property(e => e.RoleId).HasColumnName("role_id");
 
+                entity.Property(e => e.StartDate).HasColumnType("date");
+
                 entity.Property(e => e.Status).HasColumnName("status");
 
                 entity.HasOne(d => d.Role)
@@ -75,30 +80,30 @@ namespace SRMMS.Models
 
             modelBuilder.Entity<Booking>(entity =>
             {
-                entity.HasNoKey();
-
                 entity.ToTable("Booking");
-
-                entity.Property(e => e.AccId).HasColumnName("acc_id");
 
                 entity.Property(e => e.BookingId)
                     .ValueGeneratedOnAdd()
                     .HasColumnName("Booking_id");
 
+                entity.Property(e => e.AccId).HasColumnName("acc_id");
+
+                entity.Property(e => e.Shift).HasMaxLength(50);
+
                 entity.Property(e => e.Status).HasColumnName("status");
 
                 entity.Property(e => e.TimeBooking)
-                    .HasColumnType("date")
+                    .HasColumnType("datetime")
                     .HasColumnName("Time_booking");
 
                 entity.HasOne(d => d.Acc)
-                    .WithMany()
+                    .WithMany(p => p.Bookings)
                     .HasForeignKey(d => d.AccId)
                     .HasConstraintName("FK_Booking_Accounts");
 
                 entity.HasOne(d => d.BookingNavigation)
-                    .WithMany()
-                    .HasForeignKey(d => d.BookingId)
+                    .WithOne(p => p.Booking)
+                    .HasForeignKey<Booking>(d => d.BookingId)
                     .OnDelete(DeleteBehavior.ClientSetNull)
                     .HasConstraintName("FK_Booking_Table");
             });
@@ -351,6 +356,27 @@ namespace SRMMS.Models
                     .HasColumnName("role_name");
             });
 
+            modelBuilder.Entity<StatusTable>(entity =>
+            {
+                entity.HasKey(e => e.StatusId);
+
+                entity.ToTable("StatusTable");
+
+                entity.Property(e => e.StatusId)
+                    .ValueGeneratedOnAdd()
+                    .HasColumnName("Status_id");
+
+                entity.Property(e => e.StatusName)
+                    .HasMaxLength(50)
+                    .HasColumnName("Status_name");
+
+                entity.HasOne(d => d.Status)
+                    .WithOne(p => p.StatusTable)
+                    .HasForeignKey<StatusTable>(d => d.StatusId)
+                    .OnDelete(DeleteBehavior.ClientSetNull)
+                    .HasConstraintName("FK_StatusTable_Table");
+            });
+
             modelBuilder.Entity<Table>(entity =>
             {
                 entity.ToTable("Table");
@@ -359,7 +385,7 @@ namespace SRMMS.Models
 
                 entity.Property(e => e.BookingId).HasColumnName("Booking_id");
 
-                entity.Property(e => e.Status).HasColumnName("status");
+                entity.Property(e => e.StatusId).HasColumnName("status_id");
 
                 entity.Property(e => e.TableName)
                     .HasMaxLength(50)
