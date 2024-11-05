@@ -11,6 +11,5 @@ namespace SRMMS.Models
         public string? ComboImg { get; set; }
         public decimal? ComboMoney { get; set; }
         public bool? ComboStatus { get; set; }
-        public virtual ICollection<ComboDetail> ComboDetails { get; set; } = new List<ComboDetail>();
     }
 }

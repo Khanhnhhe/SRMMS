@@ -80,19 +80,15 @@ namespace SRMMS.Models
 
             modelBuilder.Entity<Booking>(entity =>
             {
-                entity.HasNoKey();
-
                 entity.ToTable("Booking");
-
-                entity.Property(e => e.AccId).HasColumnName("acc_id");
 
                 entity.Property(e => e.BookingId)
                     .ValueGeneratedOnAdd()
                     .HasColumnName("Booking_id");
 
-                entity.Property(e => e.EndDate)
-                    .HasColumnType("datetime")
-                    .HasColumnName("End_Date");
+                entity.Property(e => e.AccId).HasColumnName("acc_id");
+
+                entity.Property(e => e.Shift).HasMaxLength(50);
 
                 entity.Property(e => e.Status).HasColumnName("status");
 
@@ -101,13 +97,13 @@ namespace SRMMS.Models
                     .HasColumnName("Time_booking");
 
                 entity.HasOne(d => d.Acc)
-                    .WithMany()
+                    .WithMany(p => p.Bookings)
                     .HasForeignKey(d => d.AccId)
                     .HasConstraintName("FK_Booking_Accounts");
 
                 entity.HasOne(d => d.BookingNavigation)
-                    .WithMany()
-                    .HasForeignKey(d => d.BookingId)
+                    .WithOne(p => p.Booking)
+                    .HasForeignKey<Booking>(d => d.BookingId)
                     .OnDelete(DeleteBehavior.ClientSetNull)
                     .HasConstraintName("FK_Booking_Table");
             });
@@ -150,29 +146,24 @@ namespace SRMMS.Models
 
             modelBuilder.Entity<ComboDetail>(entity =>
             {
-                // Xóa dòng này, vì bạn đã có khóa chính.
-                // entity.HasNoKey();
-
-                // Định nghĩa khóa chính hỗn hợp.
-                entity.HasKey(cd => new { cd.ComboId, cd.ProId });
+                entity.HasNoKey();
 
                 entity.ToTable("Combo_Detail");
 
                 entity.Property(e => e.ComboId).HasColumnName("combo_id");
+
                 entity.Property(e => e.ProId).HasColumnName("pro_id");
 
-                // Cấu hình mối quan hệ với Combo
                 entity.HasOne(d => d.Combo)
-                    .WithMany(c => c.ComboDetails) // Thêm tham số để chỉ định thuộc tính navgation trên Combo
+                    .WithMany()
                     .HasForeignKey(d => d.ComboId)
                     .OnDelete(DeleteBehavior.ClientSetNull)
-                    .HasConstraintName("FK_Combo_Detail_Combo");
+                    .HasConstraintName("FK_Combo Detail_Combo");
 
-                // Cấu hình mối quan hệ với Product
                 entity.HasOne(d => d.Pro)
-                    .WithMany() // Nếu không cần thuộc tính điều hướng ngược lại
+                    .WithMany()
                     .HasForeignKey(d => d.ProId)
-                    .HasConstraintName("FK_Combo_Detail_Menu");
+                    .HasConstraintName("FK_Combo Detail_Menu");
             });
 
             modelBuilder.Entity<DiscountCode>(entity =>
@@ -362,7 +353,7 @@ namespace SRMMS.Models
 
             modelBuilder.Entity<StatusTable>(entity =>
             {
-                entity.HasNoKey();
+                entity.HasKey(e => e.StatusId);
 
                 entity.ToTable("StatusTable");
 
@@ -375,8 +366,8 @@ namespace SRMMS.Models
                     .HasColumnName("Status_name");
 
                 entity.HasOne(d => d.Status)
-                    .WithMany()
-                    .HasForeignKey(d => d.StatusId)
+                    .WithOne(p => p.StatusTable)
+                    .HasForeignKey<StatusTable>(d => d.StatusId)
                     .OnDelete(DeleteBehavior.ClientSetNull)
                     .HasConstraintName("FK_StatusTable_Table");
             });

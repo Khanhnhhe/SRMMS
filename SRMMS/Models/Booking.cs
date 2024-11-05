@@ -10,7 +10,7 @@ namespace SRMMS.Models
         public int? NumberOfPeople { get; set; }
         public int? AccId { get; set; }
         public bool? Status { get; set; }
-        public DateTime? EndDate { get; set; }
+        public string? Shift { get; set; }
 
         public virtual Account? Acc { get; set; }
         public virtual Table BookingNavigation { get; set; } = null!;
