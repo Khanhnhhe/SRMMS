@@ -7,6 +7,7 @@ namespace SRMMS.Models
     {
         public Account()
         {
+            Bookings = new HashSet<Booking>();
             PointLists = new HashSet<PointList>();
         }
 
@@ -21,6 +22,7 @@ namespace SRMMS.Models
         public DateTime? EndDate { get; set; }
 
         public virtual Role? Role { get; set; }
+        public virtual ICollection<Booking> Bookings { get; set; }
         public virtual ICollection<PointList> PointLists { get; set; }
     }
 }

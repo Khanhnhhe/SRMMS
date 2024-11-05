@@ -36,6 +36,7 @@ namespace SRMMS.Controllers
 
 
             _context.Bookings.Add(booking);
+
             await _context.SaveChangesAsync();
 
             var bookings = await _context.Bookings.ToListAsync();
@@ -44,6 +45,32 @@ namespace SRMMS.Controllers
 
             return CreatedAtAction(nameof(CreateBooking), new { id = booking.BookingId }, booking);
         }
+
+        [HttpGet("/api/booking/getById/{id}")]
+        public async Task<IActionResult> GetBookingById(int id)
+        {
+            var booking = await _context.Bookings
+                .Include(b => b.Acc) 
+                .Where(b => b.BookingId == id)
+                .Select(b => new
+                {
+                    b.BookingId,
+                    b.TimeBooking,
+                    b.NumberOfPeople,
+                    AccountName = b.Acc.FullName,
+                    Phone = b.Acc.Phone,
+                    b.Status
+                })
+                .FirstOrDefaultAsync();
+
+            if (booking == null)
+            {
+                return NotFound("Booking not found.");
+            }
+
+            return Ok(booking);
+        }
+
 
         [HttpGet("/api/booking/getList")]
         public async Task<ActionResult<IEnumerable<Booking>>> SearchBookings(string? accountName = "", DateTime? bookingDate = null, bool? status = null, int pageNumber = 1, int pageSize = 10)                     
@@ -81,6 +108,8 @@ namespace SRMMS.Controllers
                     b.TimeBooking,
                     b.NumberOfPeople,
                     AccountName = b.Acc.FullName,
+                    Phone = b.Acc.Phone,
+                    b.Shift,
                     b.Status
                 }).ToListAsync();
 
@@ -91,6 +120,55 @@ namespace SRMMS.Controllers
                 TotalBookings = totalBookings,
                 Bookings = bookings
             });
+        }
+
+
+        [HttpPut("/api/booking/update/{id}")]
+        public async Task<IActionResult> UpdateBooking(int id, [FromBody] UpdateBookingDTO bookingDto)
+        {
+            if (bookingDto == null)
+            {
+                return BadRequest("Invalid booking data.");
+            }
+
+            var existingBooking = await _context.Bookings.FindAsync(id);
+            if (existingBooking == null)
+            {
+                return NotFound("Booking not found.");
+            }
+
+            
+            existingBooking.TimeBooking = bookingDto.TimeBooking ?? existingBooking.TimeBooking;
+            existingBooking.NumberOfPeople = bookingDto.NumberOfPeople ?? existingBooking.NumberOfPeople;
+            existingBooking.Status = bookingDto.Status ?? existingBooking.Status;
+            existingBooking.Shift = bookingDto.Shift ?? existingBooking.Shift;
+
+            _context.Bookings.Update(existingBooking);
+            await _context.SaveChangesAsync();
+
+            var bookings = await _context.Bookings.ToListAsync();
+            await _hubContext.Clients.All.SendAsync("ReceiveBookingUpdate", bookings);
+
+            return Ok(existingBooking);
+        }
+
+
+        [HttpDelete("/api/booking/delete/{id}")]
+        public async Task<IActionResult> DeleteBooking(int id)
+        {
+            var existingBooking = await _context.Bookings.FindAsync(id);
+            if (existingBooking == null)
+            {
+                return NotFound("Booking not found.");
+            }
+
+            _context.Bookings.Remove(existingBooking);
+            await _context.SaveChangesAsync();
+
+            var bookings = await _context.Bookings.ToListAsync();
+            await _hubContext.Clients.All.SendAsync("ReceiveBookingUpdate", bookings);
+
+            return NoContent();
         }
 
     }
