@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.ComponentModel.DataAnnotations.Schema;
 
 namespace SRMMS.Models
 {
@@ -9,7 +10,7 @@ namespace SRMMS.Models
         {
             Orders = new HashSet<Order>();
         }
-
+        [DatabaseGenerated(DatabaseGeneratedOption.Identity)]
         public int CodeId { get; set; }
         public string? CodeDetail { get; set; }
         public double? DiscountValue { get; set; }
