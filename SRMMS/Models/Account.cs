@@ -8,6 +8,7 @@ namespace SRMMS.Models
         public Account()
         {
             Bookings = new HashSet<Booking>();
+            Feedbacks = new HashSet<Feedback>();
             PointLists = new HashSet<PointList>();
         }
 
@@ -23,6 +24,7 @@ namespace SRMMS.Models
 
         public virtual Role? Role { get; set; }
         public virtual ICollection<Booking> Bookings { get; set; }
+        public virtual ICollection<Feedback> Feedbacks { get; set; }
         public virtual ICollection<PointList> PointLists { get; set; }
     }
 }

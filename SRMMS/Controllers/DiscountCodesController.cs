@@ -179,7 +179,7 @@ namespace SRMMS.Controllers
             {
                 return false;
             }
-            return startDate <= endDate;
+            return startDate < endDate;
         }
 
         // DELETE: api/DiscountCodes/5
