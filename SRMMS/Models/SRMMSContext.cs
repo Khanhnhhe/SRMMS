@@ -33,12 +33,11 @@ namespace SRMMS.Models
 
         protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
         {
-            IConfiguration config = new ConfigurationBuilder()
-   .SetBasePath(Directory.GetCurrentDirectory())
-   .AddJsonFile("appsettings.json", true, true)
-   .Build();
-            var strConn = config["ConnectionStrings:DB"];
-            optionsBuilder.UseSqlServer(strConn);
+            if (!optionsBuilder.IsConfigured)
+            {
+#warning To protect potentially sensitive information in your connection string, you should move it out of source code. You can avoid scaffolding the connection string by using the Name= syntax to read it from configuration - see https://go.microsoft.com/fwlink/?linkid=2131148. For more guidance on storing connection strings, see http://go.microsoft.com/fwlink/?LinkId=723263.
+                optionsBuilder.UseSqlServer("server=(local);database=SRMMS;Trusted_Connection=SSPI;Encrypt=false;TrustServerCertificate=true");
+            }
         }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
@@ -173,9 +172,7 @@ namespace SRMMS.Models
 
                 entity.ToTable("Discount_code");
 
-                entity.Property(e => e.CodeId)
-                    .ValueGeneratedNever()
-                    .HasColumnName("code_id");
+                entity.Property(e => e.CodeId).HasColumnName("code_id");
 
                 entity.Property(e => e.CodeDetail)
                     .HasMaxLength(250)
@@ -196,9 +193,11 @@ namespace SRMMS.Models
 
             modelBuilder.Entity<Feedback>(entity =>
             {
-                entity.HasNoKey();
-
                 entity.ToTable("Feedback");
+
+                entity.Property(e => e.FeedbackId)
+                    .ValueGeneratedNever()
+                    .HasColumnName("feedback_id");
 
                 entity.Property(e => e.AccId).HasColumnName("acc_id");
 
@@ -211,8 +210,6 @@ namespace SRMMS.Models
                     .HasMaxLength(300)
                     .HasColumnName("feedback");
 
-                entity.Property(e => e.FeedbackId).HasColumnName("feedback_id");
-
                 entity.Property(e => e.RateStar).HasColumnName("rate_star");
 
                 entity.Property(e => e.UpdatedAt)
@@ -221,7 +218,7 @@ namespace SRMMS.Models
                     .HasDefaultValueSql("(getdate())");
 
                 entity.HasOne(d => d.Acc)
-                    .WithMany()
+                    .WithMany(p => p.Feedbacks)
                     .HasForeignKey(d => d.AccId)
                     .HasConstraintName("FK_Feedback_Accounts");
             });
