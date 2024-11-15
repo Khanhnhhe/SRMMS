@@ -5,7 +5,11 @@ using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
 using System.Text;
 using SRMMS.Models;
+<<<<<<< HEAD
 using SRMMS.Controllers;
+=======
+using SRMMS.Hubs;
+>>>>>>> b119490 (listById table , fix CRUD api table , fix getList Table)
 
 namespace SRMMS;
 
@@ -96,8 +100,15 @@ public class Program
             app.UseSwaggerUI();
         }
 
+
+        // confix signalR
         app.MapHub<BookingHub>("/bookingHub");
+<<<<<<< HEAD
         app.MapHub<FeedbackHub>("feedbackHub");
+=======
+        app.MapHub<FeedbackHub>("/feedbackHub");
+
+>>>>>>> b119490 (listById table , fix CRUD api table , fix getList Table)
         app.UseHttpsRedirection();
         app.UseRouting();
 
