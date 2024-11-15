@@ -2,6 +2,7 @@
 using Microsoft.AspNetCore.SignalR;
 using Microsoft.EntityFrameworkCore;
 using SRMMS.DTOs;
+using SRMMS.Hubs;
 using SRMMS.Models;
 
 namespace SRMMS.Controllers

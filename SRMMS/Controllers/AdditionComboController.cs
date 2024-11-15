@@ -29,7 +29,7 @@
 //        [HttpPost("create")]
 //        public async Task<IActionResult> CreateComboWithProducts([FromForm] AdditionComboProductDTO comboDto)
 //        {
-            
+
 //            if (string.IsNullOrWhiteSpace(comboDto.ComboName) || comboDto.ProductNames == null || !comboDto.ProductNames.Any())
 //            {
 //                return BadRequest("Tên combo và danh sách sản phẩm là bắt buộc.");
@@ -40,14 +40,14 @@
 //                return BadRequest("Hình ảnh không tìm thấy.");
 //            }
 
-            
+
 //            var existingCombo = await _context.Combos.FirstOrDefaultAsync(c => c.ComboName == comboDto.ComboName);
 //            if (existingCombo != null)
 //            {
 //                return Conflict($"Combo với tên '{comboDto.ComboName}' đã tồn tại.");
 //            }
 
-           
+
 //            var tempFilePath = Path.Combine(Path.GetTempPath(), Guid.NewGuid().ToString() + Path.GetExtension(comboDto.ComboImg.FileName));
 
 //            using (var stream = new FileStream(tempFilePath, FileMode.Create))
@@ -63,18 +63,18 @@
 
 //            var uploadResult = await _cloudinary.UploadAsync(uploadParams);
 
-            
+
 //            var newCombo = new Combo
 //            {
 //                ComboName = comboDto.ComboName,
 //                ComboDiscription = comboDto.ComboDescription,
 //                ComboImg = uploadResult.SecureUrl.ToString(),
 //                ComboMoney = comboDto.ComboMoney,
-//                ComboStatus = comboDto.ComboStatus ?? true 
+//                ComboStatus = comboDto.ComboStatus ?? true
 //            };
 
-            
-//            var productIds = new List<int>(); 
+
+//            var productIds = new List<int>();
 //            foreach (var productName in comboDto.ProductNames)
 //            {
 //                var product = await _context.Products.FirstOrDefaultAsync(p => p.ProName == productName);
@@ -88,11 +88,11 @@
 //                }
 //            }
 
-            
+
 //            _context.Combos.Add(newCombo);
 //            await _context.SaveChangesAsync();
 
-     
+
 //            foreach (var proId in productIds)
 //            {
 //                var comboDetail = new ComboDetail
@@ -103,7 +103,7 @@
 //                _context.ComboDetails.Add(comboDetail);
 //            }
 
-           
+
 //            try
 //            {
 //                await _context.SaveChangesAsync();
@@ -128,7 +128,7 @@
 //        {
 //            var query = _context.Combos.AsQueryable();
 
-            
+
 //            if (!string.IsNullOrWhiteSpace(cbName))
 //            {
 //                query = query.Where(c => c.ComboName.Contains(cbName));
@@ -145,7 +145,7 @@
 //            }
 
 //            var totalCombos = await query.CountAsync();
-//            var totalPages = (int)Math.Ceiling((double)totalCombos / pageSize); 
+//            var totalPages = (int)Math.Ceiling((double)totalCombos / pageSize);
 
 //            var combos = await query
 //                .Skip((pageNumber - 1) * pageSize)
@@ -170,7 +170,7 @@
 //            return Ok(new
 //            {
 //                TotalCount = totalCombos,
-//                TotalPages = totalPages, 
+//                TotalPages = totalPages,
 //                PageNumber = pageNumber,
 //                PageSize = pageSize,
 //                Combos = comboDtos
@@ -180,7 +180,7 @@
 //        [HttpPut("update/{id}")]
 //        public async Task<IActionResult> UpdateCombo(int id, [FromForm] UpdateComboProductDTO updateDto)
 //        {
-            
+
 //            var existingCombo = await _context.Combos.FindAsync(id);
 //            if (existingCombo == null)
 //            {
@@ -198,7 +198,7 @@
 //                }
 //            }
 
-            
+
 //            var missingProducts = new List<string>();
 //            foreach (var productName in updateDto.ProductNames)
 //            {
@@ -209,19 +209,19 @@
 //                }
 //            }
 
-            
+
 //            if (missingProducts.Any())
 //            {
 //                return NotFound($"Các sản phẩm không tìm thấy: {string.Join(", ", missingProducts)}.");
 //            }
 
-            
+
 //            existingCombo.ComboName = updateDto.ComboName;
 //            existingCombo.ComboDiscription = updateDto.ComboDescription;
 //            existingCombo.ComboMoney = updateDto.ComboMoney;
 //            existingCombo.ComboStatus = updateDto.ComboStatus;
 
-            
+
 //            if (updateDto.ComboImg != null && updateDto.ComboImg.Length > 0)
 //            {
 //                var tempFilePath = Path.Combine(Path.GetTempPath(), Guid.NewGuid().ToString() + Path.GetExtension(updateDto.ComboImg.FileName));
@@ -240,14 +240,14 @@
 //                existingCombo.ComboImg = uploadResult.SecureUrl.ToString();
 //            }
 
-           
+
 //            var currentProductDetails = await _context.ComboDetails
 //                .Where(cd => cd.ComboId == existingCombo.ComboId)
 //                .ToListAsync();
 
 //            _context.ComboDetails.RemoveRange(currentProductDetails);
 
-           
+
 //            foreach (var productName in updateDto.ProductNames)
 //            {
 //                var product = await _context.Products.FirstOrDefaultAsync(p => p.ProName == productName);
@@ -302,7 +302,7 @@
 //            var combo = await _context.Combos
 //                .Include(c => c.ComboDetails)
 //                    .ThenInclude(cd => cd.Pro).
-//                    ThenInclude(p => p.Cat) 
+//                    ThenInclude(p => p.Cat)
 //                .FirstOrDefaultAsync(c => c.ComboId == comboId);
 
 //            if (combo == null)
@@ -316,20 +316,20 @@
 //                ComboName = combo.ComboName,
 //                ComboDescription = combo.ComboDiscription,
 //                Products = combo.ComboDetails
-//                    .Where(cd => cd.Pro != null) 
+//                    .Where(cd => cd.Pro != null)
 //                    .Select(cd => new ProductDetailDTO
 //                    {
-//                        ProductId = cd.Pro?.ProId,  
-//                        ProductName = cd.Pro.ProName , 
-//                        Description = cd.Pro.ProDiscription, 
-//                        Price = cd.Pro.ProPrice, 
-//                        Category = cd.Pro.Cat.CatName, 
-//                        Image = cd.Pro.ProImg, 
-//                        Calories = cd.Pro.ProCalories, 
+//                        ProductId = cd.Pro?.ProId,
+//                        ProductName = cd.Pro.ProName,
+//                        Description = cd.Pro.ProDiscription,
+//                        Price = cd.Pro.ProPrice,
+//                        Category = cd.Pro.Cat.CatName,
+//                        Image = cd.Pro.ProImg,
+//                        Calories = cd.Pro.ProCalories,
 //                    }).ToList()
 //            };
 
-            
+
 //            Console.WriteLine($"Số lượng sản phẩm trong combo: {combo.ComboDetails.Count()}");
 
 //            return Ok(comboDetailDto);
