@@ -134,29 +134,57 @@ namespace SRMMS.Controllers
 
 
 
-        [HttpGet("/api/table/list")]
-        public async Task<IActionResult> GetTables(int? statusId = null, int? tableOfPeople = null, int pageNumber = 1, int pageSize = 10)
-        {
+        //[HttpGet("/api/table/list")]
+        //public async Task<IActionResult> GetTables(int? statusId = null, int? tableOfPeople = null, int pageNumber = 1, int pageSize = 10)
+        //{
        
-            var query = _context.Tables.AsQueryable();
+        //    var query = _context.Tables.AsQueryable();
 
-            if (statusId.HasValue)
-            {
-                query = query.Where(t => t.StatusId == statusId.Value);
-            }
+        //    if (statusId.HasValue)
+        //    {
+        //        query = query.Where(t => t.StatusId == statusId.Value);
+        //    }
 
-            if (tableOfPeople.HasValue)
-            {
-                query = query.Where(t => t.TableOfPeople == tableOfPeople.Value);
-            }
+        //    if (tableOfPeople.HasValue)
+        //    {
+        //        query = query.Where(t => t.TableOfPeople == tableOfPeople.Value);
+        //    }
 
-            var totalTables = await query.CountAsync();
+        //    var totalTables = await query.CountAsync();
 
-            var skip = (pageNumber - 1) * pageSize;
+        //    var skip = (pageNumber - 1) * pageSize;
 
-            var tables = await query
-                .Skip(skip)
-                .Take(pageSize)
+        //    var tables = await query
+        //        .Skip(skip)
+        //        .Take(pageSize)
+        //        .Select(t => new ListTableDTO
+        //        {
+        //            TableId = t.TableId,
+        //            TableName = t.TableName,
+        //            StatusName = t.StatusId != null
+        //                ? _context.StatusTables
+        //                    .Where(s => s.StatusId == t.StatusId)
+        //                    .Select(s => s.StatusName)
+        //                    .FirstOrDefault()
+        //                : null,
+        //            BookingId = t.BookingId,
+        //            TableOfPeople = t.TableOfPeople
+        //        })
+        //        .ToListAsync();
+
+        //    return Ok(new
+        //    {
+        //        PageNumber = pageNumber,
+        //        PageSize = pageSize,
+        //        TotalTables = totalTables,
+        //        Tables = tables
+        //    });
+        //}
+
+        [HttpGet("/api/table/list")]
+        public async Task<IActionResult> GetTables()
+        {
+            var tables = await _context.Tables
                 .Select(t => new ListTableDTO
                 {
                     TableId = t.TableId,
@@ -172,14 +200,9 @@ namespace SRMMS.Controllers
                 })
                 .ToListAsync();
 
-            return Ok(new
-            {
-                PageNumber = pageNumber,
-                PageSize = pageSize,
-                TotalTables = totalTables,
-                Tables = tables
-            });
+            return Ok(tables);
         }
+
 
 
 
