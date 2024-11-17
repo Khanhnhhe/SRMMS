@@ -36,7 +36,7 @@ namespace SRMMS.Models
             if (!optionsBuilder.IsConfigured)
             {
 #warning To protect potentially sensitive information in your connection string, you should move it out of source code. You can avoid scaffolding the connection string by using the Name= syntax to read it from configuration - see https://go.microsoft.com/fwlink/?linkid=2131148. For more guidance on storing connection strings, see http://go.microsoft.com/fwlink/?LinkId=723263.
-                optionsBuilder.UseSqlServer("server=(local);database=SRMMS;Trusted_Connection=SSPI;Encrypt=false;TrustServerCertificate=true");
+                optionsBuilder.UseSqlServer("Server=DESKTOP-Q5D4AD1\\SQLEXPRESS;database=SRMMS;Trusted_Connection=SSPI;Encrypt=false;TrustServerCertificate=true");
             }
         }
 
@@ -88,13 +88,17 @@ namespace SRMMS.Models
 
                 entity.Property(e => e.AccId).HasColumnName("acc_id");
 
+                entity.Property(e => e.DayBooking)
+                    .HasColumnType("date")
+                    .HasColumnName("Day_booking");
+
+                entity.Property(e => e.HourBooking)
+                    .HasColumnType("time(0)")
+                    .HasColumnName("Hour_booking");
+
                 entity.Property(e => e.Shift).HasMaxLength(50);
 
                 entity.Property(e => e.Status).HasColumnName("status");
-
-                entity.Property(e => e.TimeBooking)
-                    .HasColumnType("datetime")
-                    .HasColumnName("Time_booking");
 
                 entity.HasOne(d => d.Acc)
                     .WithMany(p => p.Bookings)

@@ -5,11 +5,14 @@ using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
 using System.Text;
 using SRMMS.Models;
-<<<<<<< HEAD
+
 using SRMMS.Controllers;
-=======
+
 using SRMMS.Hubs;
->>>>>>> b119490 (listById table , fix CRUD api table , fix getList Table)
+using Humanizer.Configuration;
+using SRMMS.SMS;
+
+
 
 namespace SRMMS;
 
@@ -25,6 +28,11 @@ public class Program
         builder.Services.AddSwaggerGen();
         builder.Services.AddSignalR();
         builder.Services.AddScoped<OrderService>();
+
+        //Confix Twilio
+
+        builder.Services.AddSingleton<IConfiguration>(builder.Configuration);
+        builder.Services.AddScoped<ITwilioService, TwilioService>();
 
 
         builder.Services.AddDbContext<SRMMSContext>(options =>
@@ -59,6 +67,19 @@ public class Program
             });
         });
 */
+
+        builder.Services.AddCors(options =>
+        {
+            options.AddPolicy("AllowAll", builder =>
+            {
+                builder.AllowAnyOrigin()
+                       .AllowAnyMethod()
+                       .AllowAnyHeader();
+            });
+        });
+
+        
+
 
 
         builder.Services.AddSwaggerGen(c =>
@@ -100,15 +121,13 @@ public class Program
             app.UseSwaggerUI();
         }
 
-
+        app.UseCors("AllowAll");
         // confix signalR
         app.MapHub<BookingHub>("/bookingHub");
-<<<<<<< HEAD
-        app.MapHub<FeedbackHub>("feedbackHub");
-=======
+
         app.MapHub<FeedbackHub>("/feedbackHub");
 
->>>>>>> b119490 (listById table , fix CRUD api table , fix getList Table)
+
         app.UseHttpsRedirection();
         app.UseRouting();
 

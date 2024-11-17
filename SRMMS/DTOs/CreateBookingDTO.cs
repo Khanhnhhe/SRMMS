@@ -2,8 +2,9 @@
 {
     public class CreateBookingDTO
     {
-        public DateTime TimeBooking { get; set; }
-        public int NumberOfPeople { get; set; }
-        public int AccId { get; set; }
+        public DateTime? DayBooking { get; set; }
+        public string HourBooking { get; set; }
+        public int? NumberOfPeople { get; set; }
+        public int? AccId { get; set; }
     }
 }
