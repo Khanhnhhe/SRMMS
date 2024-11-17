@@ -1,6 +1,7 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.SignalR;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.IdentityModel.Tokens;
 using SRMMS.DTOs;
 using SRMMS.Hubs;
 using SRMMS.Models;
@@ -27,12 +28,20 @@ namespace SRMMS.Controllers
             {
                 return BadRequest("Invalid booking data.");
             }
+
+            TimeSpan? hourBooking = null;
+            if (!string.IsNullOrEmpty(bookingDto.HourBooking))
+            {
+                hourBooking = TimeSpan.Parse(bookingDto.HourBooking);  
+            }
+
             var booking = new Booking
             {
-                TimeBooking = bookingDto.TimeBooking,
+                DayBooking = bookingDto.DayBooking,
+                HourBooking = hourBooking,
                 NumberOfPeople = bookingDto.NumberOfPeople,
                 AccId = bookingDto.AccId,
-                Status = true 
+                Status = true
             };
 
 
@@ -51,12 +60,13 @@ namespace SRMMS.Controllers
         public async Task<IActionResult> GetBookingById(int id)
         {
             var booking = await _context.Bookings
-                .Include(b => b.Acc) 
+                .Include(b => b.Acc)
                 .Where(b => b.BookingId == id)
                 .Select(b => new
                 {
                     b.BookingId,
-                    b.TimeBooking,
+                    DayBooking = b.DayBooking,
+                    HourBooking = b.HourBooking,
                     b.NumberOfPeople,
                     AccountName = b.Acc.FullName,
                     Phone = b.Acc.Phone,
@@ -69,18 +79,29 @@ namespace SRMMS.Controllers
                 return NotFound("Booking not found.");
             }
 
+            var result = new
+            {
+                booking.BookingId,
+                booking.DayBooking,
+                HourBooking = booking.HourBooking?.ToString(@"hh\:mm\:ss"),
+                booking.NumberOfPeople,
+                booking.AccountName,
+                booking.Phone,
+                booking.Status
+            };
+
             return Ok(booking);
         }
 
 
         [HttpGet("/api/booking/getList")]
-        public async Task<ActionResult<IEnumerable<Booking>>> SearchBookings(string? accountName = "", DateTime? bookingDate = null, bool? status = null, int pageNumber = 1, int pageSize = 10)                     
+        public async Task<ActionResult<IEnumerable<Booking>>> SearchBookings(string? accountName = "", DateTime? bookingDate = null, bool? status = null, int pageNumber = 1, int pageSize = 10)
         {
-            
+
             var totalBookings = await _context.Bookings.CountAsync();
             var skip = (pageNumber - 1) * pageSize;
 
-            
+
             var query = _context.Bookings.Include(b => b.Acc).AsQueryable();
 
             if (!string.IsNullOrWhiteSpace(accountName))
@@ -92,7 +113,7 @@ namespace SRMMS.Controllers
 
             if (bookingDate.HasValue)
             {
-                query = query.Where(b => b.TimeBooking.Value.Date == bookingDate.Value.Date);
+                query = query.Where(b => b.DayBooking.HasValue && b.DayBooking.Value.Date == bookingDate.Value.Date);
             }
 
             if (status.HasValue)
@@ -106,13 +127,26 @@ namespace SRMMS.Controllers
                 .Select(b => new
                 {
                     b.BookingId,
-                    b.TimeBooking,
+                    DayBooking = b.DayBooking,
+                    HourBooking = b.HourBooking,
                     b.NumberOfPeople,
                     AccountName = b.Acc.FullName,
                     Phone = b.Acc.Phone,
                     b.Shift,
                     b.Status
                 }).ToListAsync();
+
+            var result = bookings.Select(b => new
+            {
+                b.BookingId,
+                b.DayBooking,
+                HourBooking = b.HourBooking?.ToString(@"hh\:mm\:ss"),
+                b.NumberOfPeople,
+                b.AccountName,
+                b.Phone,
+                b.Shift,
+                b.Status
+            }).ToList();
 
             return Ok(new
             {
@@ -138,8 +172,14 @@ namespace SRMMS.Controllers
                 return NotFound("Booking not found.");
             }
 
+
+            existingBooking.DayBooking = bookingDto.DayBooking ?? existingBooking.DayBooking;
+            if (!string.IsNullOrEmpty(bookingDto.HourBooking))
+            {
+                existingBooking.HourBooking = TimeSpan.Parse(bookingDto.HourBooking); 
+            }
+
             
-            existingBooking.TimeBooking = bookingDto.TimeBooking ?? existingBooking.TimeBooking;
             existingBooking.NumberOfPeople = bookingDto.NumberOfPeople ?? existingBooking.NumberOfPeople;
             existingBooking.Status = bookingDto.Status ?? existingBooking.Status;
             existingBooking.Shift = bookingDto.Shift ?? existingBooking.Shift;
