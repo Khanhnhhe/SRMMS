@@ -421,5 +421,61 @@ namespace SRMMS.Controllers
             return NoContent();
         }
 
+        [HttpGet("detail/{id}")]
+        public async Task<IActionResult> GetProductDetail(int id)
+        {
+            
+            if (id <= 0)
+            {
+                return BadRequest("Invalid product ID. ID must be greater than 0.");
+            }
+
+            
+            var product = await _context.Products
+                .Include(p => p.Cat)
+                .FirstOrDefaultAsync(p => p.ProId == id);
+
+            if (product == null)
+            {
+                return NotFound("Product not found");
+            }
+
+            
+            var relatedProducts = await _context.Products
+                .Where(p => p.CatId == product.CatId && p.ProId != id)
+                .Select(p => new ListProductDTO
+                {
+                    ProductId = p.ProId,
+                    ProductName = p.ProName,
+                    Description = p.ProDiscription,
+                    Price = p.ProPrice,
+                    Category = p.Cat.CatName,
+                    Image = p.ProImg,
+                    Calories = p.ProCalories,
+                    Status = p.ProStatus
+                })
+                .ToListAsync();
+
+            
+            var result = new
+            {
+                ProductDetail = new
+                {
+                    ProductId = product.ProId,
+                    ProductName = product.ProName,
+                    Description = product.ProDiscription,
+                    Price = product.ProPrice,
+                    Category = product.Cat.CatName,
+                    Image = product.ProImg,
+                    Calories = product.ProCalories,
+                    Status = product.ProStatus
+                },
+                RelatedProducts = relatedProducts
+            };
+
+            return Ok(result);
+        }
+
+
     }
 }
