@@ -150,8 +150,30 @@ namespace SRMMS.Controllers
             {
                 return BadRequest("Image not found");
             }
+            if (productDto.Price < 0)
+            {
+                return BadRequest("Price cannot be negative.");
+            }
 
-            
+            if (productDto.Category.HasValue && productDto.Category < 0)
+            {
+                return BadRequest("Category does not exist.");
+            }
+            if (productDto.Price == 0)
+            {
+                return BadRequest("Price is required and must be greater than 0.");
+            }
+
+            if (string.IsNullOrWhiteSpace(productDto.ProductName) &&
+               string.IsNullOrWhiteSpace(productDto.Description) &&
+               !productDto.Category.HasValue &&
+                !productDto.Price.HasValue &&
+                 productDto.Image == null &&
+                 string.IsNullOrWhiteSpace(productDto.Calories))
+            {
+                return BadRequest("All fields cannot be null.");
+            }
+
             var tempFilePath = Path.Combine(Path.GetTempPath(), Guid.NewGuid().ToString() + Path.GetExtension(productDto.Image.FileName));
 
             
@@ -194,6 +216,11 @@ namespace SRMMS.Controllers
         [HttpGet("getProductById/{proId}")]
         public async Task<ActionResult<ListProductDTO>> GetProductById(int proId)
         {
+
+            if (proId == null)
+            {
+                return BadRequest("The parameter 'proId' is required.");
+            }
             var product = await _context.Products
         .Include(c => c.Cat)
         .Where(p => p.ProId == proId) 
@@ -242,6 +269,39 @@ namespace SRMMS.Controllers
                 }
 
                 existingProduct.ProName = updateProductDto.ProductName;
+            }
+            if (string.IsNullOrEmpty(updateProductDto.ProductName) && !updateProductDto.Price.HasValue && updateProductDto.Image == null && !updateProductDto.Status.HasValue && !updateProductDto.Category.HasValue)
+            {
+                return Ok("No changes made to the product.");
+            }
+
+            if (updateProductDto.Price.HasValue)
+            {
+             
+                if (updateProductDto.Price.Value <= 0)
+                {
+                    return BadRequest("Invalid price. Please provide a valid price.");
+                }
+                existingProduct.ProPrice = updateProductDto.Price.Value;
+            }
+            if (updateProductDto.Category.HasValue)
+            {
+               
+                if (updateProductDto.Category.Value < 0)
+                {
+                    return BadRequest("Invalid category. Category cannot be negative.");
+                }
+
+                var category = await _context.Categories.FindAsync(updateProductDto.Category.Value);
+                if (category != null)
+                {
+                    existingProduct.CatId = category.CatId;
+                    existingProduct.Cat = category;
+                }
+                else
+                {
+                    return BadRequest("Invalid category provided.");
+                }
             }
 
             if (updateProductDto.Price.HasValue)
@@ -362,41 +422,44 @@ namespace SRMMS.Controllers
         [HttpGet("searchProductName")]
         public async Task<ActionResult<IEnumerable<ListProductDTO>>> SearchByProductName(string? productName = "", int pageNumber = 1, int pageSize = 10)
         {
-            
             var skip = (pageNumber - 1) * pageSize;
 
-            
+     
             var query = _context.Products.Include(p => p.Cat).AsQueryable();
 
             
             if (!string.IsNullOrWhiteSpace(productName))
             {
-                query = query.Where(p => p.ProName.Contains(productName));
+          
+                query = query.Where(p => p.ProName.ToLower().Contains(productName.ToLower().Trim()));
             }
 
-            
+          
             var products = await query
-                                 .Skip(skip)
-                                 .Take(pageSize)
-                                 .Select(p => new ListProductDTO
-                                 {
-                                     ProductName = p.ProName,
-                                     Description = p.ProDiscription,
-                                     Price = p.ProPrice,
-                                     Calories = p.ProCalories,
-                                     Status = p.ProStatus,
-                                     Category = p.Cat.CatName
-                                 }).ToListAsync();
+                                     .Skip(skip)
+                                     .Take(pageSize)
+                                     .Select(p => new ListProductDTO
+                                     {
+                                         ProductId = p.ProId,
+                                         ProductName = p.ProName,
+                                         Image = p.ProImg,
+                                         Description = p.ProDiscription,
+                                         Price = p.ProPrice,
+                                         Calories = p.ProCalories,
+                                         Status = p.ProStatus,
+                                         Category = p.Cat.CatName
+                                     }).ToListAsync();
 
-            
+        
             if (products == null || !products.Any())
             {
                 return NotFound("No products found.");
             }
 
-            
+          
             return Ok(products);
         }
+
 
         [HttpDelete("delete/{id}")]
         public async Task<IActionResult> DeleteProduct(int id)
