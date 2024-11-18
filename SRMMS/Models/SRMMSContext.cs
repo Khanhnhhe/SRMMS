@@ -82,11 +82,7 @@ namespace SRMMS.Models
             {
                 entity.ToTable("Booking");
 
-                entity.Property(e => e.BookingId)
-                    .ValueGeneratedOnAdd()
-                    .HasColumnName("Booking_id");
-
-                entity.Property(e => e.AccId).HasColumnName("acc_id");
+                entity.Property(e => e.BookingId).HasColumnName("Booking_id");
 
                 entity.Property(e => e.DayBooking)
                     .HasColumnType("date")
@@ -96,20 +92,17 @@ namespace SRMMS.Models
                     .HasColumnType("time(0)")
                     .HasColumnName("Hour_booking");
 
+                entity.Property(e => e.NameBooking)
+                    .HasMaxLength(50)
+                    .HasColumnName("Name_booking");
+
+                entity.Property(e => e.PhoneBooking)
+                    .HasMaxLength(50)
+                    .HasColumnName("Phone_booking");
+
                 entity.Property(e => e.Shift).HasMaxLength(50);
 
                 entity.Property(e => e.Status).HasColumnName("status");
-
-                entity.HasOne(d => d.Acc)
-                    .WithMany(p => p.Bookings)
-                    .HasForeignKey(d => d.AccId)
-                    .HasConstraintName("FK_Booking_Accounts");
-
-                entity.HasOne(d => d.BookingNavigation)
-                    .WithOne(p => p.Booking)
-                    .HasForeignKey<Booking>(d => d.BookingId)
-                    .OnDelete(DeleteBehavior.ClientSetNull)
-                    .HasConstraintName("FK_Booking_Table");
             });
 
             modelBuilder.Entity<Category>(entity =>
@@ -299,10 +292,17 @@ namespace SRMMS.Models
 
                 entity.Property(e => e.NumberPonit).HasColumnName("number_ponit");
 
+                entity.Property(e => e.OrderId).HasColumnName("order_id");
+
                 entity.HasOne(d => d.Acc)
                     .WithMany(p => p.PointLists)
                     .HasForeignKey(d => d.AccId)
                     .HasConstraintName("FK_Point_List_Accounts");
+
+                entity.HasOne(d => d.Order)
+                    .WithMany(p => p.PointLists)
+                    .HasForeignKey(d => d.OrderId)
+                    .HasConstraintName("FK_Point_List_Order");
             });
 
             modelBuilder.Entity<Product>(entity =>
@@ -387,6 +387,11 @@ namespace SRMMS.Models
                 entity.Property(e => e.TableName)
                     .HasMaxLength(50)
                     .HasColumnName("table_name");
+
+                entity.HasOne(d => d.Booking)
+                    .WithMany(p => p.Tables)
+                    .HasForeignKey(d => d.BookingId)
+                    .HasConstraintName("FK_Table_Booking");
             });
 
             OnModelCreatingPartial(modelBuilder);

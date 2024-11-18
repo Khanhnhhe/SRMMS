@@ -26,13 +26,21 @@ namespace SRMMS.Controllers
         {
             if (bookingDto == null)
             {
-                return BadRequest("Invalid booking data.");
+                return BadRequest("Dữ liệu đặt bàn không hợp lệ.");
             }
 
             TimeSpan? hourBooking = null;
             if (!string.IsNullOrEmpty(bookingDto.HourBooking))
             {
-                hourBooking = TimeSpan.Parse(bookingDto.HourBooking);  
+                hourBooking = TimeSpan.Parse(bookingDto.HourBooking);
+            }
+
+            string? nameBooking = bookingDto.NameBooking;
+            string? phoneBooking = bookingDto.PhoneBooking;
+
+            if (string.IsNullOrEmpty(nameBooking) || string.IsNullOrEmpty(phoneBooking))
+            {
+                return BadRequest("Vui lòng cung cấp tên và số điện thoại của khách.");
             }
 
             var booking = new Booking
@@ -40,13 +48,13 @@ namespace SRMMS.Controllers
                 DayBooking = bookingDto.DayBooking,
                 HourBooking = hourBooking,
                 NumberOfPeople = bookingDto.NumberOfPeople,
-                AccId = bookingDto.AccId,
-                Status = true
+                NameBooking = nameBooking,
+                PhoneBooking = phoneBooking,
+                Status = true,
+                Shift = GetShift(hourBooking),
             };
 
-
             _context.Bookings.Add(booking);
-
             await _context.SaveChangesAsync();
 
             var bookings = await _context.Bookings.ToListAsync();
@@ -56,11 +64,11 @@ namespace SRMMS.Controllers
             return CreatedAtAction(nameof(CreateBooking), new { id = booking.BookingId }, booking);
         }
 
+
         [HttpGet("/api/booking/getById/{id}")]
         public async Task<IActionResult> GetBookingById(int id)
         {
             var booking = await _context.Bookings
-                .Include(b => b.Acc)
                 .Where(b => b.BookingId == id)
                 .Select(b => new
                 {
@@ -68,48 +76,46 @@ namespace SRMMS.Controllers
                     DayBooking = b.DayBooking,
                     HourBooking = b.HourBooking,
                     b.NumberOfPeople,
-                    AccountName = b.Acc.FullName,
-                    Phone = b.Acc.Phone,
+                    Shift = GetShift(b.HourBooking),
+                    NameBooking = b.NameBooking,
+                    PhoneBooking = b.PhoneBooking,
                     b.Status
                 })
                 .FirstOrDefaultAsync();
 
-            if (booking == null)
-            {
-                return NotFound("Booking not found.");
-            }
-
             var result = new
             {
-                booking.BookingId,
-                booking.DayBooking,
-                HourBooking = booking.HourBooking?.ToString(@"hh\:mm\:ss"),
-                booking.NumberOfPeople,
-                booking.AccountName,
-                booking.Phone,
-                booking.Status
+                booking?.BookingId,
+                booking?.DayBooking,
+                HourBooking = booking?.HourBooking?.ToString(@"hh\:mm\:ss"),
+                booking?.Shift,
+                booking?.NumberOfPeople,
+                NameBooking = booking?.NameBooking,
+                PhoneBooking = booking?.PhoneBooking,
+                booking?.Status
             };
 
-            return Ok(booking);
+            return Ok(result);
         }
 
 
         [HttpGet("/api/booking/getList")]
-        public async Task<ActionResult<IEnumerable<Booking>>> SearchBookings(string? accountName = "", DateTime? bookingDate = null, bool? status = null, int pageNumber = 1, int pageSize = 10)
+        public async Task<ActionResult<IEnumerable<Booking>>> SearchBookings(
+        string? nameBooking = "",
+        DateTime? bookingDate = null,
+        bool? status = null,
+        int pageNumber = 1,
+        int pageSize = 10)
         {
 
-            var totalBookings = await _context.Bookings.CountAsync();
-            var skip = (pageNumber - 1) * pageSize;
+            var query = _context.Bookings.AsQueryable();
 
-
-            var query = _context.Bookings.Include(b => b.Acc).AsQueryable();
-
-            if (!string.IsNullOrWhiteSpace(accountName))
+            if (!string.IsNullOrWhiteSpace(nameBooking))
             {
-                var trimmedAccountName = accountName.Trim();
-                query = query.Where(b => b.Acc.FullName.Contains(trimmedAccountName));
+                var trimmedNameBooking = nameBooking.Trim();
+                query = query.Where(b =>
+                    !string.IsNullOrEmpty(b.NameBooking) && b.NameBooking.Contains(trimmedNameBooking));
             }
-
 
             if (bookingDate.HasValue)
             {
@@ -121,6 +127,10 @@ namespace SRMMS.Controllers
                 query = query.Where(b => b.Status == status.Value);
             }
 
+            var totalBookings = await query.CountAsync();
+
+            var skip = (pageNumber - 1) * pageSize;
+
             var bookings = await query
                 .Skip(skip)
                 .Take(pageSize)
@@ -130,11 +140,12 @@ namespace SRMMS.Controllers
                     DayBooking = b.DayBooking,
                     HourBooking = b.HourBooking,
                     b.NumberOfPeople,
-                    AccountName = b.Acc.FullName,
-                    Phone = b.Acc.Phone,
-                    b.Shift,
+                    b.NameBooking,
+                    b.PhoneBooking,
+                    Shift = BookingController.GetShift(b.HourBooking),
                     b.Status
-                }).ToListAsync();
+                })
+                .ToListAsync();
 
             var result = bookings.Select(b => new
             {
@@ -142,8 +153,8 @@ namespace SRMMS.Controllers
                 b.DayBooking,
                 HourBooking = b.HourBooking?.ToString(@"hh\:mm\:ss"),
                 b.NumberOfPeople,
-                b.AccountName,
-                b.Phone,
+                b.NameBooking,
+                b.PhoneBooking,
                 b.Shift,
                 b.Status
             }).ToList();
@@ -153,9 +164,32 @@ namespace SRMMS.Controllers
                 PageNumber = pageNumber,
                 PageSize = pageSize,
                 TotalBookings = totalBookings,
-                Bookings = bookings
+                Bookings = result
             });
         }
+
+
+        public static string GetShift(TimeSpan? hourBooking)
+        {
+            if (!hourBooking.HasValue)
+                return "Unknown";
+
+            var hour = hourBooking.Value.Hours;
+
+
+            if (hour >= 10 && hour < 14)
+            {
+                return "Ca Trưa";
+            }
+            else if (hour >= 16 && hour <= 23)
+            {
+                return "Ca Tối";
+            }
+
+            return "Ca Khác";
+        }
+
+
 
 
         [HttpPut("/api/booking/update/{id}")]
@@ -172,26 +206,49 @@ namespace SRMMS.Controllers
                 return NotFound("Booking not found.");
             }
 
-
+            // Update the properties of the existing booking
             existingBooking.DayBooking = bookingDto.DayBooking ?? existingBooking.DayBooking;
+
+            // Handle HourBooking, ensure it's only updated if the new value is valid
             if (!string.IsNullOrEmpty(bookingDto.HourBooking))
             {
-                existingBooking.HourBooking = TimeSpan.Parse(bookingDto.HourBooking); 
+                existingBooking.HourBooking = TimeSpan.Parse(bookingDto.HourBooking);
+
+                // Tự động xác định Shift dựa trên giờ
+                int hour = existingBooking.HourBooking.Value.Hours;
+
+                // Nếu giờ từ 10 đến 14, thì là "Ca Trưa"
+                // Nếu giờ từ 16 đến 23, thì là "Ca Tối"
+                if (hour >= 10 && hour <= 14)
+                {
+                    existingBooking.Shift = "Ca Trưa";
+                }
+                else if (hour >= 16 && hour <= 23)
+                {
+                    existingBooking.Shift = "Ca Tối";
+                }
+                else
+                {
+                    existingBooking.Shift = "Khác"; // Hoặc để là null nếu không muốn có giá trị mặc định
+                }
             }
 
-            
             existingBooking.NumberOfPeople = bookingDto.NumberOfPeople ?? existingBooking.NumberOfPeople;
             existingBooking.Status = bookingDto.Status ?? existingBooking.Status;
-            existingBooking.Shift = bookingDto.Shift ?? existingBooking.Shift;
 
+
+            // Update the booking in the context
             _context.Bookings.Update(existingBooking);
             await _context.SaveChangesAsync();
 
+            // Send the updated booking data to clients via SignalR
             var bookings = await _context.Bookings.ToListAsync();
             await _hubContext.Clients.All.SendAsync("ReceiveBookingUpdate", bookings);
 
+            // Return the updated booking details
             return Ok(existingBooking);
         }
+
 
 
         [HttpDelete("/api/booking/delete/{id}")]
