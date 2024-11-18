@@ -97,7 +97,9 @@ public class Program
         }
 
         app.MapHub<BookingHub>("/bookingHub");
-        app.MapHub<FeedbackHub>("feedbackHub");
+
+        app.MapHub<FeedbackHub>("/feedbackHub");
+
         app.UseHttpsRedirection();
         app.UseRouting();
 
@@ -109,8 +111,8 @@ public class Program
         app.UseAuthorization();
 
         app.MapControllers();
-        
-        
+
+
 
         app.UseEndpoints(endpoints =>
         {

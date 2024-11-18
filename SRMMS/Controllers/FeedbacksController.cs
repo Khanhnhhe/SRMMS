@@ -6,6 +6,7 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.SignalR;
 using Microsoft.EntityFrameworkCore;
+using SRMMS.DTOs;
 using SRMMS.Models;
 
 namespace SRMMS.Controllers
@@ -16,11 +17,9 @@ namespace SRMMS.Controllers
     {
         private readonly SRMMSContext _context;
         private readonly IHubContext<FeedbackHub> _hubContext;
-
-        public FeedbacksController(SRMMSContext context, IHubContext<FeedbackHub> hubContext)
+        public FeedbacksController(SRMMSContext context)
         {
             _context = context;
-            _hubContext = hubContext;
         }
 
         // GET: api/Feedbacks
@@ -33,31 +32,35 @@ namespace SRMMS.Controllers
             }
 
             var feedbacks = await _context.Feedbacks
-                .Select(static f => new FeedbackDto
+                .Include(f => f.Acc)
+                .Select(f => new FeedbackDto
                 {
                     FeedbackId = f.FeedbackId,
                     Feedback1 = f.Feedback1,
                     RateStar = f.RateStar,
                     AccId = f.AccId,
-                    AccountFullName = f.Acc != null ? f.Acc.FullName : null, // Lấy FullName từ Account
-                    CreatedAt = f.CreatedAt.HasValue ? f.CreatedAt.Value.ToString("dd/MM/yyyy") : null,
-                    UpdatedAt = f.UpdatedAt.HasValue ? f.UpdatedAt.Value.ToString("dd/MM/yyyy") : null
-
-                })
-                .ToListAsync();
+                    CreatedAt = f.CreatedAt,
+                    FullName = f.Acc.FullName
+                }).ToListAsync();
 
             return Ok(feedbacks);
         }
 
-        // GET: api/Feedbacks/5
         [HttpGet("{id}")]
-        public async Task<ActionResult<Feedback>> GetFeedback(int id)
+        public async Task<ActionResult<FeedbackDto>> GetFeedback(int id)
         {
-            if (_context.Feedbacks == null)
-            {
-                return NotFound();
-            }
-            var feedback = await _context.Feedbacks.FindAsync(id);
+            var feedback = await _context.Feedbacks
+                .Include(f => f.Acc)
+                .Where(f => f.FeedbackId == id)
+                .Select(f => new FeedbackDto
+                {
+                    FeedbackId = f.FeedbackId,
+                    Feedback1 = f.Feedback1,
+                    RateStar = f.RateStar,
+                    AccId = f.AccId,
+                    CreatedAt = f.CreatedAt,
+                    FullName = f.Acc.FullName
+                }).FirstOrDefaultAsync();
 
             if (feedback == null)
             {
@@ -67,53 +70,39 @@ namespace SRMMS.Controllers
             return feedback;
         }
 
-        // PUT: api/Feedbacks/5
-        [HttpPut("{id}")]
-        public async Task<IActionResult> PutFeedback(int id, Feedback feedback)
-        {
-            if (id != feedback.FeedbackId)
-            {
-                return BadRequest();
-            }
 
-            _context.Entry(feedback).State = EntityState.Modified;
+      
+       
 
-            try
-            {
-                await _context.SaveChangesAsync();
-
-                // Notify clients about the updated feedback
-                await _hubContext.Clients.All.SendAsync("FeedbackUpdated", feedback);
-            }
-            catch (DbUpdateConcurrencyException)
-            {
-                if (!FeedbackExists(id))
-                {
-                    return NotFound();
-                }
-                else
-                {
-                    throw;
-                }
-            }
-
-            return NoContent();
-        }
 
         // POST: api/Feedbacks
+        // To protect from overposting attacks, see https://go.microsoft.com/fwlink/?linkid=2123754
         [HttpPost]
-        public async Task<ActionResult<FeedbackResponseDto>> PostFeedback(FeedbackRequestDto feedbackDto)
+        public async Task<ActionResult<FeedbackOutputDto>> PostFeedback(FeedbackInputDto input)
         {
-            if (_context.Feedbacks == null)
+            if (string.IsNullOrWhiteSpace(input.Feedback1))
             {
-                return Problem("Entity set 'SRMMSContext.Feedbacks' is null.");
+                return BadRequest("Feedback content is required.");
             }
 
-            // Tạo mới thực thể Feedback với thông tin từ DTO
+            if (input.RateStar < 1 || input.RateStar > 5)
+            {
+                return BadRequest("RateStar must be between 1 and 5.");
+            }
+
+            // Tìm tài khoản dựa trên Email
+            var account = await _context.Accounts.FirstOrDefaultAsync(a => a.Email == input.AccountEmail);
+            if (account == null)
+            {
+                return NotFound("Account not found.");
+            }
+
+            // Tạo thực thể Feedback mới
             var feedback = new Feedback
             {
-                Feedback1 = feedbackDto.Feedback1,
-                RateStar = feedbackDto.RateStar,
+                Feedback1 = input.Feedback1,
+                RateStar = input.RateStar,
+                AccId = account.AccId,
                 CreatedAt = DateTime.UtcNow,
                 UpdatedAt = DateTime.UtcNow
             };
@@ -121,24 +110,24 @@ namespace SRMMS.Controllers
             _context.Feedbacks.Add(feedback);
             await _context.SaveChangesAsync();
 
-            // Map Feedback sang FeedbackResponseDto để trả về kết quả
-            var feedbackResponse = new FeedbackResponseDto
+          
+            var output = new FeedbackOutputDto
             {
                 FeedbackId = feedback.FeedbackId,
                 Feedback1 = feedback.Feedback1,
-                RateStar = feedback.RateStar,
-                FullName = feedback.Acc?.FullName ?? "Anonymous",
-                CreatedAt = feedback.CreatedAt?.ToString("dd/MM/yyyy")
-               
+                RateStar = (int)feedback.RateStar,
+                AccId = (int)feedback.AccId,
+                CreatedAt = (DateTime)feedback.CreatedAt,
+                UpdatedAt = (DateTime)feedback.UpdatedAt,
+                Acc = new AccountDto
+                {
+                    AccId = account.AccId,
+                    FullName = account.FullName
+                }
             };
 
-            // Thông báo cho tất cả các client qua SignalR về feedback mới
-            await _hubContext.Clients.All.SendAsync("FeedbackCreated", feedbackResponse);
-
-            return CreatedAtAction("GetFeedback", new { id = feedback.FeedbackId }, feedbackResponse);
+            return CreatedAtAction(nameof(GetFeedback), new { id = output.FeedbackId }, output);
         }
-
-
 
 
 
@@ -158,9 +147,6 @@ namespace SRMMS.Controllers
 
             _context.Feedbacks.Remove(feedback);
             await _context.SaveChangesAsync();
-
-            // Notify clients about the deleted feedback
-            await _hubContext.Clients.All.SendAsync("FeedbackDeleted", feedback.FeedbackId);
 
             return NoContent();
         }

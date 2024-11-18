@@ -195,6 +195,8 @@ namespace SRMMS.Models
             {
                 entity.ToTable("Feedback");
 
+                entity.HasIndex(e => e.AccId, "idx_feedback_acc_id");
+
                 entity.Property(e => e.FeedbackId)
                     .ValueGeneratedNever()
                     .HasColumnName("feedback_id");
@@ -220,7 +222,8 @@ namespace SRMMS.Models
                 entity.HasOne(d => d.Acc)
                     .WithMany(p => p.Feedbacks)
                     .HasForeignKey(d => d.AccId)
-                    .HasConstraintName("FK_Feedback_Accounts");
+                    .OnDelete(DeleteBehavior.Cascade)
+                    .HasConstraintName("fk_account_feedback");
             });
 
             modelBuilder.Entity<Order>(entity =>
