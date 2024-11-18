@@ -5,6 +5,8 @@
         public DateTime? DayBooking { get; set; }
         public string HourBooking { get; set; }
         public int? NumberOfPeople { get; set; }
-        public int? AccId { get; set; }
+
+        public string? NameBooking { get; set; }
+        public string? PhoneBooking { get; set; }
     }
 }

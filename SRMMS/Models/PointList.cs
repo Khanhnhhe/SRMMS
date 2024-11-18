@@ -8,7 +8,9 @@ namespace SRMMS.Models
         public int PointId { get; set; }
         public int? AccId { get; set; }
         public double? NumberPonit { get; set; }
+        public int? OrderId { get; set; }
 
         public virtual Account? Acc { get; set; }
+        public virtual Order? Order { get; set; }
     }
 }
