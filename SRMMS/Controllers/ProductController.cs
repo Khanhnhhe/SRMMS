@@ -539,6 +539,21 @@ namespace SRMMS.Controllers
             return Ok(result);
         }
 
+        [HttpGet("count")]
+        public async Task<IActionResult> CountPro()
+        {
+            try
+            {
+                
+                var totalPro = await _context.Products.CountAsync();
+
+                return Ok(new { TotalCount = totalPro });
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { Message = ex.Message });
+            }
+        }
 
     }
 }
