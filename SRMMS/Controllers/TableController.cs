@@ -26,6 +26,7 @@ namespace SRMMS.Controllers
         public TableController(SRMMSContext context)
         {
             _context = context;
+            
         }
 
         [HttpPost("/api/table/create")]
@@ -62,6 +63,124 @@ namespace SRMMS.Controllers
             return Created("Table created successfully.", result);
         }
 
+        [HttpPut("/api/table/update/{id}")]
+        public async Task<IActionResult> UpdateTable(int id, [FromBody] TableDTO model)
+        {
+            if (model == null || string.IsNullOrWhiteSpace(model.Table_Name))
+            {
+                return BadRequest("BadRequest");
+            }
+
+            var table = await _context.Tables.FirstOrDefaultAsync(t => t.TableId == id);
+            //if (table == null)
+            //{
+            //    return NotFound(".");
+            //}
+
+            var existingTable = await _context.Tables
+                .FirstOrDefaultAsync(t => t.TableName == model.Table_Name && t.TableId != id);
+            if (existingTable != null)
+            {
+                return Conflict("Conflict");
+            }
+
+
+            table.TableName = model.Table_Name;
+            table.TableOfPeople = model.TableOfPeople;
+            table.StatusId = model.StatusId;
+
+
+            _context.Tables.Update(table);
+            await _context.SaveChangesAsync();
+
+            var result = new TableDTO
+            {
+                Table_Id = table.TableId,
+                Table_Name = table.TableName,
+                TableOfPeople = table.TableOfPeople,
+                StatusId = table.StatusId
+            };
+
+            return Ok("Update successfully");
+        }
+
+        [HttpGet("/api/table/{id}")]
+        public async Task<IActionResult> GetTableById(int id)
+        {
+            var table = await _context.Tables
+                .Where(t => t.TableId == id)
+                .Select(t => new ListTableDTO
+                {
+                    TableId = t.TableId,
+                    TableName = t.TableName,
+                    StatusName = t.StatusId != null
+                        ? _context.StatusTables
+                            .Where(s => s.StatusId == t.StatusId)
+                            .Select(s => s.StatusName)
+                            .FirstOrDefault()
+                        : null,
+                    BookingId = t.BookingId,
+                    TableOfPeople = t.TableOfPeople
+                })
+                .FirstOrDefaultAsync();
+
+            //if (table == null)
+            //{
+            //    return NotFound("not found table");
+            //}
+
+            return Ok(table);
+        }
+
+
+
+        //[HttpGet("/api/table/list")]
+        //public async Task<IActionResult> GetTables(int? statusId = null, int? tableOfPeople = null, int pageNumber = 1, int pageSize = 10)
+        //{
+       
+        //    var query = _context.Tables.AsQueryable();
+
+        //    if (statusId.HasValue)
+        //    {
+        //        query = query.Where(t => t.StatusId == statusId.Value);
+        //    }
+
+        //    if (tableOfPeople.HasValue)
+        //    {
+        //        query = query.Where(t => t.TableOfPeople == tableOfPeople.Value);
+        //    }
+
+        //    var totalTables = await query.CountAsync();
+
+        //    var skip = (pageNumber - 1) * pageSize;
+
+        //    var tables = await query
+        //        .Skip(skip)
+        //        .Take(pageSize)
+        //        .Select(t => new ListTableDTO
+        //        {
+        //            TableId = t.TableId,
+        //            TableName = t.TableName,
+        //            StatusName = t.StatusId != null
+        //                ? _context.StatusTables
+        //                    .Where(s => s.StatusId == t.StatusId)
+        //                    .Select(s => s.StatusName)
+        //                    .FirstOrDefault()
+        //                : null,
+        //            BookingId = t.BookingId,
+        //            TableOfPeople = t.TableOfPeople
+        //        })
+        //        .ToListAsync();
+
+        //    return Ok(new
+        //    {
+        //        PageNumber = pageNumber,
+        //        PageSize = pageSize,
+        //        TotalTables = totalTables,
+        //        Tables = tables
+        //    });
+        //}
+
         [HttpGet("/api/table/list")]
         public async Task<IActionResult> GetTables()
         {
@@ -70,11 +189,12 @@ namespace SRMMS.Controllers
                 {
                     TableId = t.TableId,
                     TableName = t.TableName,
-                    StatusName = t.StatusId != null ? _context.StatusTables
-                        .Where(s => s.StatusId == t.StatusId)
-                        .Select(s => s.StatusName)
-                        .FirstOrDefault() : null,
-
+                    StatusName = t.StatusId != null
+                        ? _context.StatusTables
+                            .Where(s => s.StatusId == t.StatusId)
+                            .Select(s => s.StatusName)
+                            .FirstOrDefault()
+                        : null,
                     BookingId = t.BookingId,
                     TableOfPeople = t.TableOfPeople
                 })
@@ -82,6 +202,27 @@ namespace SRMMS.Controllers
 
             return Ok(tables);
         }
+
+
+
+
+        [HttpDelete("/api/table/delete/{id}")]
+        public async Task<IActionResult> DeleteTable(int id)
+        {
+            var table = await _context.Tables.FirstOrDefaultAsync(t => t.TableId == id);
+            //if (table == null)
+            //{
+            //    return NotFound("not found");
+            //}
+
+            _context.Tables.Remove(table);
+            await _context.SaveChangesAsync();
+
+            return Ok("delete successfully");
+        }
+
+
+
 
 
 
