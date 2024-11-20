@@ -189,12 +189,14 @@ namespace SRMMS.Controllers
                 {
                     TableId = t.TableId,
                     TableName = t.TableName,
+                    StatusId = t.StatusId,
                     StatusName = t.StatusId != null
                         ? _context.StatusTables
                             .Where(s => s.StatusId == t.StatusId)
                             .Select(s => s.StatusName)
                             .FirstOrDefault()
                         : null,
+
                     BookingId = t.BookingId,
                     TableOfPeople = t.TableOfPeople
                 })
@@ -203,7 +205,21 @@ namespace SRMMS.Controllers
             return Ok(tables);
         }
 
+        [HttpGet("/api/status/list")]
+        public async Task<IActionResult> GetStatusList()
+        {
+            
+            var statuses = await _context.StatusTables
+                .Select(s => new
+                {
+                    StatusId = s.StatusId,
+                    StatusName = s.StatusName
+                })
+                .ToListAsync();
 
+            
+            return Ok(statuses);
+        }
 
 
         [HttpDelete("/api/table/delete/{id}")]

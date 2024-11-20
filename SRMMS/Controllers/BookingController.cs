@@ -206,19 +206,14 @@ namespace SRMMS.Controllers
                 return NotFound("Booking not found.");
             }
 
-            // Update the properties of the existing booking
             existingBooking.DayBooking = bookingDto.DayBooking ?? existingBooking.DayBooking;
 
-            // Handle HourBooking, ensure it's only updated if the new value is valid
             if (!string.IsNullOrEmpty(bookingDto.HourBooking))
             {
                 existingBooking.HourBooking = TimeSpan.Parse(bookingDto.HourBooking);
 
-                // Tự động xác định Shift dựa trên giờ
                 int hour = existingBooking.HourBooking.Value.Hours;
 
-                // Nếu giờ từ 10 đến 14, thì là "Ca Trưa"
-                // Nếu giờ từ 16 đến 23, thì là "Ca Tối"
                 if (hour >= 10 && hour <= 14)
                 {
                     existingBooking.Shift = "Ca Trưa";
@@ -229,23 +224,19 @@ namespace SRMMS.Controllers
                 }
                 else
                 {
-                    existingBooking.Shift = "Khác"; // Hoặc để là null nếu không muốn có giá trị mặc định
+                    existingBooking.Shift = "Khác"; 
                 }
             }
 
             existingBooking.NumberOfPeople = bookingDto.NumberOfPeople ?? existingBooking.NumberOfPeople;
             existingBooking.Status = bookingDto.Status ?? existingBooking.Status;
 
-
-            // Update the booking in the context
             _context.Bookings.Update(existingBooking);
             await _context.SaveChangesAsync();
 
-            // Send the updated booking data to clients via SignalR
             var bookings = await _context.Bookings.ToListAsync();
             await _hubContext.Clients.All.SendAsync("ReceiveBookingUpdate", bookings);
 
-            // Return the updated booking details
             return Ok(existingBooking);
         }
 
