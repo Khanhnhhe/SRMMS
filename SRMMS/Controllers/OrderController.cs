@@ -1,5 +1,6 @@
 ﻿using System;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 using SRMMS.DTOs;
 
 namespace SRMMS.Controllers
@@ -27,40 +28,55 @@ namespace SRMMS.Controllers
             var orderId = await _orderService.CreateOrder(orderDto);
             return Ok(new { OrderId = orderId });
         }
-        //[HttpGet("list")]
-        //public IActionResult GetOrders([FromQuery] int pageNumber = 1, [FromQuery] int pageSize = 10, [FromQuery] string? tableName = null)
-        //{
-        //    var orders = _orderService.GetOrders(pageNumber, pageSize, tableName);
-        //    return Ok(orders);
-        //}
+        [HttpGet("list")]
+        public IActionResult GetOrders([FromQuery] int pageNumber = 1, [FromQuery] int pageSize = 10, [FromQuery] string? tableName = null)
+        {
+            var orders = _orderService.GetOrders(pageNumber, pageSize, tableName);
+            return Ok(orders);
+        }
 
-        //[HttpGet("listOrderByTable/{tableId}")]
-        //public IActionResult GetOrdersByTable(int tableId, int pageNumber = 1, int pageSize = 10)
-        //{
-        //    var orders = _orderService.GetOrdersByTable(tableId, pageNumber, pageSize);
-        //    if (orders == null || orders.Count == 0)
-        //    {
-        //        return NotFound(new { Message = $"No orders found for table {tableId}" });
-        //    }
-        //    return Ok(orders);
-        //}
+        [HttpGet("listOrderByTable/{tableId}")]
+        public IActionResult GetOrdersByTable(int tableId, int pageNumber = 1, int pageSize = 10)
+        {
+            var orders = _orderService.GetOrdersByTable(tableId, pageNumber, pageSize);
+            if (orders == null || orders.Count == 0)
+            {
+                return NotFound(new { Message = $"No orders found for table {tableId}" });
+            }
+            return Ok(orders);
+        }
 
-        //[HttpGet("searchByTableName")]
-        //public IActionResult SearchOrdersByTableName([FromQuery] string? tableName, [FromQuery] int pageNumber = 1, [FromQuery] int pageSize = 10)
-        //{
+        [HttpGet("searchByTableName")]
+        public IActionResult SearchOrdersByTableName([FromQuery] string? tableName, [FromQuery] int pageNumber = 1, [FromQuery] int pageSize = 10)
+        {
 
-        //    if (string.IsNullOrEmpty(tableName))
-        //    {
-        //        var orders = _orderService.GetOrders(pageNumber, pageSize);
-        //        return Ok(orders);
-        //    }
-        //    else
-        //    {
+            if (string.IsNullOrEmpty(tableName))
+            {
+                var orders = _orderService.GetOrders(pageNumber, pageSize);
+                return Ok(orders);
+            }
+            else
+            {
 
-        //        var orders = _orderService.SearchOrdersByTableName(tableName, pageNumber, pageSize);
-        //        return Ok(orders);
-        //    }
-        //}
+                var orders = _orderService.SearchOrdersByTableName(tableName, pageNumber, pageSize);
+                return Ok(orders);
+            }
+        }
+
+        [HttpGet("count")]
+        public IActionResult CountOrders()
+        {
+            try
+            {
+                int totalOrders = _orderService.CountOrders();
+                return Ok(new { TotalOrders = totalOrders });
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { Message = "An error occurred while counting orders.", Error = ex.Message });
+            }
+        }
+
     }
 }
 
