@@ -29,11 +29,29 @@ namespace SRMMS.Controllers
             return Ok(new { OrderId = orderId });
         }
         [HttpGet("list")]
-        public IActionResult GetOrders([FromQuery] int pageNumber = 1, [FromQuery] int pageSize = 10, [FromQuery] string? tableName = null)
+        public IActionResult GetOrders(
+    [FromQuery] int pageNumber = 1,
+    [FromQuery] int pageSize = 10,
+    [FromQuery] string? tableName = null,
+    [FromQuery] DateTime? fromDate = null,
+    [FromQuery] DateTime? toDate = null)
         {
-            var orders = _orderService.GetOrders(pageNumber, pageSize, tableName);
-            return Ok(orders);
+            try
+            {
+                // Gọi service để lấy dữ liệu đơn hàng đã phân trang và tính toán tổng số đơn hàng
+                var (orders, totalOrders) = _orderService.GetOrders(pageNumber, pageSize, tableName, fromDate, toDate);
+
+                // Trả về kết quả với danh sách đơn hàng và tổng số đơn hàng
+                return Ok(new { Orders = orders, TotalOrders = totalOrders });
+            }
+            catch (Exception ex)
+            {
+                // Trả về lỗi nếu có exception xảy ra
+                return BadRequest(new { Message = ex.Message });
+            }
         }
+
+
 
         [HttpGet("listOrderByTable/{tableId}")]
         public IActionResult GetOrdersByTable(int tableId, int pageNumber = 1, int pageSize = 10)
