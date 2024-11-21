@@ -1,4 +1,6 @@
 ﻿using System;
+using SRMMS.Models;
+
 namespace SRMMS.DTOs
 {
 	public class OrderDTO
@@ -10,7 +12,8 @@ namespace SRMMS.DTOs
         public decimal? TotalMoney { get; set; }
         public bool? Status { get; set; }
         public int? CodeId { get; set; }
-        public List<OrderDetailDTO> OrderDetails { get; set; }
+        public List<ComboDetailDTO> ComboDetails { get; set; }  
+        public List<ProductDetailOrderDTO> ProductDetails { get; set; }
     }
 }
 

@@ -1,3 +1,4 @@
+
 ﻿using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.SignalR;
 using Microsoft.EntityFrameworkCore;
@@ -231,14 +232,16 @@ namespace SRMMS.Controllers
             existingBooking.NumberOfPeople = bookingDto.NumberOfPeople ?? existingBooking.NumberOfPeople;
             existingBooking.Status = bookingDto.Status ?? existingBooking.Status;
 
-            _context.Bookings.Update(existingBooking);
-            await _context.SaveChangesAsync();
 
-            var bookings = await _context.Bookings.ToListAsync();
-            await _hubContext.Clients.All.SendAsync("ReceiveBookingUpdate", bookings);
+//            _context.Bookings.Update(existingBooking);
+//            await _context.SaveChangesAsync();
 
-            return Ok(existingBooking);
-        }
+//            var bookings = await _context.Bookings.ToListAsync();
+//            await _hubContext.Clients.All.SendAsync("ReceiveBookingUpdate", bookings);
+
+//            return Ok(existingBooking);
+//        }
+
 
 
 
@@ -251,14 +254,15 @@ namespace SRMMS.Controllers
                 return NotFound("Booking not found.");
             }
 
-            _context.Bookings.Remove(existingBooking);
-            await _context.SaveChangesAsync();
 
-            var bookings = await _context.Bookings.ToListAsync();
-            await _hubContext.Clients.All.SendAsync("ReceiveBookingUpdate", bookings);
+//            _context.Bookings.Remove(existingBooking);
+//            await _context.SaveChangesAsync();
 
-            return NoContent();
-        }
+//            var bookings = await _context.Bookings.ToListAsync();
+//            await _hubContext.Clients.All.SendAsync("ReceiveBookingUpdate", bookings);
 
-    }
-}
+//            return NoContent();
+//        }
+
+//    }
+//}

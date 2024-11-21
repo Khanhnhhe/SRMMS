@@ -20,5 +20,6 @@ namespace SRMMS.Models
         public string? PhoneBooking { get; set; }
 
         public virtual ICollection<Table> Tables { get; set; }
+
     }
 }

@@ -36,7 +36,9 @@ namespace SRMMS.Models
             if (!optionsBuilder.IsConfigured)
             {
 #warning To protect potentially sensitive information in your connection string, you should move it out of source code. You can avoid scaffolding the connection string by using the Name= syntax to read it from configuration - see https://go.microsoft.com/fwlink/?linkid=2131148. For more guidance on storing connection strings, see http://go.microsoft.com/fwlink/?LinkId=723263.
+
                 optionsBuilder.UseSqlServer("Server=DESKTOP-Q5D4AD1\\SQLEXPRESS;database=SRMMS;Trusted_Connection=SSPI;Encrypt=false;TrustServerCertificate=true");
+
             }
         }
 
@@ -101,6 +103,7 @@ namespace SRMMS.Models
                     .HasColumnName("Phone_booking");
 
                 entity.Property(e => e.Shift).HasMaxLength(50);
+
 
                 entity.Property(e => e.Status).HasColumnName("status");
             });
@@ -235,7 +238,7 @@ namespace SRMMS.Models
                 entity.Property(e => e.CodeId).HasColumnName("code_id");
 
                 entity.Property(e => e.OrderDate)
-                    .HasColumnType("date")
+                    .HasColumnType("datetime")
                     .HasColumnName("order_date");
 
                 entity.Property(e => e.Status).HasColumnName("status");
@@ -263,6 +266,8 @@ namespace SRMMS.Models
 
                 entity.Property(e => e.OrderDetailId).HasColumnName("order_detail_id");
 
+                entity.Property(e => e.ComboId).HasColumnName("combo_id");
+
                 entity.Property(e => e.OrderId).HasColumnName("order_id");
 
                 entity.Property(e => e.Price)
@@ -272,6 +277,11 @@ namespace SRMMS.Models
                 entity.Property(e => e.ProId).HasColumnName("pro_id");
 
                 entity.Property(e => e.Quantiity).HasColumnName("quantiity");
+
+                entity.HasOne(d => d.Combo)
+                    .WithMany(p => p.OrderDetails)
+                    .HasForeignKey(d => d.ComboId)
+                    .HasConstraintName("FK_OrderDetails_Combo");
 
                 entity.HasOne(d => d.Order)
                     .WithMany(p => p.OrderDetails)
