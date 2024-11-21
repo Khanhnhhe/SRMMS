@@ -5,6 +5,7 @@ using Microsoft.IdentityModel.Tokens;
 using SRMMS.DTOs;
 using SRMMS.Hubs;
 using SRMMS.Models;
+using SRMMS.SMS;
 
 namespace SRMMS.Controllers
 {
@@ -14,11 +15,13 @@ namespace SRMMS.Controllers
     {
         private readonly SRMMSContext _context;
         private readonly IHubContext<BookingHub> _hubContext;
+        private readonly ITwilioService _twilioService;
 
-        public BookingController(SRMMSContext context, IHubContext<BookingHub> hubContext)
+        public BookingController(SRMMSContext context, IHubContext<BookingHub> hubContext, ITwilioService twilioService)
         {
             _context = context;
             _hubContext = hubContext;
+            _twilioService = twilioService;
         }
 
         [HttpPost("/api/booking/Create")]
@@ -189,7 +192,43 @@ namespace SRMMS.Controllers
             return "Ca Khác";
         }
 
+        [HttpPut("/api/booking/updateStatus/{id}")]
+        public async Task<IActionResult> UpdateStatusBooking(int id, [FromBody] BookingStatusDTO model)
+        {
+            
+            if (model == null)
+            {
+                return BadRequest("Dữ liệu không hợp lệ.");
+            }
 
+            var booking = await _context.Bookings.FirstOrDefaultAsync(b => b.BookingId == id);
+            if (booking == null)
+            {
+                return NotFound("Không tìm thấy đơn đặt chỗ.");
+            }
+
+            
+            booking.Status = model.Status;
+            _context.Bookings.Update(booking);
+            await _context.SaveChangesAsync();
+
+            
+            string message = model.Status
+                ? $"Xin chào {booking.NameBooking}, đơn đặt chỗ của bạn cho {booking.NumberOfPeople} người vào ngày {booking.DayBooking?.ToString("dd/MM/yyyy")} lúc {booking.HourBooking?.ToString(@"hh\:mm")} đã được chấp nhận. Cảm ơn bạn đã chọn dịch vụ của chúng tôi!"
+                : $"Xin chào {booking.NameBooking}, rất tiếc đơn đặt chỗ của bạn cho ngày {booking.DayBooking?.ToString("dd/MM/yyyy")} vào lúc {booking.HourBooking?.ToString(@"hh\:mm")} không được chấp nhận. Vui lòng liên hệ với chúng tôi để biết thêm chi tiết.";
+
+            try
+            {
+                
+                await _twilioService.SendSmsAsync(booking.PhoneBooking, message);
+                return Ok("Cập nhật trạng thái và gửi thông báo thành công.");
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Lỗi khi gửi SMS: {ex.Message}");
+                return StatusCode(500, "Cập nhật trạng thái thành công, nhưng không gửi được thông báo SMS.");
+            }
+        }
 
 
         [HttpPut("/api/booking/update/{id}")]
