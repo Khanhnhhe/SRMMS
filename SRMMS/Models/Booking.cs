@@ -5,6 +5,11 @@ namespace SRMMS.Models
 {
     public partial class Booking
     {
+        public Booking()
+        {
+            Tables = new HashSet<Table>();
+        }
+
         public int BookingId { get; set; }
         public DateTime? DayBooking { get; set; }
         public int? NumberOfPeople { get; set; }
@@ -14,6 +19,7 @@ namespace SRMMS.Models
         public string? NameBooking { get; set; }
         public string? PhoneBooking { get; set; }
 
-        public virtual Table BookingNavigation { get; set; } = null!;
+        public virtual ICollection<Table> Tables { get; set; }
+
     }
 }

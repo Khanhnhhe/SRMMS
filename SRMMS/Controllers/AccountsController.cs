@@ -98,10 +98,10 @@ namespace SRMMS.Controllers
                 })
                 .FirstOrDefaultAsync();
 
-            if (account == null)
-            {
-                return NotFound(new { message = "Account not found." });
-            }
+            //if (account == null)
+            //{
+            //    return NotFound(new { message = "Account not found." });
+            //}
 
             return Ok(account);
         }
@@ -186,10 +186,10 @@ namespace SRMMS.Controllers
         {
             var customer = _context.Accounts.FirstOrDefault(c => c.AccId == id);
 
-            if (customer == null)
-            {
-                return NotFound(new { message = "Customer not found." });
-            }
+            //if (customer == null)
+            //{
+            //    return NotFound(new { message = "Customer not found." });
+            //}
 
             _context.Accounts.Remove(customer);
             _context.SaveChanges();

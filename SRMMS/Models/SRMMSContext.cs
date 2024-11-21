@@ -36,7 +36,9 @@ namespace SRMMS.Models
             if (!optionsBuilder.IsConfigured)
             {
 #warning To protect potentially sensitive information in your connection string, you should move it out of source code. You can avoid scaffolding the connection string by using the Name= syntax to read it from configuration - see https://go.microsoft.com/fwlink/?linkid=2131148. For more guidance on storing connection strings, see http://go.microsoft.com/fwlink/?LinkId=723263.
-                optionsBuilder.UseSqlServer("Server=localhost;Database=SRMMS;User Id=SA;Password=Admin2002@;");
+
+                optionsBuilder.UseSqlServer("Server=DESKTOP-Q5D4AD1\\SQLEXPRESS;database=SRMMS;Trusted_Connection=SSPI;Encrypt=false;TrustServerCertificate=true");
+
             }
         }
 
@@ -82,9 +84,7 @@ namespace SRMMS.Models
             {
                 entity.ToTable("Booking");
 
-                entity.Property(e => e.BookingId)
-                    .ValueGeneratedOnAdd()
-                    .HasColumnName("Booking_id");
+                entity.Property(e => e.BookingId).HasColumnName("Booking_id");
 
                 entity.Property(e => e.DayBooking)
                     .HasColumnType("date")
@@ -104,13 +104,8 @@ namespace SRMMS.Models
 
                 entity.Property(e => e.Shift).HasMaxLength(50);
 
-                entity.Property(e => e.Status).HasColumnName("status");
 
-                entity.HasOne(d => d.BookingNavigation)
-                    .WithOne(p => p.Booking)
-                    .HasForeignKey<Booking>(d => d.BookingId)
-                    .OnDelete(DeleteBehavior.ClientSetNull)
-                    .HasConstraintName("FK_Booking_Table");
+                entity.Property(e => e.Status).HasColumnName("status");
             });
 
             modelBuilder.Entity<Category>(entity =>
@@ -408,6 +403,11 @@ namespace SRMMS.Models
                 entity.Property(e => e.TableName)
                     .HasMaxLength(50)
                     .HasColumnName("table_name");
+
+                entity.HasOne(d => d.Booking)
+                    .WithMany(p => p.Tables)
+                    .HasForeignKey(d => d.BookingId)
+                    .HasConstraintName("FK_Table_Booking");
             });
 
             OnModelCreatingPartial(modelBuilder);

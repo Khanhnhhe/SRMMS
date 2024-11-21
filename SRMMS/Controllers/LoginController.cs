@@ -9,6 +9,8 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.IdentityModel.Tokens;
 using SRMMS.DTOs;
 using SRMMS.Models;
+using SRMMS.SMS;
+
 
 namespace SRMMS.Controllers
 {
@@ -18,11 +20,13 @@ namespace SRMMS.Controllers
     {
         private readonly IConfiguration _configuration;
         private readonly SRMMSContext _context;
+        private readonly ITwilioService _twilioService;
 
-        public LoginController(IConfiguration configuration, SRMMSContext context)
+        public LoginController(IConfiguration configuration, SRMMSContext context , ITwilioService twilioService)
         {
             _configuration = configuration;
             _context = context;
+            _twilioService = twilioService;
         }
 
         [HttpPost("login")]
@@ -82,6 +86,8 @@ namespace SRMMS.Controllers
             return new JwtSecurityTokenHandler().WriteToken(token);
         }
 
+        
+
         [HttpPost("change-password")]
         public IActionResult ChangePassword([FromBody] ChangePasswordDTO model)
         {
@@ -105,5 +111,51 @@ namespace SRMMS.Controllers
 
             return Ok("Password changed successfully");
         }
+
+        [HttpPost("register")]
+        public async Task<IActionResult> Register([FromBody] RegisterDTO model)
+        {
+            var existingUser = await _context.Accounts.FirstOrDefaultAsync(a => a.Email == model.Email);
+            if (existingUser != null)
+            {
+                return BadRequest("Email is already registered.");
+            }
+
+            try
+            {
+                string verificationCode = GenerateVerificationCode();
+
+              
+                await _twilioService.SendSmsAsync(model.PhoneNumber, $"Mã xác nhận của bạn là: {verificationCode}");
+
+                
+                var newUser = new Account
+                {
+                    Email = model.Email,
+                    Phone = model.PhoneNumber,
+                    Password = model.Password, 
+                    FullName = model.FullName
+                };
+
+                _context.Accounts.Add(newUser);
+                await _context.SaveChangesAsync();
+
+                return Ok(new { Message = "Mã xác nhận đã được gửi đến số điện thoại của bạn. Vui lòng kiểm tra và nhập mã xác nhận để hoàn tất đăng ký." });
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error: {ex.Message}");
+                return StatusCode(500, $"Internal server error: {ex.Message}");
+            }
+        }
+
+        private string GenerateVerificationCode()
+        {
+            var random = new Random();
+            return random.Next(100000, 999999).ToString(); // Tạo mã xác nhận 6 chữ số
+        }
+
+
+
     }
 }

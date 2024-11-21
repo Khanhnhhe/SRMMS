@@ -4,7 +4,9 @@
     {
 
         public int BookingId { get; set; }
-        public DateTime? TimeBooking { get; set; }
+
+        public DateTime? DayBooking { get; set; }
+        public string HourBooking { get; set; }
         public int? NumberOfPeople { get; set; }
         public bool? Status { get; set; }
         public string? Shift { get; set; }
