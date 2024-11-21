@@ -1,6 +1,7 @@
 ﻿using System;
 using Microsoft.AspNetCore.SignalR;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Metadata.Internal;
 using SRMMS.DTOs;
 using SRMMS.Models;
 
@@ -18,20 +19,23 @@ namespace SRMMS.Controllers
         }
         public async Task<int> CreateOrder(OrderDTO orderDto)
         {
-           
+            
             var code = await _context.DiscountCodes.FindAsync(orderDto.CodeId);
-            if (code == null)
-            {
-                // Nếu không tìm thấy CodeId, trả về thông báo lỗi
-                throw new Exception("CodeId không tồn tại.");
-            }
+          
 
-           
+            
             var table = await _context.Tables.FindAsync(orderDto.TableId);
             if (table == null)
             {
-               
                 throw new Exception("TableId không tồn tại.");
+            }
+
+          
+            if (orderDto.PointId.HasValue)
+            {
+                var point = await _context.PointLists
+                    .FirstOrDefaultAsync(p => p.PointId == orderDto.PointId && p.AccId == orderDto.AccId);
+
             }
 
            
@@ -39,7 +43,7 @@ namespace SRMMS.Controllers
             {
                 TableId = orderDto.TableId,
                 OrderDate = DateTime.Now,
-                TotalMoney = orderDto.TotalMoney,  
+                TotalMoney = orderDto.TotalMoney,
                 Status = orderDto.Status,
                 CodeId = orderDto.CodeId,
                 OrderDetails = new List<OrderDetail>()
@@ -58,27 +62,23 @@ namespace SRMMS.Controllers
                         throw new Exception($"Combo với ID {comboDetail.ComboId} không tồn tại.");
                     }
 
-                    // Kiểm tra trạng thái của combo
                     if (combo.ComboStatus == false)
                     {
                         throw new Exception($"Combo với ID {comboDetail.ComboId} đã bị vô hiệu hóa, không thể đặt hàng.");
                     }
-                    if (combo != null)
-                    {
-                       
-                        var orderDetail = new OrderDetail
-                        {
-                            ComboId = comboDetail.ComboId,
-                            Quantiity= comboDetail.Quantity,
-                            Price = comboDetail.Price  
-                        };
 
-                        order.OrderDetails.Add(orderDetail);
-                    }
+                    var orderDetail = new OrderDetail
+                    {
+                        ComboId = comboDetail.ComboId,
+                        Quantiity = comboDetail.Quantity,
+                        Price = comboDetail.Price
+                    };
+
+                    order.OrderDetails.Add(orderDetail);
                 }
             }
 
-           
+            
             if (orderDto.ProductDetails != null && orderDto.ProductDetails.Any())
             {
                 foreach (var productDetail in orderDto.ProductDetails)
@@ -89,23 +89,19 @@ namespace SRMMS.Controllers
                         throw new Exception($"Sản phẩm với ID {productDetail.ProId} không tồn tại.");
                     }
 
-                    // Kiểm tra trạng thái của sản phẩm
                     if (product.ProStatus == false)
                     {
                         throw new Exception($"Sản phẩm với ID {productDetail.ProId} đã bị vô hiệu hóa, không thể đặt hàng.");
                     }
-                    if (product != null)
-                    {
-                       
-                        var orderDetail = new OrderDetail
-                        {
-                            ProId = productDetail.ProId,
-                            Quantiity = productDetail.Quantity,
-                            Price = productDetail.Price  
-                        };
 
-                        order.OrderDetails.Add(orderDetail);
-                    }
+                    var orderDetail = new OrderDetail
+                    {
+                        ProId = productDetail.ProId,
+                        Quantiity = productDetail.Quantity,
+                        Price = productDetail.Price
+                    };
+
+                    order.OrderDetails.Add(orderDetail);
                 }
             }
 
@@ -117,125 +113,198 @@ namespace SRMMS.Controllers
             await _context.SaveChangesAsync();
 
             
-            await _orderHubContext.Clients.All.SendAsync("ReceiveOrder", order);
+            if (orderDto.PointId.HasValue)
+            {
+                var point = await _context.PointLists.FirstOrDefaultAsync(p => p.PointId == orderDto.PointId);
+                if (point != null)
+                {
+                    point.OrderId = order.OrderId;  
+                    _context.PointLists.Update(point);
+                    await _context.SaveChangesAsync();
+                }
+            }
 
             
+            await _orderHubContext.Clients.All.SendAsync("ReceiveOrder", order);
+
             return order.OrderId;
         }
 
 
 
+        public List<GetOrderByTableNameDTO> GetOrders(int pageNumber = 1, int pageSize = 10, string? tableName = null)
+        {
+            var query = _context.Orders
+                .Include(o => o.Table)
+                .Include(o => o.OrderDetails)  
+                .ThenInclude(od => od.Pro)  
+                .Include(o => o.OrderDetails)  
+                .ThenInclude(od => od.Combo)   
+                .AsQueryable();
 
-        //    public List<OrderDTO> GetOrders(int pageNumber = 1, int pageSize = 10, string? tableName = null)
-        //    {
-        //        var query = _context.Orders
-        //            .Include(o => o.Table) 
-        //            .AsQueryable();
+            if (!string.IsNullOrEmpty(tableName))
+            {
+                string normalizedTableName = tableName.Replace(" ", "");
+                var tableExists = _context.Tables
+                    .Any(t => t.TableName.Replace(" ", "").Contains(normalizedTableName));
 
+                if (!tableExists)
+                {
+                    throw new Exception($"Table with name '{tableName}' does not exist.");
+                }
+            }
 
-        //        if (!string.IsNullOrEmpty(tableName))
-        //        {
+            var orders = query
+                .Select(o => new GetOrderByTableNameDTO
+                {
+                    OrderId = o.OrderId,
+                    OrderDate = o.OrderDate,
+                    TotalMoney = o.TotalMoney,
+                    Status = o.Status,
+                    Products = o.OrderDetails
+                        .Where(od => od.Pro != null)  
+                        .Select(od => new GetProductDTO
+                        {
+                            ProductId = od.Pro.ProId,
+                            Quantity = (int)od.Quantiity,
+                            Price = od.Price
+                        }).ToList(),
+                    Combos = o.OrderDetails
+                        .Where(od => od.Combo != null)  
+                        .Select(od => new GetComboDTO
+                        {
+                            ComboId = od.Combo.ComboId,
+                            Quantity = (int)od.Quantiity,
+                            Price = od.Price
+                        }).ToList()
+                })
+                .Skip((pageNumber - 1) * pageSize)
+                .Take(pageSize)
+                .ToList();
 
-        //            string normalizedTableName = tableName.Replace(" ", "");
-
-        //            query = query.Where(o => o.Table.TableName.Replace(" ", "").Contains(normalizedTableName)); 
-        //        }
-
-        //        var orders = query
-        //            .Select(o => new OrderDTO
-        //            {
-        //                OrderId = o.OrderId,
-        //                TableId = o.TableId,
-        //                TableName = o.Table.TableName, 
-        //                OrderDate = o.OrderDate,
-        //                TotalMoney = o.TotalMoney,
-        //                Status = o.Status,
-        //                CodeId = o.CodeId,
-        //                OrderDetails = o.OrderDetails.Select(od => new OrderDetailDTO
-        //                {
-        //                    ProId = od.ProId,
-        //                    Quantity = od.Quantiity,
-        //                    Price = od.Price
-        //                }).ToList()
-        //            })
-        //            .Skip((pageNumber - 1) * pageSize)  
-        //            .Take(pageSize)                     
-        //            .ToList();
-
-        //        return orders;
-        //    }
-
-
-        //    public List<OrderDTO> GetOrdersByTable(int tableId, int pageNumber = 1, int pageSize = 10)
-        //    {
-        //        var ordersQuery = _context.Orders
-        //            .Where(o => o.TableId == tableId)
-        //            .OrderBy(o => o.OrderDate);
-
-        //        var pagedOrders = ordersQuery
-        //            .Skip((pageNumber - 1) * pageSize)
-        //            .Take(pageSize)
-        //            .Select(o => new OrderDTO
-        //            {
-        //                OrderId = o.OrderId,
-        //                TableId = o.TableId,
-        //                OrderDate = o.OrderDate,
-        //                TotalMoney = o.TotalMoney,
-        //                Status = o.Status,
-        //                CodeId = o.CodeId,
-        //                OrderDetails = o.OrderDetails.Select(od => new OrderDetailDTO
-        //                {
-        //                    ProId = od.ProId,
-        //                    Quantity = od.Quantiity,
-        //                    Price = od.Price
-        //                }).ToList()
-        //            })
-        //            .ToList();
-
-        //        return pagedOrders;
-        //    }
-
-        //    public List<OrderDTO> SearchOrdersByTableName(string tableName, int pageNumber = 1, int pageSize = 10)
-        //    {
-
-        //        string normalizedTableName = tableName.Replace(" ", "");
-
-        //        var query = _context.Orders
-        //            .Include(o => o.Table) 
-        //            .AsQueryable();
+            return orders;
+        }
 
 
-        //        query = query.Where(o => o.Table.TableName.Replace(" ", "").Contains(normalizedTableName));
 
-        //        var orders = query
-        //            .Select(o => new OrderDTO
-        //            {
-        //                OrderId = o.OrderId,
-        //                TableId = o.TableId,
-        //                TableName = o.Table.TableName, 
-        //                OrderDate = o.OrderDate,
-        //                TotalMoney = o.TotalMoney,
-        //                Status = o.Status,
-        //                CodeId = o.CodeId,
-        //                OrderDetails = o.OrderDetails.Select(od => new OrderDetailDTO
-        //                {
-        //                    ProId = od.ProId,
-        //                    Quantity = od.Quantiity,
-        //                    Price = od.Price
-        //                }).ToList()
-        //            })
-        //            .Skip((pageNumber - 1) * pageSize)  
-        //            .Take(pageSize)                     
-        //            .ToList();
 
-        //        return orders;
-        //    }
 
-        //    public int CountOrders()
-        //    {
+        public List<GetOrderByTableNameDTO> GetOrdersByTable(int tableId, int pageNumber = 1, int pageSize = 10)
+        {
+            var tableExists = _context.Tables.Any(t => t.TableId == tableId);
 
-        //        return _context.Orders.Count();
-        //    }
+            if (!tableExists)
+            {
+                
+                throw new Exception($"Table with ID '{tableId}' does not exist.");
+            }
+
+            var query = _context.Orders
+                .Where(o => o.TableId == tableId)
+                .Include(o => o.OrderDetails)  
+                    .ThenInclude(od => od.Pro)  
+                .Include(o => o.OrderDetails)  
+                    .ThenInclude(od => od.Combo)  
+                .AsQueryable();
+
+            
+            var orders = query
+                .Select(o => new GetOrderByTableNameDTO
+                {
+                    OrderId = o.OrderId,
+                    OrderDate = o.OrderDate,
+                    TotalMoney = o.TotalMoney,
+                    Status = o.Status,
+                    Products = o.OrderDetails
+                        .Where(od => od.Pro != null)  
+                        .Select(od => new GetProductDTO
+                        {
+                            ProductId = od.Pro.ProId,
+                            Quantity = (int)od.Quantiity,
+                            Price = od.Price
+                        }).ToList(),
+                    Combos = o.OrderDetails
+                        .Where(od => od.Combo != null)  
+                        .Select(od => new GetComboDTO
+                        {
+                            ComboId = od.Combo.ComboId,
+                            Quantity = (int)od.Quantiity,
+                            Price = od.Price
+                        }).ToList()
+                })
+                .Skip((pageNumber - 1) * pageSize)
+                .Take(pageSize)
+                .ToList();
+
+            return orders;
+        }
+
+
+
+        public List<GetOrderByTableNameDTO> SearchOrdersByTableName(string tableName, int pageNumber = 1, int pageSize = 10)
+        {
+            
+            string normalizedTableName = tableName.Replace(" ", "");
+
+            
+            var tableExists = _context.Tables.Any(t => t.TableName.Replace(" ", "").Contains(normalizedTableName));
+
+            if (!tableExists)
+            {
+                
+                throw new Exception($"Table with name '{tableName}' does not exist.");
+            }
+
+           
+            var query = _context.Orders
+                .Include(o => o.Table)  
+                .Include(o => o.OrderDetails)  
+                    .ThenInclude(od => od.Pro)  
+                .Include(o => o.OrderDetails)  
+                    .ThenInclude(od => od.Combo)  
+                .AsQueryable();
+
+           
+            query = query.Where(o => o.Table.TableName.Replace(" ", "").Contains(normalizedTableName));
+
+
+            var orders = query
+                .Select(o => new GetOrderByTableNameDTO
+                {
+                    OrderId = o.OrderId,
+                    OrderDate = o.OrderDate,
+                    TotalMoney = o.TotalMoney,
+                    Status = o.Status,
+                    Products = o.OrderDetails
+                        .Where(od => od.Pro != null)  
+                        .Select(od => new GetProductDTO
+                        {
+                            ProductId = od.Pro.ProId,
+                            Quantity = (int)od.Quantiity,
+                            Price = od.Price
+                        }).ToList(),
+                    Combos = o.OrderDetails
+                        .Where(od => od.Combo != null)  
+                        .Select(od => new GetComboDTO
+                        {
+                            ComboId = od.Combo.ComboId,
+                            Quantity = (int)od.Quantiity,
+                            Price = od.Price
+                        }).ToList()
+                })
+                .Skip((pageNumber - 1) * pageSize)  
+                .Take(pageSize)                     
+                .ToList();
+
+            return orders;
+        }
+
+
+        public int CountOrders()
+        {
+
+            return _context.Orders.Count();
+        }
     }
 }
 
