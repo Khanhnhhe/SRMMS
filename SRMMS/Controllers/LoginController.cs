@@ -57,7 +57,7 @@ namespace SRMMS.Controllers
             return Ok(new
             {
                 token = token,
-                email = user.Email,
+                phone = user.Phone,
                 roleName = user.Role?.RoleName,
                 fullName = user.FullName
             });

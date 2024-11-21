@@ -77,14 +77,6 @@ namespace SRMMS.Controllers
             //    return NotFound(".");
             //}
 
-            var existingTable = await _context.Tables
-                .FirstOrDefaultAsync(t => t.TableName == model.Table_Name && t.TableId != id);
-            if (existingTable != null)
-            {
-                return Conflict("Conflict");
-            }
-
-
             table.TableName = model.Table_Name;
             table.TableOfPeople = model.TableOfPeople;
             table.StatusId = model.StatusId;
