@@ -1,4 +1,4 @@
-﻿    using System;
+﻿using System;
 using System.Collections.Generic;
 
 namespace SRMMS.Models
@@ -18,7 +18,7 @@ namespace SRMMS.Models
         public bool? ComboStatus { get; set; }
 
         public virtual ICollection<OrderDetail> OrderDetails { get; set; }
+
         public virtual ICollection<ComboDetail> ComboDetails { get; set; } = new List<ComboDetail>();
-        public decimal Price { get; internal set; }
     }
 }
