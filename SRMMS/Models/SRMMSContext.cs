@@ -36,7 +36,7 @@ namespace SRMMS.Models
             if (!optionsBuilder.IsConfigured)
             {
 #warning To protect potentially sensitive information in your connection string, you should move it out of source code. You can avoid scaffolding the connection string by using the Name= syntax to read it from configuration - see https://go.microsoft.com/fwlink/?linkid=2131148. For more guidance on storing connection strings, see http://go.microsoft.com/fwlink/?LinkId=723263.
-                optionsBuilder.UseSqlServer("server=(local);database=SRMMS;Trusted_Connection=SSPI;Encrypt=false;TrustServerCertificate=true");
+                optionsBuilder.UseSqlServer("Server=localhost;Database=SRMMS;User Id=SA;Password=Admin2002@;");
             }
         }
 
@@ -86,20 +86,25 @@ namespace SRMMS.Models
                     .ValueGeneratedOnAdd()
                     .HasColumnName("Booking_id");
 
-                entity.Property(e => e.AccId).HasColumnName("acc_id");
+                entity.Property(e => e.DayBooking)
+                    .HasColumnType("date")
+                    .HasColumnName("Day_booking");
+
+                entity.Property(e => e.HourBooking)
+                    .HasColumnType("time(0)")
+                    .HasColumnName("Hour_booking");
+
+                entity.Property(e => e.NameBooking)
+                    .HasMaxLength(50)
+                    .HasColumnName("Name_booking");
+
+                entity.Property(e => e.PhoneBooking)
+                    .HasMaxLength(50)
+                    .HasColumnName("Phone_booking");
 
                 entity.Property(e => e.Shift).HasMaxLength(50);
 
                 entity.Property(e => e.Status).HasColumnName("status");
-
-                entity.Property(e => e.TimeBooking)
-                    .HasColumnType("datetime")
-                    .HasColumnName("Time_booking");
-
-                entity.HasOne(d => d.Acc)
-                    .WithMany(p => p.Bookings)
-                    .HasForeignKey(d => d.AccId)
-                    .HasConstraintName("FK_Booking_Accounts");
 
                 entity.HasOne(d => d.BookingNavigation)
                     .WithOne(p => p.Booking)
@@ -238,7 +243,7 @@ namespace SRMMS.Models
                 entity.Property(e => e.CodeId).HasColumnName("code_id");
 
                 entity.Property(e => e.OrderDate)
-                    .HasColumnType("date")
+                    .HasColumnType("datetime")
                     .HasColumnName("order_date");
 
                 entity.Property(e => e.Status).HasColumnName("status");
@@ -266,6 +271,8 @@ namespace SRMMS.Models
 
                 entity.Property(e => e.OrderDetailId).HasColumnName("order_detail_id");
 
+                entity.Property(e => e.ComboId).HasColumnName("combo_id");
+
                 entity.Property(e => e.OrderId).HasColumnName("order_id");
 
                 entity.Property(e => e.Price)
@@ -275,6 +282,11 @@ namespace SRMMS.Models
                 entity.Property(e => e.ProId).HasColumnName("pro_id");
 
                 entity.Property(e => e.Quantiity).HasColumnName("quantiity");
+
+                entity.HasOne(d => d.Combo)
+                    .WithMany(p => p.OrderDetails)
+                    .HasForeignKey(d => d.ComboId)
+                    .HasConstraintName("FK_OrderDetails_Combo");
 
                 entity.HasOne(d => d.Order)
                     .WithMany(p => p.OrderDetails)
@@ -301,10 +313,17 @@ namespace SRMMS.Models
 
                 entity.Property(e => e.NumberPonit).HasColumnName("number_ponit");
 
+                entity.Property(e => e.OrderId).HasColumnName("order_id");
+
                 entity.HasOne(d => d.Acc)
                     .WithMany(p => p.PointLists)
                     .HasForeignKey(d => d.AccId)
                     .HasConstraintName("FK_Point_List_Accounts");
+
+                entity.HasOne(d => d.Order)
+                    .WithMany(p => p.PointLists)
+                    .HasForeignKey(d => d.OrderId)
+                    .HasConstraintName("FK_Point_List_Order");
             });
 
             modelBuilder.Entity<Product>(entity =>

@@ -8,6 +8,7 @@ namespace SRMMS.Models
         public Order()
         {
             OrderDetails = new HashSet<OrderDetail>();
+            PointLists = new HashSet<PointList>();
         }
 
         public int OrderId { get; set; }
@@ -20,5 +21,6 @@ namespace SRMMS.Models
         public virtual DiscountCode? Code { get; set; }
         public virtual Table? Table { get; set; }
         public virtual ICollection<OrderDetail> OrderDetails { get; set; }
+        public virtual ICollection<PointList> PointLists { get; set; }
     }
 }
