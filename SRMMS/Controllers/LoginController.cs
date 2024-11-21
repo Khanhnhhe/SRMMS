@@ -5,6 +5,7 @@ using System.Security.Claims;
 using System.Text;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.Configuration;
 using Microsoft.IdentityModel.Tokens;
 using SRMMS.DTOs;
@@ -21,12 +22,14 @@ namespace SRMMS.Controllers
         private readonly IConfiguration _configuration;
         private readonly SRMMSContext _context;
         private readonly ITwilioService _twilioService;
+        private readonly IMemoryCache _memoryCache;
 
-        public LoginController(IConfiguration configuration, SRMMSContext context , ITwilioService twilioService)
+        public LoginController(IConfiguration configuration, SRMMSContext context , ITwilioService twilioService , IMemoryCache memoryCache)
         {
             _configuration = configuration;
             _context = context;
             _twilioService = twilioService;
+            _memoryCache = memoryCache;
         }
 
         [HttpPost("login")]
@@ -34,12 +37,14 @@ namespace SRMMS.Controllers
         {
             var user = _context.Accounts
                 .Include(a => a.Role)
-                .FirstOrDefault(a => a.Email == model.Email);
+                .FirstOrDefault(a => a.Phone == model.Phone);
 
             if (user == null)
             {
                 return Unauthorized("User not found");
             }
+
+            
 
             if (!VerifyPassword(model.Password, user.Password))
             {
@@ -47,7 +52,7 @@ namespace SRMMS.Controllers
             }
 
             // Generate token
-            var token = GenerateJwtToken(user.Email, user.Role?.RoleName);
+            var token = GenerateJwtToken(user.Phone, user.Role?.RoleName);
 
             return Ok(new
             {
@@ -92,7 +97,7 @@ namespace SRMMS.Controllers
         public IActionResult ChangePassword([FromBody] ChangePasswordDTO model)
         {
             var user = _context.Accounts
-                .FirstOrDefault(a => a.Email == model.Email);
+                .FirstOrDefault(a => a.Phone == model.Phone);
 
             if (user == null)
             {
@@ -125,7 +130,9 @@ namespace SRMMS.Controllers
             {
                 string verificationCode = GenerateVerificationCode();
 
-              
+                _memoryCache.Set(model.PhoneNumber, verificationCode, TimeSpan.FromMinutes(5));
+
+
                 await _twilioService.SendSmsAsync(model.PhoneNumber, $"Mã xác nhận của bạn là: {verificationCode}");
 
                 
@@ -134,7 +141,10 @@ namespace SRMMS.Controllers
                     Email = model.Email,
                     Phone = model.PhoneNumber,
                     Password = model.Password, 
-                    FullName = model.FullName
+                    FullName = model.FullName,
+                    Status = false,
+                    RoleId = 5,
+                    StartDate = DateTime.UtcNow,
                 };
 
                 _context.Accounts.Add(newUser);
@@ -147,6 +157,30 @@ namespace SRMMS.Controllers
                 Console.WriteLine($"Error: {ex.Message}");
                 return StatusCode(500, $"Internal server error: {ex.Message}");
             }
+        }
+
+
+        [HttpPost("verify-otp")]
+        public async Task<IActionResult> VerifyOtp([FromBody] VerifyOtpDTO model)
+        {
+            if (!_memoryCache.TryGetValue(model.PhoneNumber, out string cachedOtp) || cachedOtp != model.VerificationCode)
+            {
+                return BadRequest("Mã OTP không chính xác hoặc đã hết hạn.");
+            }
+
+            var user = await _context.Accounts.FirstOrDefaultAsync(a => a.Phone == model.PhoneNumber);
+            //if (user == null)
+            //{
+            //    return NotFound("User not found");
+            //}
+
+            user.Status = true;
+            _context.Accounts.Update(user);
+            await _context.SaveChangesAsync();
+
+            _memoryCache.Remove(model.PhoneNumber);
+
+            return Ok("Xác thực thành công! Bạn có thể đăng nhập.");
         }
 
         private string GenerateVerificationCode()

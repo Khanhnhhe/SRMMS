@@ -29,6 +29,8 @@ public class Program
         builder.Services.AddSignalR();
         builder.Services.AddScoped<OrderService>();
 
+        builder.Services.AddMemoryCache();
+
         //Confix Twilio
 
         builder.Services.AddSingleton<IConfiguration>(builder.Configuration);
