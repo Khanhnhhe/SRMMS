@@ -1,5 +1,4 @@
-
-﻿using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.SignalR;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
@@ -225,23 +224,21 @@ namespace SRMMS.Controllers
                 }
                 else
                 {
-                    existingBooking.Shift = "Khác"; 
+                    existingBooking.Shift = "Khác";
                 }
             }
 
             existingBooking.NumberOfPeople = bookingDto.NumberOfPeople ?? existingBooking.NumberOfPeople;
             existingBooking.Status = bookingDto.Status ?? existingBooking.Status;
 
+            _context.Bookings.Update(existingBooking);
+            await _context.SaveChangesAsync();
 
-//            _context.Bookings.Update(existingBooking);
-//            await _context.SaveChangesAsync();
+            var bookings = await _context.Bookings.ToListAsync();
+            await _hubContext.Clients.All.SendAsync("ReceiveBookingUpdate", bookings);
 
-//            var bookings = await _context.Bookings.ToListAsync();
-//            await _hubContext.Clients.All.SendAsync("ReceiveBookingUpdate", bookings);
-
-//            return Ok(existingBooking);
-//        }
-
+            return Ok(existingBooking);
+        }
 
 
 
@@ -254,15 +251,14 @@ namespace SRMMS.Controllers
                 return NotFound("Booking not found.");
             }
 
+            _context.Bookings.Remove(existingBooking);
+            await _context.SaveChangesAsync();
 
-//            _context.Bookings.Remove(existingBooking);
-//            await _context.SaveChangesAsync();
+            var bookings = await _context.Bookings.ToListAsync();
+            await _hubContext.Clients.All.SendAsync("ReceiveBookingUpdate", bookings);
 
-//            var bookings = await _context.Bookings.ToListAsync();
-//            await _hubContext.Clients.All.SendAsync("ReceiveBookingUpdate", bookings);
+            return NoContent();
+        }
 
-//            return NoContent();
-//        }
-
-//    }
-//}
+    }
+}
