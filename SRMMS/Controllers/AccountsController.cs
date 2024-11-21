@@ -61,7 +61,6 @@ namespace SRMMS.Controllers
                                  {
                                      AccountId = a.AccId,
                                      FullName = a.FullName ?? "",
-                                     Email = a.Email ?? "",
                                      Phone = a.Phone ?? "",
                                      RoleName = a.Role.RoleName ?? "",
                                      RoleId = a.RoleId,
@@ -88,7 +87,6 @@ namespace SRMMS.Controllers
                 {
                     a.AccId,
                     a.FullName,
-                    a.Email,
                     a.Phone,
                     a.RoleId,
                     a.Status,
@@ -111,21 +109,20 @@ namespace SRMMS.Controllers
         [HttpPost("/api/account/create")]
         public async Task<IActionResult> CreateEmployeeAccount([FromBody] CreateEmployeeAccountDTO model)
         {
-            if (model == null || string.IsNullOrWhiteSpace(model.Email) || string.IsNullOrWhiteSpace(model.Password))
+            if (model == null || string.IsNullOrWhiteSpace(model.Phone) || string.IsNullOrWhiteSpace(model.Password))
             {
                 return BadRequest("Invalid account data.");
             }
 
-            var existingAccount = await _context.Accounts.FirstOrDefaultAsync(a => a.Email == model.Email);
+            var existingAccount = await _context.Accounts.FirstOrDefaultAsync(a => a.Phone == model.Phone);
             if (existingAccount != null)
             {
-                return Conflict("Email already exists.");
+                return Conflict("Phone already exists.");
             }
 
             var account = new Account
             {
                 FullName = model.FullName,
-                Email = model.Email,
                 Password = model.Password, 
                 Phone = model.Phone,
                 RoleId = model.RoleId,
@@ -162,7 +159,6 @@ namespace SRMMS.Controllers
             }
 
             account.FullName = model.FullName ?? account.FullName;
-            account.Email = model.Email ?? account.Email;
             account.Phone = model.Phone ?? account.Phone;
             account.RoleId = model.RoleId ?? account.RoleId;
             account.StartDate = model.StartDate ?? account.StartDate;
