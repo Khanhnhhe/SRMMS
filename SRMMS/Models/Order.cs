@@ -22,6 +22,5 @@ namespace SRMMS.Models
         public virtual Table? Table { get; set; }
         public virtual ICollection<OrderDetail> OrderDetails { get; set; }
         public virtual ICollection<PointList> PointLists { get; set; }
-        public int? AccId { get; internal set; }
     }
 }
