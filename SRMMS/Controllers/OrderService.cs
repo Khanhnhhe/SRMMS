@@ -222,6 +222,68 @@ namespace SRMMS.Controllers
 
 
 
+        public GetOrderByOrderIdDTO GetOrderByOrderId(int orderId)
+        {
+            var order = _context.Orders
+                .Include(o => o.Table)
+                .Include(o => o.OrderDetails)
+                    .ThenInclude(od => od.Pro)
+                .Include(o => o.OrderDetails)
+                    .ThenInclude(od => od.Combo)
+                .Include(o => o.PointLists)
+                    .ThenInclude(pl => pl.Acc)
+                .Include(o => o.Code)
+                .FirstOrDefault(o => o.OrderId == orderId);
+
+            if (order == null)
+            {
+                throw new Exception($"Order with ID {orderId} does not exist.");
+            }
+
+            return new GetOrderByOrderIdDTO
+            {
+                OrderId = order.OrderId,
+                OrderDate = (DateTime)order.OrderDate,
+                TotalMoney = (double)order.TotalMoney,
+                Status = (bool)order.Status,
+                TableId = order.Table.TableId,
+                Products = order.OrderDetails
+                    .Where(od => od.Pro != null)
+                    .Select(od => new GetProductDTO
+                    {
+                        ProductId = od.Pro.ProId,
+                        Quantity = (int)od.Quantiity,
+                        ProName = od.Pro.ProName,
+                        Price = od.Price
+                    }).ToList(),
+                Combos = order.OrderDetails
+                    .Where(od => od.Combo != null)
+                    .Select(od => new GetComboDTO
+                    {
+                        ComboId = od.Combo.ComboId,
+                        Quantity = (int)od.Quantiity,
+                        ComboName = od.Combo.ComboName,
+                        Price = od.Price
+                    }).ToList(),
+                Customers = order.PointLists
+                    .Where(pl => pl.Acc != null)
+                    .Select(pl => new GetAccountDTO
+                    {
+                        AccId = pl.Acc.AccId,
+                        FullName = pl.Acc.FullName,
+                        Email = pl.Acc.Email,
+                        Phone = pl.Acc.Phone
+                    }).ToList(),
+                DiscountId = order.Code?.CodeId,
+                DiscountValue = order.Code?.DiscountValue,
+               
+                PointIds = order.PointLists?.Select(pl => pl.PointId).ToList() ?? new List<int>(),
+                PointNumbers = order.PointLists?.Select(pl => (double?)pl.NumberPonit).ToList() ?? new List<double?>() 
+            };
+        
+        }
+
+
 
 
         public List<GetOrderByTableNameDTO> GetOrdersByTable(int tableId, int pageNumber = 1, int pageSize = 10)
