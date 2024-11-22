@@ -122,6 +122,8 @@ namespace SRMMS.Controllers
             return Ok("Password changed successfully");
         }
 
+
+
         [HttpPost("register")]
         public async Task<IActionResult> Register([FromBody] RegisterDTO model)
         {
@@ -164,14 +166,32 @@ namespace SRMMS.Controllers
             }
         }
 
+        [HttpPost("resend-otp")]
+        public async Task<IActionResult> ResendOtp([FromBody] ResendOtpDTO model)
+        {
+            if (!_memoryCache.TryGetValue(model.PhoneNumber, out string verificationCode))
+            {
+                verificationCode = GenerateVerificationCode();
+                _memoryCache.Set(model.PhoneNumber, verificationCode, TimeSpan.FromMinutes(5));
+
+
+                await _twilioService.SendSmsAsync(model.PhoneNumber, $"Mã xác nhận của bạn là: {verificationCode}");
+            }
+            else
+            {
+                return Ok("Mã xác nhận đã được gửi trước đó. Vui lòng kiểm tra điện thoại của bạn.");
+            }
+
+            return Ok("Mã xác nhận đã được gửi lại đến số điện thoại của bạn.");
+        }
+
+
+
+
         [HttpPost("forgot-password")] // send opt 
         public async Task<IActionResult> ForgotPassword([FromBody] ForgotPasswordDTO model)
         {
             var user = await _context.Accounts.FirstOrDefaultAsync(a => a.Phone == model.PhoneNumber);
-            if (user == null)
-            {
-                return NotFound("Người dùng không tồn tại");
-            }
 
             try
             {
@@ -189,6 +209,7 @@ namespace SRMMS.Controllers
             }
         }
 
+
         [HttpPost("reset-password")] // update password after comfirm otp 
         public async Task<IActionResult> ResetPassword([FromBody] ResetPasswordDTO model)
         {
@@ -201,6 +222,7 @@ namespace SRMMS.Controllers
 
             return Ok("Mật khẩu đã được thay đổi thành công.");
         }
+
 
         [HttpPost("verify-otp")]
         public async Task<IActionResult> VerifyOtp([FromBody] VerifyOtpDTO model)
