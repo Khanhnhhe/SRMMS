@@ -91,7 +91,7 @@ namespace SRMMS.Controllers
             return new JwtSecurityTokenHandler().WriteToken(token);
         }
 
-        
+
 
         [HttpPost("change-password")]
         public IActionResult ChangePassword([FromBody] ChangePasswordDTO model)
@@ -107,6 +107,11 @@ namespace SRMMS.Controllers
             if (!VerifyPassword(model.OldPassword, user.Password))
             {
                 return BadRequest("Old password is incorrect");
+            }
+
+            if (model.NewPassword != model.ConfirmNewPassword)
+            {
+                return BadRequest("New password and confirmation do not match");
             }
 
             user.Password = model.NewPassword;
@@ -159,6 +164,43 @@ namespace SRMMS.Controllers
             }
         }
 
+        [HttpPost("forgot-password")] // send opt 
+        public async Task<IActionResult> ForgotPassword([FromBody] ForgotPasswordDTO model)
+        {
+            var user = await _context.Accounts.FirstOrDefaultAsync(a => a.Phone == model.PhoneNumber);
+            if (user == null)
+            {
+                return NotFound("Người dùng không tồn tại");
+            }
+
+            try
+            {
+                string verificationCode = GenerateVerificationCode();
+
+                _memoryCache.Set(model.PhoneNumber, verificationCode, TimeSpan.FromMinutes(5));
+
+                await _twilioService.SendSmsAsync(model.PhoneNumber, $"Mã xác nhận quên mật khẩu của bạn là: {verificationCode}");
+
+                return Ok(new { Message = "Mã xác nhận đã được gửi đến số điện thoại của bạn. Vui lòng kiểm tra và nhập mã xác nhận." });
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, $"{ex.Message}");
+            }
+        }
+
+        [HttpPost("reset-password")] // update password after comfirm otp 
+        public async Task<IActionResult> ResetPassword([FromBody] ResetPasswordDTO model)
+        {
+            var user = await _context.Accounts.FirstOrDefaultAsync(a => a.Phone == model.PhoneNumber);
+
+            user.Password = model.NewPassword;
+
+            _context.Accounts.Update(user);
+            await _context.SaveChangesAsync();
+
+            return Ok("Mật khẩu đã được thay đổi thành công.");
+        }
 
         [HttpPost("verify-otp")]
         public async Task<IActionResult> VerifyOtp([FromBody] VerifyOtpDTO model)
