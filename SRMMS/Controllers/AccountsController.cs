@@ -148,10 +148,10 @@ namespace SRMMS.Controllers
             }
 
             var account = await _context.Accounts.FindAsync(id);
-            if (account == null)
-            {
-                return NotFound(new { message = "Account not found." });
-            }
+            //if (account == null)
+            //{
+            //    return NotFound(new { message = "Account not found." });
+            //}
 
             if (account.Status == true && model.Status == false)
             {
