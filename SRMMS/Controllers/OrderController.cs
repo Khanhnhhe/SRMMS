@@ -30,26 +30,42 @@ namespace SRMMS.Controllers
         }
         [HttpGet("list")]
         public IActionResult GetOrders(
-    [FromQuery] int pageNumber = 1,
-    [FromQuery] int pageSize = 10,
-    [FromQuery] string? tableName = null,
-    [FromQuery] DateTime? fromDate = null,
-    [FromQuery] DateTime? toDate = null)
+     [FromQuery] int pageNumber = 1,
+     [FromQuery] int pageSize = 10,
+     [FromQuery] string? tableName = null,
+     [FromQuery] DateTime? fromDate = null,
+     [FromQuery] DateTime? toDate = null)
         {
             try
             {
-                
-                var (orders, totalOrders) = _orderService.GetOrders(pageNumber, pageSize, tableName, fromDate, toDate);
+               
+                var result = _orderService.GetOrders(pageNumber, pageSize, tableName, fromDate, toDate);
+
+              
+                var orders = result.Orders;
+                var totalOrders = result.TotalOrders;
+
+               
+                var totalPages = (int)Math.Ceiling(totalOrders / (double)pageSize);
 
                 
-                return Ok(new { Orders = orders, TotalOrders = totalOrders });
+                return Ok(new
+                {
+                    Orders = orders,
+                    TotalOrders = totalOrders,
+                    TotalPages = totalPages,
+                    PageNumber = pageNumber,
+                    PageSize = pageSize
+                });
             }
             catch (Exception ex)
             {
-                
+               
                 return BadRequest(new { Message = ex.Message });
             }
         }
+
+
 
         [HttpGet("order/{orderId}")]
         public IActionResult GetOrderByOrderId(int orderId)

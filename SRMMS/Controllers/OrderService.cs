@@ -20,22 +20,13 @@ namespace SRMMS.Controllers
         public async Task<int> CreateOrder(OrderDTO orderDto)
         {
            
-            var code = await _context.DiscountCodes.FindAsync(orderDto.CodeId);
-
+           
             
             var table = await _context.Tables.FindAsync(orderDto.TableId);
             if (table == null)
             {
                 throw new Exception("TableId không tồn tại.");
             }
-
-          
-            if (orderDto.PointId.HasValue)
-            {
-                var point = await _context.PointLists
-                    .FirstOrDefaultAsync(p => p.PointId == orderDto.PointId && p.AccId == orderDto.AccId);
-            }
-
             
             var order = new Order
             {
@@ -43,7 +34,6 @@ namespace SRMMS.Controllers
                 OrderDate = DateTime.Now,
                 TotalMoney = orderDto.TotalMoney,
                 Status = orderDto.Status,
-                CodeId = orderDto.CodeId,
                 OrderDetails = new List<OrderDetail>()
             };
 
@@ -121,19 +111,6 @@ namespace SRMMS.Controllers
             _context.Orders.Add(order);
             await _context.SaveChangesAsync();
 
-           
-            if (orderDto.PointId.HasValue)
-            {
-                var point = await _context.PointLists.FirstOrDefaultAsync(p => p.PointId == orderDto.PointId);
-                if (point != null)
-                {
-                    point.OrderId = order.OrderId;
-                    _context.PointLists.Update(point);
-                    await _context.SaveChangesAsync();
-                }
-            }
-
-            
             await _orderHubContext.Clients.All.SendAsync("ReceiveOrder", order);
 
             return order.OrderId;
@@ -194,6 +171,7 @@ namespace SRMMS.Controllers
                     TotalMoney = o.TotalMoney,
                     Status = o.Status,
                     TableId = o.Table.TableId,
+                    TableName = o.Table.TableName,
                     Products = o.OrderDetails
                         .Where(od => od.Pro != null)
                         .Select(od => new GetProductDTO
