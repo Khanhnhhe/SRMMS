@@ -31,7 +31,6 @@ namespace SRMMS.Controllers
             var order = new Order
             {
                 TableId = orderDto.TableId,
-                OrderDate = DateTime.Now,
                 TotalMoney = orderDto.TotalMoney,
                 Status = orderDto.Status,
                 OrderDetails = new List<OrderDetail>()
@@ -119,11 +118,11 @@ namespace SRMMS.Controllers
 
 
         public (List<GetOrderByTableNameDTO> Orders, int TotalOrders) GetOrders(
-    int pageNumber = 1,
-    int pageSize = 10,
-    string? tableName = null,
-    DateTime? fromDate = null,
-    DateTime? toDate = null)
+        int pageNumber = 1,
+        int pageSize = 10,
+        string? tableName = null,
+        DateTime? fromDate = null,
+        DateTime? toDate = null)
         {
             var query = _context.Orders
                 .Include(o => o.Table)
