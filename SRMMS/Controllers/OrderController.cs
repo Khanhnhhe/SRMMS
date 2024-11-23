@@ -150,6 +150,24 @@ namespace SRMMS.Controllers
             }
         }
 
+        [HttpGet("total-revenue")]
+        public async Task<IActionResult> GetTotalRevenue([FromQuery] DateTime? startDate = null, [FromQuery] DateTime? endDate = null)
+        {
+            try
+            {
+                
+                decimal totalRevenue = await _orderService.CalculateTotalRevenue(startDate, endDate);
+
+                
+                return Ok(new { TotalRevenue = totalRevenue });
+            }
+            catch (Exception ex)
+            {
+                
+                return StatusCode(500, new { Error = "An error occurred.", Detail = ex.Message });
+            }
+        }
+
 
 
 
