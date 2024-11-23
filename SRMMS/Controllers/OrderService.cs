@@ -403,6 +403,25 @@ namespace SRMMS.Controllers
             await _context.SaveChangesAsync();
         }
 
+        public async Task<decimal> CalculateTotalRevenue(DateTime? startDate = null, DateTime? endDate = null)
+        {
+            var query = _context.Orders.Where(o => o.Status == true);
+
+            if (startDate.HasValue && endDate.HasValue)
+            {
+                
+                query = query.Where(o => o.OrderDate >= startDate.Value && o.OrderDate <= endDate.Value);
+            }
+
+            var totalRevenue = await query
+                .SelectMany(o => o.OrderDetails)
+                .SumAsync(od => od.Quantiity * od.Price);
+
+            return (decimal)totalRevenue;
+        }
+
+
+
         public int CountOrders()
         {
 
