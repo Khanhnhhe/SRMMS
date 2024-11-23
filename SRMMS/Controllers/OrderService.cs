@@ -376,7 +376,32 @@ namespace SRMMS.Controllers
 
             return orders;
         }
+        public async Task CompleteOrder(int orderId)
+        {
+            var order = await _context.Orders
+                .Include(o => o.Table)
+                .ThenInclude(t => t.StatusTable)
+                .FirstOrDefaultAsync(o => o.OrderId == orderId);
 
+            if (order == null)
+            {
+                throw new Exception("Order not found.");
+            }
+           
+            if (order.Status == true)
+            {
+                throw new Exception("This order has already been completed and cannot be modified.");
+            }
+            order.OrderDate = DateTime.Now;  
+           
+            if (order.Table != null)
+            {
+                
+                order.Table.StatusId = 1;  
+            }
+            order.Status = true;       
+            await _context.SaveChangesAsync();
+        }
 
         public int CountOrders()
         {
