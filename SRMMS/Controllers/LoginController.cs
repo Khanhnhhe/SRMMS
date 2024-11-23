@@ -44,7 +44,10 @@ namespace SRMMS.Controllers
                 return Unauthorized("User not found");
             }
 
-            
+            if (user.Status != true)
+            {
+                return Unauthorized("Account is inactive");
+            }
 
             if (!VerifyPassword(model.Password, user.Password))
             {
