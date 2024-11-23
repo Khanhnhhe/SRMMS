@@ -127,6 +127,31 @@ namespace SRMMS.Controllers
                 return StatusCode(500, new { Message = "An error occurred while counting orders.", Error = ex.Message });
             }
         }
+        [HttpPost("complete-order/{orderId}")]
+        public async Task<IActionResult> CompleteOrder(int orderId)
+        {
+            try
+            {
+               
+                await _orderService.CompleteOrder(orderId);
+
+               
+                return Ok(new { Message = "Order completed successfully." });
+            }
+            catch (Exception ex) when (ex is ArgumentException || ex is InvalidOperationException)
+            {
+                
+                return BadRequest(new { Error = ex.Message });
+            }
+            catch (Exception ex)
+            {
+               
+                return StatusCode(500, new { Error = "An unexpected error occurred.", Detail = ex.Message });
+            }
+        }
+
+
+
 
     }
 }
