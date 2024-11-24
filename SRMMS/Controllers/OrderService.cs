@@ -249,6 +249,7 @@ namespace SRMMS.Controllers
                 TotalMoney = (double)order.TotalMoney,
                 Status = (bool)order.Status,
                 TableId = order.Table.TableId,
+                TableName = order.Table.TableName,
                 Products = order.OrderDetails
                     .Where(od => od.Pro != null)
                     .Select(od => new GetProductDTO
@@ -314,6 +315,8 @@ namespace SRMMS.Controllers
                     OrderDate = o.OrderDate,
                     TotalMoney = o.TotalMoney,
                     Status = o.Status,
+                    TableId = o.Table.TableId,
+                    TableName = o.Table.TableName,
                     Products = o.OrderDetails
                         .Where(od => od.Pro != null)  
                         .Select(od => new GetProductDTO
