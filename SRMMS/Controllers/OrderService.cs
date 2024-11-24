@@ -38,8 +38,9 @@ namespace SRMMS.Controllers
 
             bool hasCombo = false;
             bool hasProduct = false;
+            decimal calculatedTotalMoney = 0;
 
-            
+
             if (orderDto.ComboDetails != null && orderDto.ComboDetails.Any())
             {
                 foreach (var comboDetail in orderDto.ComboDetails)
@@ -56,6 +57,10 @@ namespace SRMMS.Controllers
                     {
                         throw new Exception($"Combo với ID {comboDetail.ComboId} đã bị vô hiệu hóa, không thể đặt hàng.");
                     }
+                    if (comboDetail.Quantity <= 0)
+                    {
+                        throw new Exception($"Số lượng combo với ID {comboDetail.ComboId} phải lớn hơn 0.");
+                    }   
 
                     var orderDetail = new OrderDetail
                     {
@@ -64,6 +69,7 @@ namespace SRMMS.Controllers
                         Price = comboDetail.Price
                     };
 
+                    calculatedTotalMoney += comboDetail.Quantity * comboDetail.Price;
                     order.OrderDetails.Add(orderDetail);
                 }
                 hasCombo = true;
@@ -85,13 +91,22 @@ namespace SRMMS.Controllers
                         throw new Exception($"Sản phẩm với ID {productDetail.ProId} đã bị vô hiệu hóa, không thể đặt hàng.");
                     }
 
+                    if (productDetail.Quantity <= 0)
+                    {
+                        throw new Exception($"Số lượng sản phẩm với ID {productDetail.ProId} phải lớn hơn 0.");
+                    }
+
+                    if (order.TotalMoney <= 0)
+                    {
+                        throw new Exception("Tổng tiền phải lớn hơn 0.");
+                    }
                     var orderDetail = new OrderDetail
                     {
                         ProId = productDetail.ProId,
                         Quantiity = productDetail.Quantity,
                         Price = productDetail.Price
                     };
-
+                    calculatedTotalMoney += productDetail.Quantity * productDetail.Price;
                     order.OrderDetails.Add(orderDetail);
                 }
                 hasProduct = true;
@@ -103,7 +118,11 @@ namespace SRMMS.Controllers
                 throw new Exception("Đơn hàng phải có ít nhất một sản phẩm hoặc combo.");
             }
 
-            
+            if (order.TotalMoney != calculatedTotalMoney)
+            {
+                throw new Exception($"Tổng tiền không khớp. Tổng tiền chính xác phải là {calculatedTotalMoney}.");
+            }
+
             order.TotalMoney = orderDto.TotalMoney;
 
             
