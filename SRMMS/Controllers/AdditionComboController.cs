@@ -127,15 +127,16 @@ namespace SRMMS.Controllers
         [HttpGet("list")]
         public async Task<IActionResult> GetAllCombos(int pageNumber = 1, int pageSize = 10, string? cbName = null, decimal? minPrice = null, decimal? maxPrice = null)
         {
-            var query = _context.Combos.AsQueryable();
-
+            var query = _context.Combos
+                .Include(c => c.ComboDetails)
+                    .ThenInclude(cd => cd.Pro) 
+                .AsQueryable();
 
             if (!string.IsNullOrWhiteSpace(cbName))
             {
                 query = query.Where(c => c.ComboName.Contains(cbName));
             }
 
-            // Tìm kiếm theo giá
             if (minPrice.HasValue)
             {
                 query = query.Where(c => c.ComboMoney >= minPrice.Value);
@@ -165,7 +166,10 @@ namespace SRMMS.Controllers
                 ComboDescription = combo.ComboDiscription,
                 ComboImg = combo.ComboImg,
                 ComboMoney = combo.ComboMoney,
-                ComboStatus = combo.ComboStatus
+                ComboStatus = combo.ComboStatus,
+                ProductNames = combo.ComboDetails
+                                .Select(cd => cd.Pro.ProName) 
+                                .ToList()
             }).ToList();
 
             return Ok(new
@@ -177,6 +181,7 @@ namespace SRMMS.Controllers
                 Combos = comboDtos
             });
         }
+
 
         [HttpPut("update/{id}")]
         public async Task<IActionResult> UpdateCombo(int id, [FromForm] UpdateComboProductDTO updateDto)

@@ -9,6 +9,7 @@ namespace SRMMS.DTOs
         public string ComboImg { get; set; }
         public decimal? ComboMoney { get; set; }
         public bool? ComboStatus { get; set; }
+        public List<string> ProductNames { get; set; }
     }
 }
 
