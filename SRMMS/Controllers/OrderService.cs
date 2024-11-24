@@ -121,8 +121,8 @@ namespace SRMMS.Controllers
         int pageNumber = 1,
         int pageSize = 10,
         string? tableName = null,
-        DateTime? fromDate = null,
-        DateTime? toDate = null)
+        DateOnly? fromDate = null,
+        DateOnly? toDate = null)
         {
             var query = _context.Orders
                 .Include(o => o.Table)
@@ -147,18 +147,24 @@ namespace SRMMS.Controllers
                 query = query.Where(o => o.Table.TableName.Replace(" ", "").Contains(normalizedTableName));
             }
 
-          
+
             if (fromDate.HasValue)
             {
-                query = query.Where(o => o.OrderDate >= fromDate.Value);
+                query = query.Where(o => o.OrderDate.HasValue &&
+                                         (o.OrderDate.Value.Year > fromDate.Value.Year ||
+                                         (o.OrderDate.Value.Year == fromDate.Value.Year && o.OrderDate.Value.Month > fromDate.Value.Month) ||
+                                         (o.OrderDate.Value.Year == fromDate.Value.Year && o.OrderDate.Value.Month == fromDate.Value.Month && o.OrderDate.Value.Day >= fromDate.Value.Day)));
             }
 
             if (toDate.HasValue)
             {
-                query = query.Where(o => o.OrderDate <= toDate.Value);
+                query = query.Where(o => o.OrderDate.HasValue &&
+                                         (o.OrderDate.Value.Year < toDate.Value.Year ||
+                                         (o.OrderDate.Value.Year == toDate.Value.Year && o.OrderDate.Value.Month < toDate.Value.Month) ||
+                                         (o.OrderDate.Value.Year == toDate.Value.Year && o.OrderDate.Value.Month == toDate.Value.Month && o.OrderDate.Value.Day <= toDate.Value.Day)));
             }
 
-            
+
             var totalOrders = query.Count();
 
             
