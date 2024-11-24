@@ -3,6 +3,7 @@ using System.IdentityModel.Tokens.Jwt;
 using System.Linq;
 using System.Security.Claims;
 using System.Text;
+using System.Text.RegularExpressions;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Caching.Memory;
@@ -136,6 +137,16 @@ namespace SRMMS.Controllers
                 return BadRequest("Email is already registered.");
             }
 
+            if (!IsValidEmail(model.Email))
+            {
+                return BadRequest("Email không hợp lệ ");
+            }
+
+            if (!IsValidPassword(model.Password))
+            {
+                return BadRequest("Mật khẩu phải có độ dài từ 8 đến 12 ký tự và bao gồm cả chữ cái và số.");
+            }
+
             try
             {
                 string verificationCode = GenerateVerificationCode();
@@ -167,6 +178,18 @@ namespace SRMMS.Controllers
                 Console.WriteLine($"Error: {ex.Message}");
                 return StatusCode(500, $"Internal server error: {ex.Message}");
             }
+        }
+
+        private bool IsValidPassword(string password)
+        {
+            var passwordRegex = @"^(?=.*[a-zA-Z])(?=.*\d)[a-zA-Z\d]{8,12}$";
+            return Regex.IsMatch(password, passwordRegex);
+        }
+
+        private bool IsValidEmail(string email)
+        {
+            var emailRegex = @"^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$";
+            return Regex.IsMatch(email, emailRegex);
         }
 
         [HttpPost("resend-otp")]
