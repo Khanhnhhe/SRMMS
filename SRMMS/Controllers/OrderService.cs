@@ -184,7 +184,8 @@ namespace SRMMS.Controllers
             {
                 if (DateTime.TryParse(toDate, out var parsedToDate))
                 {
-                    query = query.Where(o => o.OrderDate.HasValue && o.OrderDate.Value <= parsedToDate);
+                    parsedToDate = parsedToDate.AddDays(1);
+                    query = query.Where(o => o.OrderDate.HasValue && o.OrderDate.Value < parsedToDate);
                 }
                 else
                 {
@@ -198,7 +199,7 @@ namespace SRMMS.Controllers
                 .Select(o => new GetOrderByTableNameDTO
                 {
                     OrderId = o.OrderId,
-                    OrderDate = o.OrderDate.Value.ToString("yyyy-MM-dd"),
+                    OrderDate = o.OrderDate.Value.ToString("yyyy-MM-dd hh:mm:ss"),
                     TotalMoney = o.TotalMoney,
                     Status = o.Status,
                     TableId = o.Table.TableId,
@@ -319,7 +320,7 @@ namespace SRMMS.Controllers
                 .Select(o => new GetOrderByTableNameDTO
                 {
                     OrderId = o.OrderId,
-                    OrderDate = o.OrderDate.Value.ToString("yyyy-MM-dd"),
+                    OrderDate = o.OrderDate.Value.ToString("yyyy-MM-dd hh:mm:ss"),
                     TotalMoney = o.TotalMoney,
                     Status = o.Status,
                     TableId = o.Table.TableId,
@@ -383,7 +384,7 @@ namespace SRMMS.Controllers
                 .Select(o => new GetOrderByTableNameDTO
                 {
                     OrderId = o.OrderId,
-                    OrderDate = o.OrderDate.Value.ToString("yyyy-MM-dd"),
+                    OrderDate = o.OrderDate.Value.ToString("yyyy-MM-dd hh:mm:ss"),
                     TotalMoney = o.TotalMoney,
                     Status = o.Status,
                     Products = o.OrderDetails
