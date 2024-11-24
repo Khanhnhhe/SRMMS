@@ -81,6 +81,10 @@ namespace SRMMS.Controllers
                 var product = await _context.Products.FirstOrDefaultAsync(p => p.ProName == productName);
                 if (product != null)
                 {
+                    if (product.ProStatus == false)
+                    {
+                        return BadRequest($"Sản phẩm '{productName}' không thể thêm vào combo vì trạng thái sản phẩm là false.");
+                    }
                     productIds.Add(product.ProId);
                 }
                 else
@@ -158,6 +162,18 @@ namespace SRMMS.Controllers
             {
                 return NotFound("Không tìm thấy combo nào.");
             }
+            foreach (var combo in combos)
+            {
+                
+                if (combo.ComboDetails == null || !combo.ComboDetails.Any())
+                {
+                    combo.ComboStatus = false;
+                    _context.Combos.Update(combo); 
+                }
+            }
+
+            
+            await _context.SaveChangesAsync();
 
             var comboDtos = combos.Select(combo => new ListComboProductDTO
             {
@@ -274,12 +290,10 @@ namespace SRMMS.Controllers
             });
         }
 
-        [HttpDelete("{comboId}")]
-        public IActionResult DeleteCombo(int comboId)
+        [HttpPatch("changeStatus/{comboId}")]
+        public IActionResult DisableCombo(int comboId)
         {
-
             var combo = _context.Combos
-                .Include(c => c.ComboDetails)
                 .FirstOrDefault(c => c.ComboId == comboId);
 
             if (combo == null)
@@ -287,20 +301,15 @@ namespace SRMMS.Controllers
                 return NotFound();
             }
 
+            
+            combo.ComboStatus = false;
 
-            if (combo.ComboDetails != null && combo.ComboDetails.Any())
-            {
-                _context.ComboDetails.RemoveRange(combo.ComboDetails);
-            }
-
-
-            _context.Combos.Remove(combo);
-
-
+            _context.Combos.Update(combo);
             _context.SaveChanges();
 
-            return NoContent();
+            return NoContent(); 
         }
+
 
         [HttpGet("detail/{comboId}")]
         public async Task<IActionResult> GetComboDetails(int comboId)

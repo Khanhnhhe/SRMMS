@@ -460,29 +460,87 @@ namespace SRMMS.Controllers
             return Ok(products);
         }
 
-
-        [HttpDelete("delete/{id}")]
+        [HttpDelete("DeleteProduct/{id}")]
         public async Task<IActionResult> DeleteProduct(int id)
         {
-            var product = await _context.Products.FindAsync(id);
-
-            if (product == null)
+            using (var transaction = await _context.Database.BeginTransactionAsync())
             {
-                return NotFound("Product not found.");
+                try
+                {
+                   
+                    var product = await _context.Products.FindAsync(id);
+                    if (product == null)
+                    {
+                        return NotFound(new { Message = "Product not found." });
+                    }
+
+                    
+                    product.ProStatus = false;  
+
+                   
+                    var comboDetails = _context.ComboDetails.Where(cd => cd.ProId == id).ToList();
+                    if (comboDetails.Any())
+                    {
+                        _context.ComboDetails.RemoveRange(comboDetails); 
+                    }
+
+                    var orderDetails = _context.OrderDetails
+                     .Include(od => od.Order)
+                     .Where(od => od.ProId == id)
+                      .ToList();
+
+                    if (orderDetails.Any())
+                    {
+                        foreach (var orderDetail in orderDetails)
+                        {
+                            if (orderDetail.Order?.Status == false)  
+                            {
+
+                                var productInOrder = await _context.Products.FindAsync(orderDetail.ProId); 
+                                if (productInOrder != null)
+                                {
+                                    productInOrder.ProStatus = false; 
+                                    _context.Products.Update(productInOrder); 
+                                }
+
+
+                                var comboDetail = _context.ComboDetails.FirstOrDefault(cd => cd.ProId == orderDetail.ProId);
+                                if (comboDetail != null)
+                                {
+                                    var combo = await _context.Combos.FindAsync(comboDetail.ComboId);
+                                    if (combo != null)
+                                    {
+                                        combo.ComboStatus = false; 
+                                        _context.Combos.Update(combo); 
+                                    }
+                                }
+                            }
+                            
+                        }
+
+                        await _context.SaveChangesAsync(); 
+                    }
+
+
+
+                    await _context.SaveChangesAsync();
+                    await transaction.CommitAsync();
+
+                    return Ok(new { Message = "Product status updated to false successfully." });
+                }
+                catch (Exception ex)
+                {
+                    await transaction.RollbackAsync();
+                    var innerExceptionMessage = ex.InnerException?.Message ?? ex.Message;
+                    return StatusCode(500, new { Message = "An error occurred.", Details = innerExceptionMessage });
+                }
             }
-
-            
-            if (!string.IsNullOrEmpty(product.ProImg))
-            {
-                var publicId = product.ProImg.Split('/').Last().Split('.').First();
-                await _clouddinary.DestroyAsync(new DeletionParams(publicId));
-            }
-
-            _context.Products.Remove(product);
-            await _context.SaveChangesAsync();
-
-            return NoContent();
         }
+
+
+
+
+
 
         [HttpGet("detail/{id}")]
         public async Task<IActionResult> GetProductDetail(int id)
@@ -538,8 +596,6 @@ namespace SRMMS.Controllers
 
             return Ok(result);
         }
-
-
 
         [HttpGet("count")]
         public async Task<IActionResult> CountPro()
