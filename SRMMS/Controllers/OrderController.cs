@@ -33,8 +33,8 @@ namespace SRMMS.Controllers
      [FromQuery] int pageNumber = 1,
      [FromQuery] int pageSize = 10,
      [FromQuery] string? tableName = null,
-     [FromQuery] DateTime? fromDate = null,
-     [FromQuery] DateTime? toDate = null)
+     [FromQuery] DateOnly? fromDate = null,
+     [FromQuery] DateOnly? toDate = null)
         {
             try
             {
