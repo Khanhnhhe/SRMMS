@@ -2,6 +2,7 @@
 using Microsoft.AspNetCore.SignalR;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Internal;
+using Microsoft.IdentityModel.Tokens;
 using SRMMS.DTOs;
 using SRMMS.Models;
 
@@ -140,8 +141,8 @@ namespace SRMMS.Controllers
         int pageNumber = 1,
         int pageSize = 10,
         string? tableName = null,
-        DateOnly? fromDate = null,
-        DateOnly? toDate = null)
+        String? fromDate = null,
+        String? toDate = null)
         {
             var query = _context.Orders
                 .Include(o => o.Table)
@@ -166,24 +167,30 @@ namespace SRMMS.Controllers
                 query = query.Where(o => o.Table.TableName.Replace(" ", "").Contains(normalizedTableName));
             }
 
-
-            if (fromDate.HasValue)
+            if (!string.IsNullOrEmpty(fromDate))
             {
-                query = query.Where(o => o.OrderDate.HasValue &&
-                                         (o.OrderDate.Value.Year > fromDate.Value.Year ||
-                                         (o.OrderDate.Value.Year == fromDate.Value.Year && o.OrderDate.Value.Month > fromDate.Value.Month) ||
-                                         (o.OrderDate.Value.Year == fromDate.Value.Year && o.OrderDate.Value.Month == fromDate.Value.Month && o.OrderDate.Value.Day >= fromDate.Value.Day)));
+                if (DateTime.TryParse(fromDate, out var parsedFromDate))
+                {
+                    query = query.Where(o => o.OrderDate.HasValue && o.OrderDate.Value >= parsedFromDate);
+                }
+                else
+                {
+                    throw new Exception($"Invalid fromDate format: '{fromDate}'. Expected format is yyyy-MM-dd.");
+                }
             }
 
-            if (toDate.HasValue)
+           
+            if (!string.IsNullOrEmpty(toDate))
             {
-                query = query.Where(o => o.OrderDate.HasValue &&
-                                         (o.OrderDate.Value.Year < toDate.Value.Year ||
-                                         (o.OrderDate.Value.Year == toDate.Value.Year && o.OrderDate.Value.Month < toDate.Value.Month) ||
-                                         (o.OrderDate.Value.Year == toDate.Value.Year && o.OrderDate.Value.Month == toDate.Value.Month && o.OrderDate.Value.Day <= toDate.Value.Day)));
+                if (DateTime.TryParse(toDate, out var parsedToDate))
+                {
+                    query = query.Where(o => o.OrderDate.HasValue && o.OrderDate.Value <= parsedToDate);
+                }
+                else
+                {
+                    throw new Exception($"Invalid toDate format: '{toDate}'. Expected format is yyyy-MM-dd.");
+                }
             }
-
-
             var totalOrders = query.Count();
 
             
@@ -191,7 +198,7 @@ namespace SRMMS.Controllers
                 .Select(o => new GetOrderByTableNameDTO
                 {
                     OrderId = o.OrderId,
-                    OrderDate = o.OrderDate,
+                    OrderDate = o.OrderDate.Value.ToString("yyyy-MM-dd"),
                     TotalMoney = o.TotalMoney,
                     Status = o.Status,
                     TableId = o.Table.TableId,
@@ -312,7 +319,7 @@ namespace SRMMS.Controllers
                 .Select(o => new GetOrderByTableNameDTO
                 {
                     OrderId = o.OrderId,
-                    OrderDate = o.OrderDate,
+                    OrderDate = o.OrderDate.Value.ToString("yyyy-MM-dd"),
                     TotalMoney = o.TotalMoney,
                     Status = o.Status,
                     TableId = o.Table.TableId,
@@ -376,7 +383,7 @@ namespace SRMMS.Controllers
                 .Select(o => new GetOrderByTableNameDTO
                 {
                     OrderId = o.OrderId,
-                    OrderDate = o.OrderDate,
+                    OrderDate = o.OrderDate.Value.ToString("yyyy-MM-dd"),
                     TotalMoney = o.TotalMoney,
                     Status = o.Status,
                     Products = o.OrderDetails
