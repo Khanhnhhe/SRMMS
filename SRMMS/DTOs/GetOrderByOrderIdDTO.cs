@@ -4,7 +4,7 @@ namespace SRMMS.DTOs
 	public class GetOrderByOrderIdDTO
 	{
         public int OrderId { get; set; }
-        public DateTime OrderDate { get; set; }
+        public DateTime? OrderDate { get; set; }
         public double TotalMoney { get; set; }
         public bool Status { get; set; }
         public int TableId { get; set; }

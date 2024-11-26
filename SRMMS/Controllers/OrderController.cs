@@ -156,18 +156,26 @@ namespace SRMMS.Controllers
         {
             try
             {
-                
-                decimal totalRevenue = await _orderService.CalculateTotalRevenue(startDate, endDate);
+                var result = await _orderService.CalculateTotalRevenue(startDate, endDate);
 
-                
-                return Ok(new { TotalRevenue = totalRevenue });
+                return Ok(new
+                {
+                    TotalRevenue = result.TotalRevenue,
+                    Orders = result.Orders
+                });
             }
             catch (Exception ex)
             {
-                
-                return StatusCode(500, new { Error = "An error occurred.", Detail = ex.Message });
+                return StatusCode(500, new
+                {
+                    Error = "An error occurred.",
+                    Detail = ex.Message
+                });
             }
         }
+
+
+
 
 
 
