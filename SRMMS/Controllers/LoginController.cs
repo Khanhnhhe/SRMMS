@@ -61,6 +61,7 @@ namespace SRMMS.Controllers
             return Ok(new
             {
                 token = token,
+                id = user.AccId,
                 phone = user.Phone,
                 roleName = user.Role?.RoleName,
                 fullName = user.FullName
@@ -105,7 +106,7 @@ namespace SRMMS.Controllers
 
             if (user == null)
             {
-                return NotFound("User not found");
+                return BadRequest("User not found");
             }
 
             if (!VerifyPassword(model.OldPassword, user.Password))
@@ -259,10 +260,10 @@ namespace SRMMS.Controllers
             }
 
             var user = await _context.Accounts.FirstOrDefaultAsync(a => a.Phone == model.PhoneNumber);
-            //if (user == null)
-            //{
-            //    return NotFound("User not found");
-            //}
+            if (user == null)
+            {
+                return BadRequest("User not found");
+            }
 
             user.Status = true;
             _context.Accounts.Update(user);
