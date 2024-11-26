@@ -613,5 +613,31 @@ namespace SRMMS.Controllers
             }
         }
 
+        [HttpGet("list-combo")]
+        public async Task<IActionResult> GetAllProductsForCombo()
+        {
+            var products = await _context.Products
+                .Include(p => p.Cat)
+                .Select(p => new ListProductDTO
+                {
+                    ProductId = p.ProId,
+                    ProductName = p.ProName,
+                    Description = p.ProDiscription,
+                    Price = p.ProPrice,
+                    Category = p.Cat.CatName,
+                    Image = p.ProImg,
+                    Calories = p.ProCalories,
+                    Status = p.ProStatus
+                })
+                .ToListAsync();
+
+            if (products == null || products.Count == 0)
+            {
+                return Ok(new List<ListProductDTO>());
+            }
+
+            return Ok(products);
+        }
+
     }
 }

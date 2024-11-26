@@ -1,4 +1,5 @@
 ﻿using System;
+using CloudinaryDotNet.Actions;
 using Microsoft.AspNetCore.SignalR;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Internal;
@@ -439,33 +440,85 @@ namespace SRMMS.Controllers
             await _context.SaveChangesAsync();
         }
 
-        public async Task<decimal> CalculateTotalRevenue(DateTime? startDate = null, DateTime? endDate = null)
+        public async Task<(List<GetOrderByOrderIdDTO> Orders, decimal TotalRevenue)> CalculateTotalRevenue(DateTime? startDate = null, DateTime? endDate = null)
         {
-           
-            var query = _context.Orders.Where(o => o.Status == true);
+            var query = _context.Orders
+                .Where(o => o.Status == true);
 
-           
+
             if (startDate.HasValue && endDate.HasValue)
             {
+               
                 query = query.Where(o => o.OrderDate >= startDate.Value && o.OrderDate < endDate.Value.AddDays(1));
             }
+            else if (startDate.HasValue)
+            {
+               
+                query = query.Where(o => o.OrderDate >= startDate.Value);
+            }
+            else if (endDate.HasValue)
+            {
+               
+                query = query.Where(o => o.OrderDate < endDate.Value.AddDays(1));  
+            }
 
-          
-            var totalRevenue = await query
-                .SelectMany(o => o.OrderDetails)
-                .SumAsync(od => (decimal)(od.Quantiity * od.Price));
 
-            return totalRevenue;
+            var orders = await query
+                .Select(o => new GetOrderByOrderIdDTO
+                {
+                    OrderId = o.OrderId,
+                    OrderDate = (DateTime)o.OrderDate,
+                    TotalMoney = (double)o.TotalMoney,
+                    Status = (bool)o.Status,
+                    TableId = o.Table.TableId,
+                    TableName = o.Table.TableName,
+                    Products = o.OrderDetails
+                        .Where(od => od.Pro != null)
+                        .Select(od => new GetProductDTO
+                        {
+                            ProductId = od.Pro.ProId,
+                            Quantity = (int)od.Quantiity,
+                            ProName = od.Pro.ProName,
+                            Price = od.Price
+                        }).ToList(),
+                    Combos = o.OrderDetails
+                        .Where(od => od.Combo != null)
+                        .Select(od => new GetComboDTO
+                        {
+                            ComboId = od.Combo.ComboId,
+                            Quantity = (int)od.Quantiity,
+                            ComboName = od.Combo.ComboName,
+                            Price = od.Price
+                        }).ToList(),
+                    Customers = o.PointLists
+                        .Where(pl => pl.Acc != null)
+                        .Select(pl => new GetAccountDTO
+                        {
+                            AccId = pl.Acc.AccId,
+                            FullName = pl.Acc.FullName,
+                            Email = pl.Acc.Email,
+                            Phone = pl.Acc.Phone
+                        }).ToList(),
+                    DiscountId = o.Code != null ? o.Code.CodeId : null,
+                    DiscountValue = o.Code != null ? o.Code.DiscountValue : null,
+                    PointIds = o.PointLists != null ? o.PointLists.Select(pl => pl.PointId).ToList() : new List<int>(),
+                    PointNumbers = o.PointLists != null ? o.PointLists.Select(pl => (double?)pl.NumberPonit).ToList() : new List<double?>()
+                })
+                .ToListAsync();
+
+           
+            var totalRevenue = orders.Sum(o => o.TotalMoney);
+
+            return (orders, (decimal)totalRevenue);
         }
-
 
 
 
         public int CountOrders()
         {
-
-            return _context.Orders.Count();
+            return _context.Orders.Count(o => o.Status == true);
         }
+
     }
 }
 
