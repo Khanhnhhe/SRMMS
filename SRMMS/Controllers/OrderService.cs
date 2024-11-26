@@ -440,29 +440,68 @@ namespace SRMMS.Controllers
             await _context.SaveChangesAsync();
         }
 
-        public async Task<(List<GetOrderByOrderIdDTO> Orders, decimal TotalRevenue)> CalculateTotalRevenue(DateTime? startDate = null, DateTime? endDate = null)
+        public async Task<(List<GetOrderByOrderIdDTO> Orders, decimal TotalRevenue)> CalculateTotalRevenue(int? weekNumber = null, int? month = null, int? year = null)
         {
             var query = _context.Orders
-                .Where(o => o.Status == true);
+                                .Where(o => o.Status == true);
 
-
-            if (startDate.HasValue && endDate.HasValue)
+            
+            if (weekNumber.HasValue && month.HasValue && year.HasValue)
             {
+                var firstDayOfMonth = new DateTime(year.Value, month.Value, 1);
+                DateTime startOfWeek;
+                DateTime endOfWeek;
+
                
-                query = query.Where(o => o.OrderDate >= startDate.Value && o.OrderDate < endDate.Value.AddDays(1));
+                switch (weekNumber.Value)
+                {
+                    case 1:
+                        startOfWeek = firstDayOfMonth;  
+                        endOfWeek = firstDayOfMonth.AddDays(6).AddHours(23).AddMinutes(59).AddSeconds(59);  // Kết thúc tuần 1 vào cuối ngày 7
+                        break;
+                    case 2:
+                        startOfWeek = firstDayOfMonth.AddDays(7);  // Bắt đầu tuần 2 từ 00:00 của ngày 8
+                        endOfWeek = firstDayOfMonth.AddDays(13).AddHours(23).AddMinutes(59).AddSeconds(59);  // Kết thúc tuần 2 vào cuối ngày 14
+                        break;
+                    case 3:
+                        startOfWeek = firstDayOfMonth.AddDays(14);  // Bắt đầu tuần 3 từ 00:00 của ngày 15
+                        endOfWeek = firstDayOfMonth.AddDays(20).AddHours(23).AddMinutes(59).AddSeconds(59);  // Kết thúc tuần 3 vào cuối ngày 21
+                        break;
+                    case 4:
+                        startOfWeek = firstDayOfMonth.AddDays(21);  // Bắt đầu tuần 4 từ 00:00 của ngày 22
+                        endOfWeek = firstDayOfMonth.AddMonths(1).AddDays(-1).AddHours(23).AddMinutes(59).AddSeconds(59);  // Kết thúc tuần 4 vào cuối ngày cuối tháng
+                        break;
+                    default:
+                        throw new ArgumentException("Invalid week number. Please enter a value between 1 and 4.");
+                }
+
+                
+                var lastDayOfMonth = firstDayOfMonth.AddMonths(1).AddDays(-1);
+                if (endOfWeek > lastDayOfMonth)
+                {
+                    endOfWeek = lastDayOfMonth;
+                }
+
+                query = query.Where(o => o.OrderDate >= startOfWeek && o.OrderDate <= endOfWeek);
             }
-            else if (startDate.HasValue)
+            
+            else if (month.HasValue && year.HasValue)
             {
-               
-                query = query.Where(o => o.OrderDate >= startDate.Value);
+                var startOfMonth = new DateTime(year.Value, month.Value, 1);
+                var endOfMonth = startOfMonth.AddMonths(1).AddDays(-1);  
+
+                query = query.Where(o => o.OrderDate >= startOfMonth && o.OrderDate <= endOfMonth);
             }
-            else if (endDate.HasValue)
+            
+            else if (year.HasValue)
             {
-               
-                query = query.Where(o => o.OrderDate < endDate.Value.AddDays(1));  
+                var startOfYear = new DateTime(year.Value, 1, 1);
+                var endOfYear = new DateTime(year.Value, 12, 31);
+
+                query = query.Where(o => o.OrderDate >= startOfYear && o.OrderDate <= endOfYear);
             }
 
-
+            
             var orders = await query
                 .Select(o => new GetOrderByOrderIdDTO
                 {
@@ -506,12 +545,11 @@ namespace SRMMS.Controllers
                 })
                 .ToListAsync();
 
-           
+            
             var totalRevenue = orders.Sum(o => o.TotalMoney);
 
             return (orders, (decimal)totalRevenue);
         }
-
 
 
         public int CountOrders()
