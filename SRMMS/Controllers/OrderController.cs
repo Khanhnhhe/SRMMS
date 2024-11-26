@@ -152,11 +152,15 @@ namespace SRMMS.Controllers
         }
 
         [HttpGet("total-revenue")]
-        public async Task<IActionResult> GetTotalRevenue([FromQuery] DateTime? startDate = null, [FromQuery] DateTime? endDate = null)
+        public async Task<IActionResult> GetTotalRevenue(
+     [FromQuery] int? year = null,
+     [FromQuery] int? month = null,
+     [FromQuery] int? week = null)
         {
             try
             {
-                var result = await _orderService.CalculateTotalRevenue(startDate, endDate);
+                // Gọi phương thức tính tổng doanh thu
+                var result = await _orderService.CalculateTotalRevenue( week, month, year);
 
                 return Ok(new
                 {
@@ -173,11 +177,6 @@ namespace SRMMS.Controllers
                 });
             }
         }
-
-
-
-
-
 
 
     }
