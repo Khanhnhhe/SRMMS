@@ -78,7 +78,7 @@ namespace SRMMS.Controllers
                 Accounts = accounts
             });
         }
-        [HttpGet("/api/account/getByID")]
+        [HttpGet("/api/account/getByID/{id}")]
         public async Task<ActionResult> GetAccountById(int id)
         {
             var account = await _context.Accounts
@@ -210,6 +210,30 @@ namespace SRMMS.Controllers
                 CustomerCount = customerCount
             });
         }
+
+
+        [HttpGet("/api/account/points/details")]
+        public async Task<IActionResult> GetCustomerPointsDetails()
+        {
+            var customerPointsDetails = await _context.Accounts
+                .Where(a => a.RoleId == 5) 
+                .Select(a => new AccountPointDetailDTO
+                {
+                    AccountId = a.AccId,
+                    FullName = a.FullName ?? "",
+                    Phone = a.Phone ?? "",
+                    Points = a.PointLists.Select(p => new PointDetailDTO
+                    {
+                        PointId = p.PointId,
+                        Points = p.NumberPonit,
+                      
+                    }).ToList()
+                })
+                .ToListAsync();
+
+            return Ok(customerPointsDetails);
+        }
+
 
     }
 }

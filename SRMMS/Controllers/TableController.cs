@@ -218,10 +218,10 @@ namespace SRMMS.Controllers
         public async Task<IActionResult> DeleteTable(int id)
         {
             var table = await _context.Tables.FirstOrDefaultAsync(t => t.TableId == id);
-            //if (table == null)
-            //{
-            //    return NotFound("not found");
-            //}
+            if (table == null)
+            {
+                return BadRequest("not found");
+            }
 
             _context.Tables.Remove(table);
             await _context.SaveChangesAsync();
