@@ -6,6 +6,8 @@
 
         public string Password { get; set; }
 
+        public int AccId { get; set; }
+
 
     }
 }
