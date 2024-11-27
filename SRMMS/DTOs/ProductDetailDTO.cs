@@ -9,6 +9,7 @@ namespace SRMMS.DTOs
         public decimal? Price { get; set; }
         public string? Category { get; set; }
         public string? Image { get; set; }
+        public bool? Status { get; set; }
         public string? Calories { get; set; } = null!;
     }
 }

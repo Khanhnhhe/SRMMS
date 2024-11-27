@@ -5,6 +5,8 @@ namespace SRMMS.Models
 {
     public partial class Order
     {
+        internal int? AccId;
+
         public Order()
         {
             OrderDetails = new HashSet<OrderDetail>();

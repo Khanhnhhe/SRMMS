@@ -96,13 +96,13 @@ namespace SRMMS.Controllers
 
             if (products == null || products.Count == 0)
             {
-                return Ok(new
+                return Ok(new PaginatedProductsResult
                 {
                     TotalProducts = totalProducts,
                     TotalPages = totalPages,
                     PageNumber = pageNumber,
                     PageSize = pageSize,
-                    Products = new List<ListProductDTO>()
+                    Products = products
                 });
             }
 
@@ -217,7 +217,7 @@ namespace SRMMS.Controllers
         public async Task<ActionResult<ListProductDTO>> GetProductById(int proId)
         {
 
-            if (proId == null)
+            if (proId == 0)
             {
                 return BadRequest("The parameter 'proId' is required.");
             }
@@ -407,7 +407,7 @@ namespace SRMMS.Controllers
                 return NotFound("No products found in this category.");
             }
 
-            var result = new
+            var result = new ProductFilterResultDTO
             {
                 TotalProducts = totalProducts,
                 PageNumber = pageNumber,
@@ -422,6 +422,10 @@ namespace SRMMS.Controllers
         [HttpGet("searchProductName")]
         public async Task<ActionResult<IEnumerable<ListProductDTO>>> SearchByProductName(string? productName = "", int pageNumber = 1, int pageSize = 10)
         {
+            if (pageSize <= 0)
+            {
+                return BadRequest("Page size must be greater than zero.");
+            }
             var skip = (pageNumber - 1) * pageSize;
 
      
@@ -464,6 +468,10 @@ namespace SRMMS.Controllers
         [HttpDelete("delete/{id}")]
         public async Task<IActionResult> DeleteProduct(int id)
         {
+            if (id == int.MaxValue)  
+            {
+                return BadRequest("The passed proId is a very large number (exceeding the database limit).");
+            }
             var product = await _context.Products.FindAsync(id);
 
             if (product == null)
@@ -520,9 +528,9 @@ namespace SRMMS.Controllers
                 .ToListAsync();
 
             
-            var result = new
+            var result = new ProductDetailResponseDTO
             {
-                ProductDetail = new
+                ProductDetail = new ProductDetailDTO
                 {
                     ProductId = product.ProId,
                     ProductName = product.ProName,

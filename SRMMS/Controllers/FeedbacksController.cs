@@ -39,9 +39,9 @@ namespace SRMMS.Controllers
                     Feedback1 = f.Feedback1,
                     RateStar = f.RateStar,
                     AccId = f.AccId,
-                    AccountFullName = f.Acc != null ? f.Acc.FullName : null, // Lấy FullName từ Account
-                    CreatedAt = f.CreatedAt.HasValue ? f.CreatedAt.Value.ToString("dd/MM/yyyy") : null,
-                    UpdatedAt = f.UpdatedAt.HasValue ? f.UpdatedAt.Value.ToString("dd/MM/yyyy") : null
+                    //AccountFullName = f.Acc != null ? f.Acc.FullName : null, // Lấy FullName từ Account
+                    //CreatedAt = f.CreatedAt.HasValue ? f.CreatedAt.Value.ToString("dd/MM/yyyy") : null,
+                    //UpdatedAt = f.UpdatedAt.HasValue ? f.UpdatedAt.Value.ToString("dd/MM/yyyy") : null
 
                 })
                 .ToListAsync();
@@ -102,41 +102,77 @@ namespace SRMMS.Controllers
 
         // POST: api/Feedbacks
         [HttpPost]
-        public async Task<ActionResult<FeedbackResponseDto>> PostFeedback(FeedbackRequestDto feedbackDto)
+        public async Task<IActionResult> CreateFeedback([FromBody] FeedbackDto feedbackDto)
         {
-            if (_context.Feedbacks == null)
+            if (feedbackDto == null)
             {
-                return Problem("Entity set 'SRMMSContext.Feedbacks' is null.");
+                return BadRequest(new { Success = false, Message = "Feedback data is required." });
             }
 
-            // Tạo mới thực thể Feedback với thông tin từ DTO
-            var feedback = new Feedback
+            try
             {
-                Feedback1 = feedbackDto.Feedback1,
-                RateStar = feedbackDto.RateStar,
-                CreatedAt = DateTime.UtcNow,
-                UpdatedAt = DateTime.UtcNow
-            };
+                // Kiểm tra AccId có tồn tại
+                var account = await _context.Accounts.FindAsync(feedbackDto.AccId);
+                if (account == null)
+                {
+                    return BadRequest(new { Success = false, Message = "Invalid account. Feedback not allowed." });
+                }
 
-            _context.Feedbacks.Add(feedback);
-            await _context.SaveChangesAsync();
+                // Kiểm tra các giá trị đầu vào
+                if (string.IsNullOrWhiteSpace(feedbackDto.Feedback1))
+                {
+                    return BadRequest(new { Success = false, Message = "Feedback content is required." });
+                }
 
-            // Map Feedback sang FeedbackResponseDto để trả về kết quả
-            var feedbackResponse = new FeedbackResponseDto
+                if (feedbackDto.RateStar == null || feedbackDto.RateStar < 1 || feedbackDto.RateStar > 5)
+                {
+                    return BadRequest(new { Success = false, Message = "RateStar must be between 1 and 5." });
+                }
+
+                // Tạo Feedback mới
+                var feedback = new Feedback
+                {
+                    Feedback1 = feedbackDto.Feedback1,
+                    RateStar = feedbackDto.RateStar,
+                    AccId = feedbackDto.AccId,
+                    CreatedAt = DateTime.UtcNow,
+                  
+                };
+
+                // Lưu vào cơ sở dữ liệu
+                _context.Feedbacks.Add(feedback);
+                await _context.SaveChangesAsync();
+
+                // Phát sự kiện qua SignalR
+                var feedbackData = new
+                {
+                    feedback.FeedbackId,
+                    feedback.Feedback1,
+                    feedback.RateStar,
+                    feedback.AccId,
+                    feedback.CreatedAt
+                  
+                };
+                await _hubContext.Clients.All.SendAsync("ReceiveFeedback", feedbackData);
+
+                return Ok(new
+                {
+                    Success = true,
+                    Message = "Feedback created successfully.",
+                    Data = feedbackData
+                });
+            }
+            catch (DbUpdateException ex)
             {
-                FeedbackId = feedback.FeedbackId,
-                Feedback1 = feedback.Feedback1,
-                RateStar = feedback.RateStar,
-                FullName = feedback.Acc?.FullName ?? "Anonymous",
-                CreatedAt = feedback.CreatedAt?.ToString("dd/MM/yyyy")
-               
-            };
-
-            // Thông báo cho tất cả các client qua SignalR về feedback mới
-            await _hubContext.Clients.All.SendAsync("FeedbackCreated", feedbackResponse);
-
-            return CreatedAtAction("GetFeedback", new { id = feedback.FeedbackId }, feedbackResponse);
+                return StatusCode(500, new
+                {
+                    Success = false,
+                    Message = "An error occurred while creating feedback.",
+                    Details = ex.InnerException?.Message ?? ex.Message
+                });
+            }
         }
+
 
 
 
