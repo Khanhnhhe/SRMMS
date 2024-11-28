@@ -1,12 +1,12 @@
-﻿    using Microsoft.AspNetCore.Mvc;
-    using Microsoft.EntityFrameworkCore;
-    using Microsoft.AspNetCore.Http;
-    using SRMMS.DTOs;
-    using SRMMS.Models;
-    using System.Collections.Generic;
-    using System.IO;
-    using System.Linq;
-    using System.Threading.Tasks;
+﻿using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.AspNetCore.Http;
+using SRMMS.DTOs;
+using SRMMS.Models;
+using System.Collections.Generic;
+using System.IO;
+using System.Linq;
+using System.Threading.Tasks;
 using Microsoft.IdentityModel.Tokens;
 using CloudinaryDotNet;
 using CloudinaryDotNet.Actions;
@@ -14,22 +14,22 @@ using Account = CloudinaryDotNet.Account;
 
 
 namespace SRMMS.Controllers
-    {
+{
     [Route("api/product")]
     [ApiController]
 
-    
+
     public class ProductController : ControllerBase
     {
         private readonly SRMMSContext _context;
 
         private readonly Cloudinary _clouddinary;
 
-        
+
 
         public ProductController(SRMMSContext context)
         {
-             Account account = new Account("dt92oc9xc", "548166873787419", "-8KA1HUjyTe6J4aHq4DGPXflJiw");
+            Account account = new Account("dt92oc9xc", "548166873787419", "-8KA1HUjyTe6J4aHq4DGPXflJiw");
             _context = context;
             _clouddinary = new Cloudinary(account);
 
@@ -40,7 +40,7 @@ namespace SRMMS.Controllers
         {
             var totalProductsQuery = _context.Products.AsQueryable();
 
-            
+
             name = name?.Trim();
 
             if (!string.IsNullOrEmpty(name))
@@ -71,10 +71,10 @@ namespace SRMMS.Controllers
                 return BadRequest("Invalid maxPrice. Please enter a numeric value.");
             }
 
-            
+
             var totalProducts = await totalProductsQuery.CountAsync();
 
-            
+
             var totalPages = (int)Math.Ceiling((double)totalProducts / pageSize);
 
             var products = await totalProductsQuery
@@ -118,7 +118,7 @@ namespace SRMMS.Controllers
             return Ok(result);
         }
 
-        
+
         private bool IsNumeric(string str, out decimal number)
         {
             return decimal.TryParse(str, out number);
@@ -133,7 +133,7 @@ namespace SRMMS.Controllers
             productDto.ProductName = productDto.ProductName?.Trim();
             productDto.Description = productDto.Description?.Trim();
             productDto.Calories = productDto.Calories?.Trim();
-            
+
             var categoryExists = await _context.Categories.AnyAsync(c => c.CatId == productDto.Category);
             if (!categoryExists)
             {
@@ -176,7 +176,7 @@ namespace SRMMS.Controllers
 
             var tempFilePath = Path.Combine(Path.GetTempPath(), Guid.NewGuid().ToString() + Path.GetExtension(productDto.Image.FileName));
 
-            
+
             using (var stream = new FileStream(tempFilePath, FileMode.Create))
             {
                 await productDto.Image.CopyToAsync(stream);
@@ -190,7 +190,7 @@ namespace SRMMS.Controllers
 
             var imageURL = await _clouddinary.UploadAsync(uploadParams);
 
-           
+
             System.IO.File.Delete(tempFilePath);
 
             var newProduct = new Product
@@ -198,7 +198,7 @@ namespace SRMMS.Controllers
                 ProName = productDto.ProductName,
                 ProDiscription = productDto.Description,
                 ProPrice = productDto.Price ?? 0,
-                CatId = productDto.Category.Value, 
+                CatId = productDto.Category.Value,
                 ProImg = imageURL.Url.ToString(),
                 ProCalories = productDto.Calories,
                 ProStatus = productDto.Status ?? true
@@ -223,7 +223,7 @@ namespace SRMMS.Controllers
             }
             var product = await _context.Products
         .Include(c => c.Cat)
-        .Where(p => p.ProId == proId) 
+        .Where(p => p.ProId == proId)
         .Select(p => new ListProductDTO
         {
             ProductId = p.ProId,
@@ -277,7 +277,7 @@ namespace SRMMS.Controllers
 
             if (updateProductDto.Price.HasValue)
             {
-             
+
                 if (updateProductDto.Price.Value <= 0)
                 {
                     return BadRequest("Invalid price. Please provide a valid price.");
@@ -286,7 +286,7 @@ namespace SRMMS.Controllers
             }
             if (updateProductDto.Category.HasValue)
             {
-               
+
                 if (updateProductDto.Category.Value < 0)
                 {
                     return BadRequest("Invalid category. Category cannot be negative.");
@@ -370,10 +370,10 @@ namespace SRMMS.Controllers
         [HttpGet("filter/{categoryName}")]
         public async Task<IActionResult> FilterByCategoryName(string categoryName, int pageNumber = 1, int pageSize = 10)
         {
-            
+
             var categories = await _context.Categories.ToListAsync();
 
-            
+
             var category = categories
                 .FirstOrDefault(c => c.CatName.Equals(categoryName, StringComparison.OrdinalIgnoreCase));
 
@@ -424,17 +424,17 @@ namespace SRMMS.Controllers
         {
             var skip = (pageNumber - 1) * pageSize;
 
-     
+
             var query = _context.Products.Include(p => p.Cat).AsQueryable();
 
-            
+
             if (!string.IsNullOrWhiteSpace(productName))
             {
-          
+
                 query = query.Where(p => p.ProName.ToLower().Contains(productName.ToLower().Trim()));
             }
 
-          
+
             var products = await query
                                      .Skip(skip)
                                      .Take(pageSize)
@@ -450,13 +450,13 @@ namespace SRMMS.Controllers
                                          Category = p.Cat.CatName
                                      }).ToListAsync();
 
-        
+
             if (products == null || !products.Any())
             {
                 return NotFound("No products found.");
             }
 
-          
+
             return Ok(products);
         }
 
@@ -467,21 +467,21 @@ namespace SRMMS.Controllers
             {
                 try
                 {
-                   
+
                     var product = await _context.Products.FindAsync(id);
                     if (product == null)
                     {
                         return NotFound(new { Message = "Product not found." });
                     }
 
-                    
-                    product.ProStatus = false;  
 
-                   
+                    product.ProStatus = false;
+
+
                     var comboDetails = _context.ComboDetails.Where(cd => cd.ProId == id).ToList();
                     if (comboDetails.Any())
                     {
-                        _context.ComboDetails.RemoveRange(comboDetails); 
+                        _context.ComboDetails.RemoveRange(comboDetails);
                     }
 
                     var orderDetails = _context.OrderDetails
@@ -493,14 +493,14 @@ namespace SRMMS.Controllers
                     {
                         foreach (var orderDetail in orderDetails)
                         {
-                            if (orderDetail.Order?.Status == false)  
+                            if (orderDetail.Order?.Status == false)
                             {
 
-                                var productInOrder = await _context.Products.FindAsync(orderDetail.ProId); 
+                                var productInOrder = await _context.Products.FindAsync(orderDetail.ProId);
                                 if (productInOrder != null)
                                 {
-                                    productInOrder.ProStatus = false; 
-                                    _context.Products.Update(productInOrder); 
+                                    productInOrder.ProStatus = false;
+                                    _context.Products.Update(productInOrder);
                                 }
 
 
@@ -510,15 +510,15 @@ namespace SRMMS.Controllers
                                     var combo = await _context.Combos.FindAsync(comboDetail.ComboId);
                                     if (combo != null)
                                     {
-                                        combo.ComboStatus = false; 
-                                        _context.Combos.Update(combo); 
+                                        combo.ComboStatus = false;
+                                        _context.Combos.Update(combo);
                                     }
                                 }
                             }
-                            
+
                         }
 
-                        await _context.SaveChangesAsync(); 
+                        await _context.SaveChangesAsync();
                     }
 
 
@@ -545,13 +545,13 @@ namespace SRMMS.Controllers
         [HttpGet("detail/{id}")]
         public async Task<IActionResult> GetProductDetail(int id)
         {
-            
+
             if (id <= 0)
             {
                 return BadRequest("Invalid product ID. ID must be greater than 0.");
             }
 
-            
+
             var product = await _context.Products
                 .Include(p => p.Cat)
                 .FirstOrDefaultAsync(p => p.ProId == id);
@@ -561,7 +561,7 @@ namespace SRMMS.Controllers
                 return NotFound("Product not found");
             }
 
-            
+
             var relatedProducts = await _context.Products
                 .Where(p => p.CatId == product.CatId && p.ProId != id)
                 .Select(p => new ListProductDTO
@@ -577,7 +577,7 @@ namespace SRMMS.Controllers
                 })
                 .ToListAsync();
 
-            
+
             var result = new
             {
                 ProductDetail = new
@@ -602,7 +602,7 @@ namespace SRMMS.Controllers
         {
             try
             {
-                
+
                 var totalPro = await _context.Products.CountAsync();
 
                 return Ok(new { TotalCount = totalPro });

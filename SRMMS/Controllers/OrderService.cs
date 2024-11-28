@@ -431,7 +431,7 @@ namespace SRMMS.Controllers
 
             double? discountValue = null;
 
-           
+
             if (discountId.HasValue)
             {
                 var discount = await _context.DiscountCodes.FirstOrDefaultAsync(d => d.CodeId == discountId.Value);
@@ -448,41 +448,41 @@ namespace SRMMS.Controllers
 
                 discountValue = discount.DiscountValue;
 
-               
+
                 if (totalMoney.HasValue)
                 {
 
                     if (discountValue >= (double)totalMoney.Value)
                     {
-                        totalMoney = 0; 
+                        totalMoney = 0;
                     }
                 }
             }
 
-           
+
             if (totalMoney.HasValue)
             {
                 order.TotalMoney = totalMoney.Value;
             }
 
-           
+
             order.OrderDate = DateTime.Now;
             order.CodeId = discountId;
 
             if (order.Table != null)
             {
-                order.Table.StatusId = 1; 
+                order.Table.StatusId = 1;
             }
 
             order.Status = true;
 
             await _context.SaveChangesAsync();
 
-            
+
             return new OrderCompleteDTO
             {
                 OrderId = order.OrderId,
-                TotalMoney = order.TotalMoney, 
+                TotalMoney = order.TotalMoney,
                 TableId = order.TableId,
                 OrderDate = order.OrderDate,
                 Status = order.Status,
