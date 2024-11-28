@@ -19,13 +19,13 @@ namespace SRMMS.Controllers
         [HttpPost("add-points")]
         public IActionResult AddPoints([FromQuery] int? accId, [FromQuery] string? phone, [FromQuery] int orderId)
         {
-            
+
             if (!accId.HasValue && string.IsNullOrEmpty(phone))
             {
                 return BadRequest(new { message = "Vui lòng cung cấp accId hoặc phone để thêm điểm." });
             }
 
-           
+
             var order = _context.Orders
                 .FirstOrDefault(o => o.OrderId == orderId && o.Status == true);
 
@@ -34,13 +34,13 @@ namespace SRMMS.Controllers
                 return NotFound(new { message = "Order không tồn tại hoặc không hợp lệ." });
             }
 
-            
+
             if (!order.TotalMoney.HasValue || order.TotalMoney <= 0)
             {
                 return BadRequest(new { message = "TotalMoney không hợp lệ." });
             }
 
-           
+
             var account = accId.HasValue
                 ? _context.Accounts.FirstOrDefault(a => a.AccId == accId)
                 : _context.Accounts.FirstOrDefault(a => a.Phone == phone);
@@ -50,20 +50,20 @@ namespace SRMMS.Controllers
                 return NotFound(new { message = "Tài khoản không tồn tại." });
             }
 
-            
-            double points = (double)order.TotalMoney.Value / 100.0; 
-            points = Math.Floor(points); 
+
+            double points = (double)order.TotalMoney.Value / 100.0;
+            points = Math.Floor(points);
 
             var pointEntry = _context.PointLists.FirstOrDefault(p => p.AccId == account.AccId);
 
             if (pointEntry != null)
             {
-               
+
                 pointEntry.NumberPonit = (pointEntry.NumberPonit ?? 0) + points;
             }
             else
             {
-                
+
                 _context.PointLists.Add(new PointList
                 {
                     AccId = account.AccId,
@@ -72,10 +72,10 @@ namespace SRMMS.Controllers
                 });
             }
 
-            
+
             _context.SaveChanges();
 
-           
+
             return Ok(new
             {
                 message = $"Đã thêm {points} điểm cho tài khoản {account.AccId} từ đơn hàng {orderId}.",
