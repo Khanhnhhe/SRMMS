@@ -12,5 +12,6 @@ namespace SRMMS.Models
 
         public virtual Account? Acc { get; set; }
         public virtual Order? Order { get; set; }
+        public double NumberPoint { get; internal set; }
     }
 }

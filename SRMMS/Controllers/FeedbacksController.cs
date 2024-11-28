@@ -4,7 +4,6 @@ using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.AspNetCore.SignalR;
 using Microsoft.EntityFrameworkCore;
 using SRMMS.Models;
 
@@ -15,12 +14,10 @@ namespace SRMMS.Controllers
     public class FeedbacksController : ControllerBase
     {
         private readonly SRMMSContext _context;
-        private readonly IHubContext<FeedbackHub> _hubContext;
 
-        public FeedbacksController(SRMMSContext context, IHubContext<FeedbackHub> hubContext)
+        public FeedbacksController(SRMMSContext context)
         {
             _context = context;
-            _hubContext = hubContext;
         }
 
         // GET: api/Feedbacks
@@ -33,7 +30,7 @@ namespace SRMMS.Controllers
             }
 
             var feedbacks = await _context.Feedbacks
-                .Select(static f => new FeedbackDto
+                .Select(f => new FeedbackDto
                 {
                     FeedbackId = f.FeedbackId,
                     Feedback1 = f.Feedback1,
@@ -67,38 +64,7 @@ namespace SRMMS.Controllers
             return feedback;
         }
 
-        // PUT: api/Feedbacks/5
-        [HttpPut("{id}")]
-        public async Task<IActionResult> PutFeedback(int id, Feedback feedback)
-        {
-            if (id != feedback.FeedbackId)
-            {
-                return BadRequest();
-            }
-
-            _context.Entry(feedback).State = EntityState.Modified;
-
-            try
-            {
-                await _context.SaveChangesAsync();
-
-                // Notify clients about the updated feedback
-                await _hubContext.Clients.All.SendAsync("FeedbackUpdated", feedback);
-            }
-            catch (DbUpdateConcurrencyException)
-            {
-                if (!FeedbackExists(id))
-                {
-                    return NotFound();
-                }
-                else
-                {
-                    throw;
-                }
-            }
-
-            return NoContent();
-        }
+     
 
         // POST: api/Feedbacks
         [HttpPost]
@@ -108,20 +74,30 @@ namespace SRMMS.Controllers
             {
                 return Problem("Entity set 'SRMMSContext.Feedbacks' is null.");
             }
-
-            // Tạo mới thực thể Feedback với thông tin từ DTO
+            var account = await _context.Accounts.FindAsync(feedbackDto.AccId);
+            if (account == null)
+            {
+                return NotFound(new { Message = "Account not found." });
+            }
             var feedback = new Feedback
             {
                 Feedback1 = feedbackDto.Feedback1,
                 RateStar = feedbackDto.RateStar,
+                AccId = feedbackDto.AccId,
                 CreatedAt = DateTime.UtcNow,
                 UpdatedAt = DateTime.UtcNow
             };
 
-            _context.Feedbacks.Add(feedback);
-            await _context.SaveChangesAsync();
+            try
+            {
+                _context.Feedbacks.Add(feedback);
+                await _context.SaveChangesAsync();
+            }
+            catch (DbUpdateException ex)
+            {
+                return StatusCode(500, new { Message = "An error occurred while saving feedback.", Details = ex.InnerException?.Message });
+            }
 
-            // Map Feedback sang FeedbackResponseDto để trả về kết quả
             var feedbackResponse = new FeedbackResponseDto
             {
                 FeedbackId = feedback.FeedbackId,
@@ -129,18 +105,10 @@ namespace SRMMS.Controllers
                 RateStar = feedback.RateStar,
                 FullName = feedback.Acc?.FullName ?? "Anonymous",
                 CreatedAt = feedback.CreatedAt?.ToString("dd/MM/yyyy")
-               
             };
-
-            // Thông báo cho tất cả các client qua SignalR về feedback mới
-            await _hubContext.Clients.All.SendAsync("FeedbackCreated", feedbackResponse);
 
             return CreatedAtAction("GetFeedback", new { id = feedback.FeedbackId }, feedbackResponse);
         }
-
-
-
-
 
         // DELETE: api/Feedbacks/5
         [HttpDelete("{id}")]
@@ -158,9 +126,6 @@ namespace SRMMS.Controllers
 
             _context.Feedbacks.Remove(feedback);
             await _context.SaveChangesAsync();
-
-            // Notify clients about the deleted feedback
-            await _hubContext.Clients.All.SendAsync("FeedbackDeleted", feedback.FeedbackId);
 
             return NoContent();
         }

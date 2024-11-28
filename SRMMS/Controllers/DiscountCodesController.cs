@@ -21,38 +21,55 @@ namespace SRMMS.Controllers
             _context = context;
         }
 
-        // GET: api/DiscountCodes
-        [HttpGet ("list")]
-        public async Task<ActionResult<IEnumerable<DiscountCodeDto>>> GetDiscountCodes(int pageNumber = 1, int pageSize = 10)
+        [HttpGet("list")]
+        public async Task<ActionResult<IEnumerable<DiscountCodeDto>>> GetDiscountCodes(
+            int pageNumber = 1,
+            int pageSize = 10,
+            string? codeDetail = null,
+            double? discountValue = 0)
         {
-        
-
             pageSize = pageSize > 0 ? pageSize : 10;
             pageNumber = pageNumber > 0 ? pageNumber : 1;
-            var discountCodes = await _context.DiscountCodes
-        .Skip((pageNumber - 1) * pageSize)
-        .Take(pageSize)
-        .Select(d => new DiscountCodeDto
-        {
-            CodeId = d.CodeId,
-            CodeDetail = d.CodeDetail,
-            DiscountValue = d.DiscountValue,
-            StartDate = d.StartDate.Value.ToString("dd/MM/yyyy"),
-            EndDate = d.EndDate.Value.ToString("dd/MM/yyyy"),
-            Status = d.Status
-        })
+
+            await UpdateDiscountCodeStatusAsync();
+
+            var query = _context.DiscountCodes.AsQueryable();
+
+            if (!string.IsNullOrEmpty(codeDetail))
+            {
+                query = query.Where(d => d.CodeDetail.Contains(codeDetail));
+            }
+
+            if (discountValue > 0)
+            {
+                query = query.Where(d => d.DiscountValue == discountValue);
+            }
+
+            var discountCodes = await query
+                .Skip((pageNumber - 1) * pageSize)
+                .Take(pageSize)
                 .ToListAsync();
 
-            if (!discountCodes.Any())
+            var discountCodeDtos = discountCodes.Select(d => new DiscountCodeDto
+            {
+                CodeId = d.CodeId,
+                CodeDetail = d.CodeDetail,
+                DiscountValue = d.DiscountValue,
+                StartDate = d.StartDate?.ToString("dd/MM/yyyy"),
+                EndDate = d.EndDate?.ToString("dd/MM/yyyy"),
+                Status = d.Status
+            }).ToList();
+
+            if (!discountCodeDtos.Any())
             {
                 return NotFound("No discount codes available.");
             }
 
-            return Ok(discountCodes);
+            return Ok(discountCodeDtos);
         }
 
 
-        // GET: api/DiscountCodes/5
+
         [HttpGet("getByID/{id}")]
         public async Task<ActionResult<DiscountCodeDto>> GetDiscountCode(int id)
         {
@@ -68,7 +85,13 @@ namespace SRMMS.Controllers
                 return NotFound($"Discount code with ID {id} not found.");
             }
 
-        
+            // Kiểm tra trạng thái của mã giảm giá
+            if (discountCode.EndDate.HasValue && discountCode.EndDate.Value.Date < DateTime.Today)
+            {
+                discountCode.Status = false;
+                await _context.SaveChangesAsync();
+            }
+
             var discountCodeDto = new DiscountCodeDto
             {
                 CodeId = discountCode.CodeId,
@@ -82,17 +105,38 @@ namespace SRMMS.Controllers
             return Ok(discountCodeDto);
         }
 
-        // PUT: api/DiscountCodes/5
-        // To protect from overposting attacks, see https://go.microsoft.com/fwlink/?linkid=2123754
-        [HttpPut("{id}")]
-        public async Task<IActionResult> PutDiscountCode(int id, DiscountCode discountCode)
+
+        [HttpPut("update/{id}")]
+        public async Task<IActionResult> PutDiscountCode(int id, UpdateDiscountDTO discountCodeDto)
         {
-            if (id != discountCode.CodeId)
+            if (_context.DiscountCodes == null)
             {
-                return BadRequest();
+                return Problem("Entity set 'SRMMSContext.DiscountCodes' is null.");
             }
 
-            _context.Entry(discountCode).State = EntityState.Modified;
+            // Tìm thực thể DiscountCode theo ID
+            var discountCode = await _context.DiscountCodes.FindAsync(id);
+            if (discountCode == null)
+            {
+                return NotFound($"Discount code with ID {id} not found.");
+            }
+
+            // Ánh xạ dữ liệu từ DTO sang thực thể
+            if (discountCodeDto.CodeDetail != null)
+                discountCode.CodeDetail = discountCodeDto.CodeDetail;
+
+            if (discountCodeDto.DiscountValue.HasValue)
+                discountCode.DiscountValue = discountCodeDto.DiscountValue.Value;
+
+            if (discountCodeDto.StartDate.HasValue)
+                discountCode.StartDate = discountCodeDto.StartDate.Value.ToDateTime(TimeOnly.MinValue).Date;
+
+            if (discountCodeDto.EndDate.HasValue)
+                discountCode.EndDate = discountCodeDto.EndDate.Value.ToDateTime(TimeOnly.MinValue).Date;
+
+
+            if (discountCodeDto.Status.HasValue)
+                discountCode.Status = discountCodeDto.Status.Value;
 
             try
             {
@@ -102,7 +146,7 @@ namespace SRMMS.Controllers
             {
                 if (!DiscountCodeExists(id))
                 {
-                    return NotFound();
+                    return NotFound($"Discount code with ID {id} not found during update.");
                 }
                 else
                 {
@@ -113,9 +157,8 @@ namespace SRMMS.Controllers
             return NoContent();
         }
 
-        // POST: api/DiscountCodes
-        // To protect from overposting attacks, see https://go.microsoft.com/fwlink/?linkid=2123754
-        // POST: api/DiscountCodes
+
+
         [HttpPost("createDiscountCode")]
         public async Task<ActionResult<DiscountCodeDto>> PostDiscountCode(DiscountCodeCreateDto discountCodeDto)
         {
@@ -124,13 +167,11 @@ namespace SRMMS.Controllers
                 return Problem("Entity set 'SRMMSContext.DiscountCodes' is null.");
             }
 
-            // Validate StartDate and EndDate
             if (!IsDateRangeValid(discountCodeDto.StartDate, discountCodeDto.EndDate))
             {
                 return BadRequest("StartDate must be earlier than or equal to EndDate.");
             }
 
-            // Map DTO to DiscountCode entity
             var discountCode = new DiscountCode
             {
                 CodeDetail = discountCodeDto.CodeDetail,
@@ -157,7 +198,6 @@ namespace SRMMS.Controllers
                 }
             }
 
-            // Map to DiscountCodeDto for response
             var responseDto = new DiscountCodeDto
             {
                 CodeId = discountCode.CodeId,
@@ -172,7 +212,6 @@ namespace SRMMS.Controllers
         }
 
 
-        // Validation method for date range
         private bool IsDateRangeValid(DateTime? startDate, DateTime? endDate)
         {
             if (startDate == null || endDate == null)
@@ -182,8 +221,7 @@ namespace SRMMS.Controllers
             return startDate < endDate;
         }
 
-        // DELETE: api/DiscountCodes/5
-        [HttpDelete("{id}")]
+        [HttpPut("changeStatus/{id}")]
         public async Task<ActionResult<DiscountCodeDto>> DeleteDiscountCode(int id)
         {
             if (_context.DiscountCodes == null)
@@ -197,7 +235,10 @@ namespace SRMMS.Controllers
                 return NotFound($"Discount code with ID {id} not found.");
             }
 
-            var deletedDiscountCodeDto = new DiscountCodeDto
+            discountCode.Status = false;
+            await _context.SaveChangesAsync();
+
+            var updatedDiscountCodeDto = new DiscountCodeDto
             {
                 CodeId = discountCode.CodeId,
                 CodeDetail = discountCode.CodeDetail,
@@ -207,15 +248,29 @@ namespace SRMMS.Controllers
                 Status = discountCode.Status
             };
 
-            _context.DiscountCodes.Remove(discountCode);
-            await _context.SaveChangesAsync();
-
-            return Ok(deletedDiscountCodeDto);
+            return Ok(updatedDiscountCodeDto);
         }
 
         private bool DiscountCodeExists(int id)
         {
             return (_context.DiscountCodes?.Any(e => e.CodeId == id)).GetValueOrDefault();
         }
+        private async Task UpdateDiscountCodeStatusAsync()
+        {
+            var expiredDiscounts = await _context.DiscountCodes
+                .Where(d => d.EndDate.HasValue && d.EndDate.Value.Date < DateTime.Today && (bool)d.Status)
+                .ToListAsync();
+
+            foreach (var discount in expiredDiscounts)
+            {
+                discount.Status = false;
+            }
+
+            if (expiredDiscounts.Any())
+            {
+                await _context.SaveChangesAsync();
+            }
+        }
+
     }
 }
