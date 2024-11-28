@@ -9,11 +9,11 @@ namespace SRMMS.Controllers
     [Route("api/[controller]")]
     [ApiController]
     public class OrderController : ControllerBase
-	{
+    {
         private readonly OrderService _orderService;
 
         public OrderController(OrderService orderService)
-		{
+        {
             _orderService = orderService;
         }
 
@@ -39,17 +39,17 @@ namespace SRMMS.Controllers
         {
             try
             {
-               
+
                 var result = _orderService.GetOrders(pageNumber, pageSize, tableName, fromDate, toDate);
 
-              
+
                 var orders = result.Orders;
                 var totalOrders = result.TotalOrders;
 
-               
+
                 var totalPages = (int)Math.Ceiling(totalOrders / (double)pageSize);
 
-                
+
                 return Ok(new
                 {
                     Orders = orders,
@@ -61,7 +61,7 @@ namespace SRMMS.Controllers
             }
             catch (Exception ex)
             {
-               
+
                 return BadRequest(new { Message = ex.Message });
             }
         }
@@ -153,7 +153,7 @@ namespace SRMMS.Controllers
             try
             {
                 // Gọi phương thức tính tổng doanh thu
-                var result = await _orderService.CalculateTotalRevenue( week, month, year);
+                var result = await _orderService.CalculateTotalRevenue(week, month, year);
 
                 return Ok(new
                 {
