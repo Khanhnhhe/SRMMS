@@ -254,7 +254,7 @@ namespace SRMMS.Controllers
             return new GetOrderByOrderIdDTO
             {
                 OrderId = order.OrderId,
-                OrderDate = (DateTime)order.OrderDate,
+                OrderDate = order.OrderDate.HasValue ? (DateTime)order.OrderDate : null,
                 TotalMoney = (double)order.TotalMoney,
                 Status = (bool)order.Status,
                 TableId = order.Table.TableId,
