@@ -109,8 +109,8 @@ namespace SRMMS.Controllers
                         CodeId = d.CodeId,
                         CodeDetail = d.CodeDetail,
                         DiscountValue = d.DiscountValue,
-                        StartDate = d.StartDate.Value.ToString("dd/MM/yyyy"),
-                        EndDate = d.EndDate.Value.ToString("dd/MM/yyyy"),
+                        StartDate = d.StartDate,
+                        EndDate = d.EndDate,
                         Status = d.Status
                     })
                     .ToListAsync();
@@ -132,8 +132,8 @@ namespace SRMMS.Controllers
                     minDiscountCodeValue,
                     maxDiscountCodeValue,
                     codeDetail,
-                    startDate = startDate?.ToString("dd/MM/yyyy"),
-                    endDate = endDate?.ToString("dd/MM/yyyy")
+                    startDate = startDate?.ToString("YYYY-mm-DD"),
+                    endDate = endDate?.ToString("YYYY-mm-DD")
                 });
             }
             catch (DbUpdateException ex)
@@ -154,70 +154,83 @@ namespace SRMMS.Controllers
             }
         }
 
-
-
-
-
-
-
-
         // GET: api/DiscountCodes/5
         [HttpGet("getByID/{id}")]
         public async Task<ActionResult<DiscountCodeDto>> GetDiscountCode(int id)
         {
             if (_context.DiscountCodes == null)
             {
-                return NotFound("No discount codes available.");
+                return BadRequest(new
+                {
+                    message = "Không tìm thấy danh sách mã giảm giá."
+                });
             }
 
             var discountCode = await _context.DiscountCodes.FindAsync(id);
 
             if (discountCode == null)
             {
-                return NotFound($"Discount code with ID {id} not found.");
+                return BadRequest(new
+                {
+                    message = $"Không tìm thấy mã giảm giá với ID {id}."
+                });
             }
-
 
             var discountCodeDto = new DiscountCodeDto
             {
                 CodeId = discountCode.CodeId,
                 CodeDetail = discountCode.CodeDetail,
                 DiscountValue = discountCode.DiscountValue,
-                StartDate = discountCode.StartDate?.ToString("dd/MM/yyyy"),
-                EndDate = discountCode.EndDate?.ToString("dd/MM/yyyy"),
+                StartDate = discountCode.StartDate,
+                EndDate = discountCode.EndDate,
                 Status = discountCode.Status
             };
 
             return Ok(discountCodeDto);
         }
 
+
         // PUT: api/DiscountCodes/5
         // To protect from overposting attacks, see https://go.microsoft.com/fwlink/?linkid=2123754
-        [HttpPut("{id}")]
-        public async Task<IActionResult> PutDiscountCode(int id, DiscountCode discountCode)
+        [HttpPut("update/{id}")]
+        public async Task<IActionResult> PutDiscountCode(int id, UpdateDiscountDTO discountCodeDto)
         {
-            if (id != discountCode.CodeId)
+            if (_context.DiscountCodes == null)
             {
-                return BadRequest();
+                return Problem("Entity set 'SRMMSContext.DiscountCodes' is null.");
             }
 
-            _context.Entry(discountCode).State = EntityState.Modified;
+            var discountCode = await _context.DiscountCodes.FindAsync(id);
+            if (discountCode == null)
+            {
+                return BadRequest(new
+                {
+                    message = $"Không tìm thấy mã giảm giá với ID {id}"
+                });
+            }
 
-            try
+
+            if (discountCodeDto.CodeDetail != null)
+                discountCode.CodeDetail = discountCodeDto.CodeDetail;
+
+            if (discountCodeDto.DiscountValue.HasValue)
+                discountCode.DiscountValue = discountCodeDto.DiscountValue.Value;
+
+            if (discountCodeDto.StartDate.HasValue)
+                discountCode.StartDate = discountCodeDto.StartDate.Value.ToDateTime(TimeOnly.MinValue).Date;
+
+            if (discountCodeDto.EndDate.HasValue)
+                discountCode.EndDate = discountCodeDto.EndDate.Value.ToDateTime(TimeOnly.MinValue).Date;
+
+            if (discountCode.EndDate.HasValue && discountCode.EndDate.Value.Date == DateTime.Today)
             {
-                await _context.SaveChangesAsync();
+                discountCode.Status = false;
             }
-            catch (DbUpdateConcurrencyException)
-            {
-                if (!DiscountCodeExists(id))
-                {
-                    return NotFound();
-                }
-                else
-                {
-                    throw;
-                }
-            }
+
+            if (discountCodeDto.Status.HasValue)
+                discountCode.Status = discountCodeDto.Status.Value;
+
+            await _context.SaveChangesAsync();
 
             return NoContent();
         }
@@ -256,8 +269,7 @@ namespace SRMMS.Controllers
             {
                 CodeDetail = discountCodeDto.CodeDetail,
                 DiscountValue = discountCodeDto.DiscountValue,
-                StartDate = discountCodeDto.StartDate,
-                EndDate = discountCodeDto.EndDate,
+                StartDate = discountCodeDto?.EndDate,
                 Status = discountCodeDto.Status
             };
 
@@ -278,14 +290,13 @@ namespace SRMMS.Controllers
                 }
             }
 
-            // Map to DiscountCodeDto for response
             var responseDto = new DiscountCodeDto
             {
                 CodeId = discountCode.CodeId,
                 CodeDetail = discountCode.CodeDetail,
                 DiscountValue = discountCode.DiscountValue,
-                StartDate = discountCode.StartDate?.ToString("dd/MM/yyyy"),
-                EndDate = discountCode.EndDate?.ToString("dd/MM/yyyy"),
+                StartDate = discountCode?.StartDate,
+                EndDate = discountCode?.EndDate,
                 Status = discountCode.Status
             };
 
@@ -293,7 +304,6 @@ namespace SRMMS.Controllers
         }
 
 
-        // Validation method for date range
         private bool IsDateRangeValid(DateTime? startDate, DateTime? endDate)
         {
             if (startDate == null || endDate == null)
@@ -303,8 +313,8 @@ namespace SRMMS.Controllers
             return startDate < endDate;
         }
 
-        // DELETE: api/DiscountCodes/5
-        [HttpDelete("{id}")]
+
+        [HttpPut("changeStatus/{id}")]
         public async Task<ActionResult<DiscountCodeDto>> DeleteDiscountCode(int id)
         {
             if (_context.DiscountCodes == null)
@@ -315,23 +325,26 @@ namespace SRMMS.Controllers
             var discountCode = await _context.DiscountCodes.FindAsync(id);
             if (discountCode == null)
             {
-                return NotFound($"Discount code with ID {id} not found.");
+                return BadRequest(new
+                {
+                    message = $"Không tìm thấy mã giảm giá với ID {id}"
+                });
             }
 
-            var deletedDiscountCodeDto = new DiscountCodeDto
+            discountCode.Status = false;
+            await _context.SaveChangesAsync();
+
+            var updatedDiscountCodeDto = new DiscountCodeDto
             {
                 CodeId = discountCode.CodeId,
                 CodeDetail = discountCode.CodeDetail,
                 DiscountValue = discountCode.DiscountValue,
-                StartDate = discountCode.StartDate?.ToString("dd/MM/yyyy"),
-                EndDate = discountCode.EndDate?.ToString("dd/MM/yyyy"),
+                StartDate = discountCode.StartDate,
+                EndDate = discountCode.EndDate,
                 Status = discountCode.Status
             };
 
-            _context.DiscountCodes.Remove(discountCode);
-            await _context.SaveChangesAsync();
-
-            return Ok(deletedDiscountCodeDto);
+            return Ok(updatedDiscountCodeDto);
         }
 
         private bool DiscountCodeExists(int id)
@@ -339,4 +352,7 @@ namespace SRMMS.Controllers
             return (_context.DiscountCodes?.Any(e => e.CodeId == id)).GetValueOrDefault();
         }
     }
+
+
 }
+
