@@ -17,7 +17,8 @@ public class CategoryController : ControllerBase
     [HttpGet("list")]
     public async Task<ActionResult<IEnumerable<ProductCategoriesDTO>>> GetCategories(int pageNumber = 1, int pageSize = 10)
     {
-        
+        // test
+
         var skip = (pageNumber - 1) * pageSize;
 
         
