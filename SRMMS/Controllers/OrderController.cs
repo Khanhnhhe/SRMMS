@@ -159,7 +159,7 @@ namespace SRMMS.Controllers
         {
             try
             {
-                // Gọi phương thức tính tổng doanh thu
+              
                 var result = await _orderService.CalculateTotalRevenue( week, month, year);
 
                 return Ok(new
