@@ -415,7 +415,6 @@ namespace SRMMS.Controllers
         }
         public async Task<OrderCompleteDTO> CompleteOrder(int orderId, int? discountId, decimal? totalMoney)
         {
-          
             var order = await _context.Orders
                 .Include(o => o.Table)
                 .FirstOrDefaultAsync(o => o.OrderId == orderId);
@@ -430,8 +429,9 @@ namespace SRMMS.Controllers
                 throw new Exception("This order has already been completed and cannot be modified.");
             }
 
-           
             double? discountValue = null;
+
+           
             if (discountId.HasValue)
             {
                 var discount = await _context.DiscountCodes.FirstOrDefaultAsync(d => d.CodeId == discountId.Value);
@@ -441,23 +441,33 @@ namespace SRMMS.Controllers
                     throw new Exception("Discount code not found.");
                 }
 
-                if (discount.Status != true) 
-                {
-                    throw new Exception("This discount code is disabled and cannot be used.");
-                }
-
                 if (discount.Status != true || discount.StartDate > DateTime.Now || (discount.EndDate != null && discount.EndDate < DateTime.Now))
                 {
                     throw new Exception("Discount code is invalid or expired.");
                 }
 
                 discountValue = discount.DiscountValue;
+
+               
+                if (totalMoney.HasValue)
+                {
+
+                    if (discountValue >= (double)totalMoney.Value)
+                    {
+                        totalMoney = 0; 
+                    }
+                }
             }
 
-            
+           
+            if (totalMoney.HasValue)
+            {
+                order.TotalMoney = totalMoney.Value;
+            }
+
+           
             order.OrderDate = DateTime.Now;
             order.CodeId = discountId;
-            order.TotalMoney = totalMoney;
 
             if (order.Table != null)
             {
@@ -466,14 +476,13 @@ namespace SRMMS.Controllers
 
             order.Status = true;
 
-           
             await _context.SaveChangesAsync();
 
-           
+            
             return new OrderCompleteDTO
             {
                 OrderId = order.OrderId,
-                TotalMoney = order.TotalMoney,
+                TotalMoney = order.TotalMoney, 
                 TableId = order.TableId,
                 OrderDate = order.OrderDate,
                 Status = order.Status,
@@ -481,9 +490,6 @@ namespace SRMMS.Controllers
                 DiscountValue = discountValue
             };
         }
-
-
-
 
 
         public async Task<(List<GetOrderByOrderIdDTO> Orders, decimal TotalRevenue)> CalculateTotalRevenue(int? weekNumber = null, int? month = null, int? year = null)
