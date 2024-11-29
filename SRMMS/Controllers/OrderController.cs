@@ -76,7 +76,7 @@ namespace SRMMS.Controllers
                 var order = _orderService.GetOrderByOrderId(orderId);
                 if (order == null)
                 {
-                    return NotFound(new { Message = $"Order with ID {orderId} not found." });
+                    return Ok(new { Message = $"Order with ID {orderId} not found." });
                 }
                 return Ok(order);
             }
@@ -93,7 +93,7 @@ namespace SRMMS.Controllers
             var orders = _orderService.GetOrdersByTable(tableId, pageNumber, pageSize);
             if (orders == null || orders.Count == 0)
             {
-                return NotFound(new { Message = $"No orders found for table {tableId}" });
+                return Ok(new { Message = $"No orders found for table {tableId}" });
             }
             return Ok(orders);
         }
@@ -152,7 +152,7 @@ namespace SRMMS.Controllers
         {
             try
             {
-                // Gọi phương thức tính tổng doanh thu
+               
                 var result = await _orderService.CalculateTotalRevenue(week, month, year);
 
                 return Ok(new

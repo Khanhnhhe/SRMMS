@@ -239,7 +239,7 @@ namespace SRMMS.Controllers
 
             if (product == null)
             {
-                return NotFound();
+                return Ok(new { Message = $"Product with ID {proId} not found." });
             }
 
             return Ok(product);
@@ -254,7 +254,7 @@ namespace SRMMS.Controllers
 
             if (existingProduct == null)
             {
-                return NotFound();
+                return Ok(new { Message = $"Product not found." });
             }
 
             if (!string.IsNullOrEmpty(updateProductDto.ProductName))
@@ -270,9 +270,21 @@ namespace SRMMS.Controllers
 
                 existingProduct.ProName = updateProductDto.ProductName;
             }
-            if (string.IsNullOrEmpty(updateProductDto.ProductName) && !updateProductDto.Price.HasValue && updateProductDto.Image == null && !updateProductDto.Status.HasValue && !updateProductDto.Category.HasValue)
+
+            if (!string.IsNullOrEmpty(updateProductDto.Calories))
             {
-                return Ok("No changes made to the product.");
+                if (int.TryParse(updateProductDto.Calories, out var calories))
+                {
+                    if (calories < 0)
+                    {
+                        return BadRequest("Calo cannot be negative.");
+                    }
+                    existingProduct.ProCalories = calories.ToString();
+                }
+                else
+                {
+                    return BadRequest("Invalid calories value. Please provide a valid number.");
+                }
             }
 
             if (updateProductDto.Price.HasValue)
@@ -350,7 +362,7 @@ namespace SRMMS.Controllers
             {
                 if (!ProductExists(id))
                 {
-                    return NotFound();
+                    return Ok(new { Message = $"Product not found." });
                 }
                 else
                 {
@@ -379,7 +391,7 @@ namespace SRMMS.Controllers
 
             if (category == null)
             {
-                return NotFound("Category not found.");
+                return Ok(new { Message = $"Catefory not found." });
             }
 
             var totalProducts = await _context.Products.CountAsync(p => p.CatId == category.CatId);
@@ -404,7 +416,8 @@ namespace SRMMS.Controllers
 
             if (products == null || products.Count == 0)
             {
-                return NotFound("No products found in this category.");
+
+                return Ok(new { Message = $"No products found in this category." });
             }
 
             var result = new
@@ -453,7 +466,7 @@ namespace SRMMS.Controllers
 
             if (products == null || !products.Any())
             {
-                return NotFound("No products found.");
+                return Ok(new { Message = $"Product not found." });
             }
 
 
@@ -471,7 +484,7 @@ namespace SRMMS.Controllers
                     var product = await _context.Products.FindAsync(id);
                     if (product == null)
                     {
-                        return NotFound(new { Message = "Product not found." });
+                        return Ok(new { Message = $"Product not found." });
                     }
 
 
@@ -558,7 +571,7 @@ namespace SRMMS.Controllers
 
             if (product == null)
             {
-                return NotFound("Product not found");
+                return Ok(new { Message = $"Product not found." });
             }
 
 

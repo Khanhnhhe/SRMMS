@@ -89,9 +89,10 @@ namespace SRMMS.Controllers
                 }
                 else
                 {
-                    return NotFound($"Sản phẩm '{productName}' không tìm thấy trong cơ sở dữ liệu.");
+                    return Ok(new { message = $"Sản phẩm '{productName}' không tìm thấy trong cơ sở dữ liệu." });
                 }
             }
+
 
 
             _context.Combos.Add(newCombo);
@@ -160,7 +161,7 @@ namespace SRMMS.Controllers
 
             if (combos == null || !combos.Any())
             {
-                return NotFound("Không tìm thấy combo nào.");
+                return Ok(new { message = $"Không tìm thấy combo nào." });
             }
             foreach (var combo in combos)
             {
@@ -206,7 +207,7 @@ namespace SRMMS.Controllers
             var existingCombo = await _context.Combos.FindAsync(id);
             if (existingCombo == null)
             {
-                return NotFound($"Combo với ID '{id}' không tìm thấy.");
+                return Ok(new { message = $"Không tìm thấy combo nào." });
             }
 
             if (!string.IsNullOrWhiteSpace(updateDto.ComboName) &&
@@ -234,7 +235,7 @@ namespace SRMMS.Controllers
 
             if (missingProducts.Any())
             {
-                return NotFound($"Các sản phẩm không tìm thấy: {string.Join(", ", missingProducts)}.");
+                return Ok(new { message = $"Không tìm thấy sản phẩm nào." });
             }
 
 
@@ -298,7 +299,7 @@ namespace SRMMS.Controllers
 
             if (combo == null)
             {
-                return NotFound();
+                return Ok(new { message = $"Không tìm thấy combo nào." });
             }
 
             
@@ -322,7 +323,7 @@ namespace SRMMS.Controllers
 
             if (combo == null)
             {
-                return NotFound($"Combo với ID '{comboId}' không tìm thấy.");
+                return Ok(new { message = $"Không tìm thấy combo nào." });
             }
 
             var comboDetailDto = new ComboProductDetailDTO
@@ -383,7 +384,7 @@ namespace SRMMS.Controllers
 
             if (combos == null || !combos.Any())
             {
-                return NotFound("Không tìm thấy combo nào.");
+                return Ok(new { message = $"Không tìm thấy combo nào." });
             }
 
             var comboDtos = combos.Select(combo => new ListComboProductDTO
