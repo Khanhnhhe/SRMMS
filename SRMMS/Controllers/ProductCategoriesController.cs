@@ -35,7 +35,7 @@ public class CategoryController : ControllerBase
 
         if (categories == null || !categories.Any())
         {
-            return NotFound("No categories found.");
+            return Ok(new { Message = "No categories found." });
         }
 
 
@@ -92,7 +92,7 @@ public class CategoryController : ControllerBase
 
         if (category == null)
         {
-            return NotFound();
+            return Ok(new { Message = $"Category with ID {catId} not found." });
         }
 
         return Ok(category);
@@ -107,7 +107,7 @@ public class CategoryController : ControllerBase
 
         if (category == null)
         {
-            return NotFound("Category not found.");
+            return Ok(new { Message = $"Category with ID {catId} not found." });
         }
 
         try
@@ -161,7 +161,7 @@ public class CategoryController : ControllerBase
 
         if (categories == null || !categories.Any())
         {
-            return NotFound("No categories found.");
+            return Ok(new { Message = $"Category not found." });
         }
 
         return Ok(categories);
@@ -174,7 +174,7 @@ public class CategoryController : ControllerBase
         var existingCategory = await _context.Categories.FindAsync(catId);
         if (existingCategory == null)
         {
-            return NotFound("Category not found.");
+            return Ok(new { Message = $"Category  not found." });
         }
 
         if (!string.IsNullOrEmpty(categoryDto.CatName) &&
@@ -209,7 +209,7 @@ public class CategoryController : ControllerBase
 
             if (!CategoryExists(catId))
             {
-                return NotFound();
+                return Ok(new { Message = $"Category not found." });
             }
             else
             {

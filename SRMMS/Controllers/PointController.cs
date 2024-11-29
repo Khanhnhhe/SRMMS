@@ -31,7 +31,7 @@ namespace SRMMS.Controllers
 
             if (order == null)
             {
-                return NotFound(new { message = "Order không tồn tại hoặc không hợp lệ." });
+                return Ok(new { message = "Order không tồn tại hoặc không hợp lệ." });
             }
 
 
@@ -47,7 +47,7 @@ namespace SRMMS.Controllers
 
             if (account == null)
             {
-                return NotFound(new { message = "Tài khoản không tồn tại." });
+                return Ok(new { message = "Tài khoản không tồn tại." });
             }
 
 

@@ -309,7 +309,8 @@ namespace SRMMS.Controllers
             }
 
             var query = _context.Orders
-                .Where(o => o.TableId == tableId)
+                .Where(o => o.TableId == tableId && (o.Status == false))
+
                 .Include(o => o.OrderDetails)
                     .ThenInclude(od => od.Pro)
                 .Include(o => o.OrderDetails)
