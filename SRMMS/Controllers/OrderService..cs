@@ -44,7 +44,7 @@ namespace SRMMS.Controllers
                     await AddOrderDetails(existingOrder, orderDto);
 
                    
-                    existingOrder.TotalMoney = orderDto.TotalMoney;
+                    existingOrder.TotalMoney += orderDto.TotalMoney;
 
                    
                     await _context.SaveChangesAsync();
@@ -65,26 +65,26 @@ namespace SRMMS.Controllers
                 OrderDetails = new List<OrderDetail>()
             };
 
-            // Thêm chi tiết đơn hàng
+           
             await AddOrderDetails(newOrder, orderDto);
 
-            // Thêm đơn hàng vào cơ sở dữ liệu
+          
             _context.Orders.Add(newOrder);
             await _context.SaveChangesAsync();
 
-            // Gửi thông báo qua SignalR
+            
             await _orderHubContext.Clients.All.SendAsync("ReceiveOrder", newOrder);
 
             return newOrder.OrderId;
         }
 
-        // Hàm thêm chi tiết vào đơn hàng
+       
         private async Task AddOrderDetails(Order order, OrderDTO orderDto)
         {
             bool hasCombo = false;
             bool hasProduct = false;
 
-            // Thêm combo
+           
             if (orderDto.ComboDetails != null && orderDto.ComboDetails.Any())
             {
                 foreach (var comboDetail in orderDto.ComboDetails)
@@ -109,12 +109,12 @@ namespace SRMMS.Controllers
                     var orderDetail = order.OrderDetails.FirstOrDefault(od => od.ComboId == comboDetail.ComboId);
                     if (orderDetail != null)
                     {
-                        // Cập nhật số lượng nếu combo đã tồn tại trong OrderDetails
+                       
                         orderDetail.Quantiity += comboDetail.Quantity;
                     }
                     else
                     {
-                        // Thêm combo mới
+                       
                         orderDetail = new OrderDetail
                         {
                             ComboId = comboDetail.ComboId,
@@ -127,7 +127,7 @@ namespace SRMMS.Controllers
                 hasCombo = true;
             }
 
-            // Thêm sản phẩm
+           
             if (orderDto.ProductDetails != null && orderDto.ProductDetails.Any())
             {
                 foreach (var productDetail in orderDto.ProductDetails)
@@ -152,12 +152,12 @@ namespace SRMMS.Controllers
                     var orderDetail = order.OrderDetails.FirstOrDefault(od => od.ProId == productDetail.ProId);
                     if (orderDetail != null)
                     {
-                        // Cập nhật số lượng nếu sản phẩm đã tồn tại
+                       
                         orderDetail.Quantiity += productDetail.Quantity;
                     }
                     else
                     {
-                        // Thêm sản phẩm mới
+                       
                         orderDetail = new OrderDetail
                         {
                             ProId = productDetail.ProId,
@@ -531,10 +531,10 @@ namespace SRMMS.Controllers
                     throw new Exception("Không tìm thấy tài khoản khách hàng.");
                 }
 
-               
-                var points = (int)(order.TotalMoney / 100);
 
-              
+                var points = (int)(order.TotalMoney * (decimal)0.05);
+
+
                 var pointList = new PointList
                 {
                     AccId = account.AccId,
@@ -591,12 +591,15 @@ namespace SRMMS.Controllers
                         endOfWeek = firstDayOfMonth.AddDays(20).AddHours(23).AddMinutes(59).AddSeconds(59);  // Kết thúc tuần 3 vào cuối ngày 21
                         break;
                     case 4:
-                        startOfWeek = firstDayOfMonth.AddDays(21);  // Bắt đầu tuần 4 từ 00:00 của ngày 22
-                        endOfWeek = firstDayOfMonth.AddMonths(1).AddDays(3).AddHours(23).AddMinutes(59).AddSeconds(59);  // Kết thúc tuần 4 vào cuối ngày cuối tháng
+                        startOfWeek = firstDayOfMonth.AddDays(21); // Bắt đầu tuần 4 từ ngày 22
+                        endOfWeek = firstDayOfMonth.AddMonths(1).AddDays(-1).AddHours(23).AddMinutes(59).AddSeconds(59); // Kết thúc tuần 4 vào cuối ngày cuối tháng
                         break;
+
                     default:
                         throw new ArgumentException("Invalid week number. Please enter a value between 1 and 4.");
                 }
+
+
 
 
                 var lastDayOfMonth = firstDayOfMonth.AddMonths(1).AddDays(-1);
