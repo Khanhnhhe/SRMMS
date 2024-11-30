@@ -59,7 +59,7 @@ namespace SRMMS.Controllers
             }
             else if (!string.IsNullOrEmpty(minPrice))
             {
-                return BadRequest("Invalid minPrice. Please enter a numeric value.");
+                return BadRequest("Giá tối thiểu không hợp lệ. Vui lòng nhập giá trị số.");
             }
 
             if (!string.IsNullOrEmpty(maxPrice) && IsNumeric(maxPrice.Trim(), out decimal parsedMaxPrice))
@@ -68,7 +68,7 @@ namespace SRMMS.Controllers
             }
             else if (!string.IsNullOrEmpty(maxPrice))
             {
-                return BadRequest("Invalid maxPrice. Please enter a numeric value.");
+                return BadRequest("maxPrice không hợp lệ. Vui lòng nhập giá trị số.");
             }
 
 
@@ -137,31 +137,31 @@ namespace SRMMS.Controllers
             var categoryExists = await _context.Categories.AnyAsync(c => c.CatId == productDto.Category);
             if (!categoryExists)
             {
-                return BadRequest("Category does not exist.");
+                return BadRequest("Không có danh mục nào tồn tại.");
             }
 
             var productExists = await _context.Products.AnyAsync(p => p.ProName == productDto.ProductName);
             if (productExists)
             {
-                return BadRequest("A product with this name already exists.");
+                return BadRequest("Một sản phẩm có tên này đã tồn tại.");
             }
 
             if (productDto.Image == null || productDto.Image.Length == 0)
             {
-                return BadRequest("Image not found");
+                return BadRequest("Không tìm thấy hình ảnh");
             }
             if (productDto.Price < 0)
             {
-                return BadRequest("Price cannot be negative.");
+                return BadRequest("Giá không thể âm.");
             }
 
             if (productDto.Category.HasValue && productDto.Category < 0)
             {
-                return BadRequest("Category does not exist.");
+                return BadRequest("Không có danh mục nào tồn tại.");
             }
             if (productDto.Price == 0)
             {
-                return BadRequest("Price is required and must be greater than 0.");
+                return BadRequest("Giá là bắt buộc và phải lớn hơn 0.");
             }
 
             if (string.IsNullOrWhiteSpace(productDto.ProductName) &&
@@ -171,7 +171,7 @@ namespace SRMMS.Controllers
                  productDto.Image == null &&
                  string.IsNullOrWhiteSpace(productDto.Calories))
             {
-                return BadRequest("All fields cannot be null.");
+                return BadRequest("Không được để giá trị null ở tất cả các trường.");
             }
 
             var tempFilePath = Path.Combine(Path.GetTempPath(), Guid.NewGuid().ToString() + Path.GetExtension(productDto.Image.FileName));
@@ -219,7 +219,7 @@ namespace SRMMS.Controllers
 
             if (proId == null)
             {
-                return BadRequest("The parameter 'proId' is required.");
+                return BadRequest("Tham số 'proId' là bắt buộc.");
             }
             var product = await _context.Products
         .Include(c => c.Cat)
@@ -239,7 +239,7 @@ namespace SRMMS.Controllers
 
             if (product == null)
             {
-                return Ok(new { Message = $"Product with ID {proId} not found." });
+                return Ok(new { Message = $"Không tìm thấy sản phẩm có ID {proId}." });
             }
 
             return Ok(product);
@@ -254,7 +254,7 @@ namespace SRMMS.Controllers
 
             if (existingProduct == null)
             {
-                return Ok(new { Message = $"Product not found." });
+                return Ok(new { Message = $"Không tìm thấy sản phẩm." });
             }
 
             if (!string.IsNullOrEmpty(updateProductDto.ProductName))
@@ -265,7 +265,7 @@ namespace SRMMS.Controllers
 
                 if (productWithSameName != null)
                 {
-                    return BadRequest("Product name already exists.");
+                    return BadRequest("Tên sản phẩm đã tồn tại.");
                 }
 
                 existingProduct.ProName = updateProductDto.ProductName;
@@ -275,15 +275,15 @@ namespace SRMMS.Controllers
             {
                 if (int.TryParse(updateProductDto.Calories, out var calories))
                 {
-                    if (calories < 0)
+                    if (calories <= 0)
                     {
-                        return BadRequest("Calo cannot be negative.");
+                        return BadRequest("Lượng calo không thể âm.");
                     }
                     existingProduct.ProCalories = calories.ToString();
                 }
                 else
                 {
-                    return BadRequest("Invalid calories value. Please provide a valid number.");
+                    return BadRequest("Giá trị calo không hợp lệ. Vui lòng cung cấp số hợp lệ.");
                 }
             }
 
@@ -292,7 +292,7 @@ namespace SRMMS.Controllers
 
                 if (updateProductDto.Price.Value <= 0)
                 {
-                    return BadRequest("Invalid price. Please provide a valid price.");
+                    return BadRequest("Giá không hợp lệ. Vui lòng cung cấp giá hợp lệ.");
                 }
                 existingProduct.ProPrice = updateProductDto.Price.Value;
             }
@@ -301,7 +301,7 @@ namespace SRMMS.Controllers
 
                 if (updateProductDto.Category.Value < 0)
                 {
-                    return BadRequest("Invalid category. Category cannot be negative.");
+                    return BadRequest("Thể loại không hợp lệ. Thể loại không thể là số âm.");
                 }
 
                 var category = await _context.Categories.FindAsync(updateProductDto.Category.Value);
@@ -312,7 +312,7 @@ namespace SRMMS.Controllers
                 }
                 else
                 {
-                    return BadRequest("Invalid category provided.");
+                    return BadRequest("Danh mục không hợp lệ.");
                 }
             }
 
@@ -348,7 +348,7 @@ namespace SRMMS.Controllers
                 }
                 else
                 {
-                    return BadRequest("Invalid category provided.");
+                    return BadRequest("Danh mục không hợp lệ.");
                 }
             }
 
@@ -362,7 +362,7 @@ namespace SRMMS.Controllers
             {
                 if (!ProductExists(id))
                 {
-                    return Ok(new { Message = $"Product not found." });
+                    return Ok(new { Message = $"Không tìm thấy sản phẩm." });
                 }
                 else
                 {
@@ -391,7 +391,7 @@ namespace SRMMS.Controllers
 
             if (category == null)
             {
-                return Ok(new { Message = $"Catefory not found." });
+                return Ok(new { Message = $"Không tìm thấy danh mục." });
             }
 
             var totalProducts = await _context.Products.CountAsync(p => p.CatId == category.CatId);
@@ -417,7 +417,7 @@ namespace SRMMS.Controllers
             if (products == null || products.Count == 0)
             {
 
-                return Ok(new { Message = $"No products found in this category." });
+                return Ok(new { Message = $"Không tìm thấy sản phẩm nào trong danh mục này." });
             }
 
             var result = new
@@ -539,7 +539,7 @@ namespace SRMMS.Controllers
                     await _context.SaveChangesAsync();
                     await transaction.CommitAsync();
 
-                    return Ok(new { Message = "Product status updated to false successfully." });
+                    return Ok(new { Message = "Trạng thái sản phẩm đã được cập nhật thành sai thành công." });
                 }
                 catch (Exception ex)
                 {
@@ -561,7 +561,7 @@ namespace SRMMS.Controllers
 
             if (id <= 0)
             {
-                return BadRequest("Invalid product ID. ID must be greater than 0.");
+                return BadRequest("ID sản phẩm không hợp lệ. ID phải lớn hơn 0.");
             }
 
 
@@ -571,7 +571,7 @@ namespace SRMMS.Controllers
 
             if (product == null)
             {
-                return Ok(new { Message = $"Product not found." });
+                return Ok(new { Message = $"Không tìm thấy sản phẩm." });
             }
 
 

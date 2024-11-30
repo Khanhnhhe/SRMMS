@@ -25,13 +25,13 @@ namespace SRMMS.Controllers
         // GET: api/DiscountCodes
         [HttpGet("list")]
         public async Task<ActionResult<object>> GetDiscountCodes(
-         int pageNumber = 1,
-         int pageSize = 10,
-         decimal? minDiscountCodeValue = null,
-         decimal? maxDiscountCodeValue = null,
-         string? codeDetail = null,
-         DateTime? startDate = null,
-         DateTime? endDate = null)
+     int pageNumber = 1,
+     int pageSize = 10,
+     decimal? minDiscountCodeValue = null,
+     decimal? maxDiscountCodeValue = null,
+     string? codeDetail = null,
+     string? startDate = null,
+     string? endDate = null)
         {
             try
             {
@@ -66,12 +66,15 @@ namespace SRMMS.Controllers
                     });
                 }
 
-                if (startDate.HasValue && endDate.HasValue && startDate > endDate)
+                if (!string.IsNullOrEmpty(startDate) && !string.IsNullOrEmpty(endDate))
                 {
-                    return BadRequest(new
+                    if (DateTime.Parse(startDate) > DateTime.Parse(endDate))
                     {
-                        message = "Ngày bắt đầu không thể lớn hơn ngày kết thúc."
-                    });
+                        return BadRequest(new
+                        {
+                            message = "Ngày bắt đầu không thể lớn hơn ngày kết thúc."
+                        });
+                    }
                 }
 
                 var query = _context.DiscountCodes.AsQueryable();
@@ -90,13 +93,13 @@ namespace SRMMS.Controllers
                     query = query.Where(d => (decimal)d.DiscountValue <= maxDiscountCodeValue.Value);
                 }
 
-                if (startDate.HasValue)
+                if (!string.IsNullOrEmpty(startDate))
                 {
-                    query = query.Where(d => d.StartDate >= startDate);
+                    query = query.Where(d => d.StartDate >= DateTime.Parse(startDate));
                 }
-                if (endDate.HasValue)
+                if (!string.IsNullOrEmpty(endDate))
                 {
-                    query = query.Where(d => d.EndDate <= endDate);
+                    query = query.Where(d => d.EndDate <= DateTime.Parse(endDate));
                 }
 
                 int totalDiscountCode = await query.CountAsync();
@@ -109,8 +112,8 @@ namespace SRMMS.Controllers
                         CodeId = d.CodeId,
                         CodeDetail = d.CodeDetail,
                         DiscountValue = d.DiscountValue,
-                        StartDate = d.StartDate,
-                        EndDate = d.EndDate,
+                        StartDate = d.StartDate.HasValue ? d.StartDate.Value.ToString("yyyy-MM-dd HH:mm:ss") : null,
+                        EndDate = d.EndDate.HasValue ? d.EndDate.Value.ToString("yyyy-MM-dd HH:mm:ss") : null,
                         Status = d.Status
                     })
                     .ToListAsync();
@@ -132,8 +135,8 @@ namespace SRMMS.Controllers
                     minDiscountCodeValue,
                     maxDiscountCodeValue,
                     codeDetail,
-                    startDate = startDate?.ToString("YYYY-mm-DD"),
-                    endDate = endDate?.ToString("YYYY-mm-DD")
+                    startDate,
+                    endDate
                 });
             }
             catch (DbUpdateException ex)
@@ -153,6 +156,7 @@ namespace SRMMS.Controllers
                 });
             }
         }
+
 
         // GET: api/DiscountCodes/5
         [HttpGet("getByID/{id}")]
@@ -181,8 +185,8 @@ namespace SRMMS.Controllers
                 CodeId = discountCode.CodeId,
                 CodeDetail = discountCode.CodeDetail,
                 DiscountValue = discountCode.DiscountValue,
-                StartDate = discountCode.StartDate,
-                EndDate = discountCode.EndDate,
+                StartDate = discountCode.StartDate.Value.ToString("yyyy-MM-dd hh:mm:ss"),
+                EndDate = discountCode.EndDate.Value.ToString("yyyy-MM-dd hh:mm:ss"),
                 Status = discountCode.Status
             };
 
@@ -302,8 +306,8 @@ namespace SRMMS.Controllers
                 CodeId = discountCode.CodeId,
                 CodeDetail = discountCode.CodeDetail,
                 DiscountValue = discountCode.DiscountValue,
-                StartDate = discountCode?.StartDate,
-                EndDate = discountCode?.EndDate,
+                StartDate = discountCode?.StartDate.Value.ToString("yyyy-MM-dd hh:mm:ss"),
+                EndDate = discountCode?.EndDate.Value.ToString("yyyy-MM-dd hh:mm:ss"),
                 Status = discountCode.Status
             };
 
@@ -346,8 +350,8 @@ namespace SRMMS.Controllers
                 CodeId = discountCode.CodeId,
                 CodeDetail = discountCode.CodeDetail,
                 DiscountValue = discountCode.DiscountValue,
-                StartDate = discountCode.StartDate,
-                EndDate = discountCode.EndDate,
+                StartDate = discountCode.StartDate.Value.ToString("yyyy-MM-dd hh:mm:ss"),
+                EndDate = discountCode.EndDate.Value.ToString("yyyy-MM-dd hh:mm:ss"),
                 Status = discountCode.Status
             };
 

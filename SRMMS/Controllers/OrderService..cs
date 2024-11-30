@@ -162,7 +162,7 @@ namespace SRMMS.Controllers
 
                 if (!tableExists)
                 {
-                    throw new Exception($"Table with name '{tableName}' does not exist.");
+                    throw new Exception($"Bàn với tên '{tableName}' không tồn taị");
                 }
 
                 query = query.Where(o => o.Table.TableName.Replace(" ", "").Contains(normalizedTableName));
@@ -176,7 +176,7 @@ namespace SRMMS.Controllers
                 }
                 else
                 {
-                    throw new Exception($"Invalid fromDate format: '{fromDate}'. Expected format is yyyy-MM-dd.");
+                    throw new Exception($"Định dạng fromDate không hợp lệ: '{fromDate}'. Định dạng dự kiến ​​là yyyy-MM-dd.");
                 }
             }
 
@@ -190,7 +190,7 @@ namespace SRMMS.Controllers
                 }
                 else
                 {
-                    throw new Exception($"Invalid toDate format: '{toDate}'. Expected format is yyyy-MM-dd.");
+                    throw new Exception($"Định dạng fromDate không hợp lệ: '{toDate}'. Định dạng dự kiến ​​là  yyyy-MM-dd.");
                 }
             }
             var totalOrders = query.Count();
@@ -248,7 +248,7 @@ namespace SRMMS.Controllers
 
             if (order == null)
             {
-                throw new Exception($"Order with ID {orderId} does not exist.");
+                throw new Exception($"Order với ID {orderId} không tồn tại.");
             }
 
             return new GetOrderByOrderIdDTO
@@ -305,7 +305,7 @@ namespace SRMMS.Controllers
             if (!tableExists)
             {
 
-                throw new Exception($"Table with ID '{tableId}' does not exist.");
+                throw new Exception($"Bàn với ID '{tableId}' không tồn tại");
             }
 
             var query = _context.Orders
@@ -366,7 +366,7 @@ namespace SRMMS.Controllers
             if (!tableExists)
             {
 
-                throw new Exception($"Table with name '{tableName}' does not exist.");
+                throw new Exception($"Bàn với ID '{tableName}' không tồn tại");
             }
 
 
@@ -422,12 +422,12 @@ namespace SRMMS.Controllers
 
             if (order == null)
             {
-                throw new Exception("Order not found.");
+                throw new Exception("Không tìm thấy Order.");
             }
 
             if (order.Status == true)
             {
-                throw new Exception("This order has already been completed and cannot be modified.");
+                throw new Exception("Đơn hàng này đã hoàn tất và không thể sửa đổi.");
             }
 
             double? discountValue = null;
@@ -439,12 +439,12 @@ namespace SRMMS.Controllers
 
                 if (discount == null)
                 {
-                    throw new Exception("Discount code not found.");
+                    throw new Exception("Không tìm thấy mã giảm giá");
                 }
 
                 if (discount.Status != true || discount.StartDate > DateTime.Now || (discount.EndDate != null && discount.EndDate < DateTime.Now))
                 {
-                    throw new Exception("Discount code is invalid or expired.");
+                    throw new Exception("Mã giảm giá không hợp lệ hoặc đã hết hạn.");
                 }
 
                 discountValue = discount.DiscountValue;
@@ -522,7 +522,7 @@ namespace SRMMS.Controllers
                         break;
                     case 4:
                         startOfWeek = firstDayOfMonth.AddDays(21);  // Bắt đầu tuần 4 từ 00:00 của ngày 22
-                        endOfWeek = firstDayOfMonth.AddMonths(1).AddDays(-1).AddHours(23).AddMinutes(59).AddSeconds(59);  // Kết thúc tuần 4 vào cuối ngày cuối tháng
+                        endOfWeek = firstDayOfMonth.AddMonths(1).AddDays(3).AddHours(23).AddMinutes(59).AddSeconds(59);  // Kết thúc tuần 4 vào cuối ngày cuối tháng
                         break;
                     default:
                         throw new ArgumentException("Invalid week number. Please enter a value between 1 and 4.");

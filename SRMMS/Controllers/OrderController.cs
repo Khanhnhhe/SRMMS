@@ -22,7 +22,7 @@ namespace SRMMS.Controllers
         {
             if (orderDto == null)
             {
-                return BadRequest("Order data is required.");
+                return BadRequest("Dữ liệu đơn hàng là bắt buộc.");
             }
 
             var orderId = await _orderService.CreateOrder(orderDto);
@@ -76,7 +76,7 @@ namespace SRMMS.Controllers
                 var order = _orderService.GetOrderByOrderId(orderId);
                 if (order == null)
                 {
-                    return Ok(new { Message = $"Order with ID {orderId} not found." });
+                    return Ok(new { Message = $"Không tìm thấy đơn hàng có ID {orderId}." });
                 }
                 return Ok(order);
             }
@@ -93,7 +93,7 @@ namespace SRMMS.Controllers
             var orders = _orderService.GetOrdersByTable(tableId, pageNumber, pageSize);
             if (orders == null || orders.Count == 0)
             {
-                return Ok(new { Message = $"No orders found for table {tableId}" });
+                return Ok(new { Message = $"Không tìm thấy đơn hàng nào cho bàn với id {tableId}" });
             }
             return Ok(orders);
         }
@@ -125,7 +125,7 @@ namespace SRMMS.Controllers
             }
             catch (Exception ex)
             {
-                return StatusCode(500, new { Message = "An error occurred while counting orders.", Error = ex.Message });
+                return StatusCode(500, new { Message = "Đã xảy ra lỗi khi đếm đơn hàng.", Error = ex.Message });
             }
         }
         [HttpPost("CompleteOrder")]
