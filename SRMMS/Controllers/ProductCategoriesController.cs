@@ -35,7 +35,7 @@ public class CategoryController : ControllerBase
 
         if (categories == null || !categories.Any())
         {
-            return Ok(new { Message = "No categories found." });
+            return Ok(new { Message = "Không tìm thấy category nào !" });
         }
 
 
@@ -48,7 +48,7 @@ public class CategoryController : ControllerBase
 
         if (await _context.Categories.AnyAsync(c => c.CatName == categoryDto.CatName))
         {
-            return BadRequest("A category with this name already exists.");
+            return BadRequest("Category đã tồn tại ");
         }
 
 
@@ -92,7 +92,7 @@ public class CategoryController : ControllerBase
 
         if (category == null)
         {
-            return Ok(new { Message = $"Category with ID {catId} not found." });
+            return Ok(new { Message = $"Category với ID {catId} không tìm thấy." });
         }
 
         return Ok(category);
@@ -107,7 +107,7 @@ public class CategoryController : ControllerBase
 
         if (category == null)
         {
-            return Ok(new { Message = $"Category with ID {catId} not found." });
+            return Ok(new { Message = $"Category với ID {catId} không tìm thấy." });
         }
 
         try
@@ -127,7 +127,7 @@ public class CategoryController : ControllerBase
         catch (DbUpdateException)
         {
 
-            return BadRequest("Could not delete the category and its products.");
+            return BadRequest("Không thể xóa danh mục và sản phẩm của danh mục đó.");
         }
 
 
@@ -161,7 +161,7 @@ public class CategoryController : ControllerBase
 
         if (categories == null || !categories.Any())
         {
-            return Ok(new { Message = $"Category not found." });
+            return Ok(new { Message = $"Category không tìm thấy." });
         }
 
         return Ok(categories);
@@ -185,7 +185,7 @@ public class CategoryController : ControllerBase
 
             if (categoryWithSameName)
             {
-                return BadRequest("A category with this name already exists.");
+                return BadRequest("Một danh mục có tên này đã tồn tại.");
             }
 
             existingCategory.CatName = categoryDto.CatName;
@@ -209,7 +209,7 @@ public class CategoryController : ControllerBase
 
             if (!CategoryExists(catId))
             {
-                return Ok(new { Message = $"Category not found." });
+                return Ok(new { Message = $"Không tìm thấy danh mục." });
             }
             else
             {
