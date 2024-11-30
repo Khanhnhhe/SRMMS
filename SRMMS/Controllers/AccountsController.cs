@@ -133,42 +133,39 @@ namespace SRMMS.Controllers
 
 
 
-
         [HttpGet("/api/account/getByID/{id}")]
         public async Task<ActionResult> GetAccountById(int id)
         {
             var account = await _context.Accounts
-            .Where(a => a.AccId == id)
-            .Include(a => a.PointLists)
-          .Select(a => new
-       {
-           a.AccId,
-           a.FullName,
-           a.Phone,
-           a.RoleId,
-           a.Status,
-           a.StartDate,
-           a.EndDate,
-           RoleName = a.Role.RoleName,
-           Points = a.RoleId == 5 ? a.PointLists.Select(p => new
-           {
-               PointId = p.PointId,
-               Points = p.NumberPonit
-           }).ToList() : null
-       })
-       .FirstOrDefaultAsync();
+                .Where(a => a.AccId == id)
+                .Include(a => a.PointLists)
+                .Select(a => new
+                {
+                    a.AccId,
+                    a.FullName,
+                    a.Phone,
+                    a.RoleId,
+                    a.Status,
+                    a.StartDate,
+                    a.EndDate,
+                    RoleName = a.Role.RoleName,
+                    TotalPoints = a.RoleId == 5 ? a.PointLists.Sum(p => p.NumberPonit) : null 
+                })
+                .FirstOrDefaultAsync();
 
             if (account == null)
             {
                 return Ok(new { message = "Không tìm thấy tài khoản." });
             }
-            if (account.RoleId == 5 && account.Points == null)
+
+            if (account.RoleId == 5 && account.TotalPoints == null)
             {
                 return Ok(new { Message = $"Tài khoản có ID {id} không phải là của khách hàng." });
             }
 
             return Ok(account);
         }
+
 
 
 
