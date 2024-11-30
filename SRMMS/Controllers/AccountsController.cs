@@ -214,10 +214,10 @@ namespace SRMMS.Controllers
             }
 
             var account = await _context.Accounts.FindAsync(id);
-            //if (account == null)
-            //{
-            //    return NotFound(new { message = "Account not found." });
-            //}
+            if (account == null)
+            {
+                return BadRequest(new { message = "Account not found." });
+            }
 
             if (account.Status == true && model.Status == false)
             {
@@ -248,10 +248,10 @@ namespace SRMMS.Controllers
         {
             var customer = _context.Accounts.FirstOrDefault(c => c.AccId == id);
 
-            //if (customer == null)
-            //{
-            //    return NotFound(new { message = "Customer not found." });
-            //}
+            if (customer == null)
+            {
+                return BadRequest(new { message = "Customer not found." });
+            }
 
             _context.Accounts.Remove(customer);
             _context.SaveChanges();
