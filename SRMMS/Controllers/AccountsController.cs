@@ -160,11 +160,11 @@ namespace SRMMS.Controllers
 
             if (account == null)
             {
-                return Ok(new { message = "Account not found." });
+                return Ok(new { message = "Không tìm thấy tài khoản." });
             }
             if (account.RoleId == 5 && account.Points == null)
             {
-                return Ok(new { Message = $"Account with ID {id} is not a customer or has no points." });
+                return Ok(new { Message = $"Tài khoản có ID {id} không phải là của khách hàng." });
             }
 
             return Ok(account);
@@ -177,13 +177,13 @@ namespace SRMMS.Controllers
         {
             if (model == null || string.IsNullOrWhiteSpace(model.Phone) || string.IsNullOrWhiteSpace(model.Password))
             {
-                return BadRequest("Invalid account data.");
+                return BadRequest("Dữ liệu tài khoản không hợp lệ.");
             }
 
             var existingAccount = await _context.Accounts.FirstOrDefaultAsync(a => a.Phone == model.Phone);
             if (existingAccount != null)
             {
-                return Conflict("Phone already exists.");
+                return BadRequest("Số điện thoại đã tồn tại.");
             }
 
             var account = new Account
@@ -200,7 +200,7 @@ namespace SRMMS.Controllers
             _context.Accounts.Add(account);
             await _context.SaveChangesAsync();
 
-            return Created("Account created successfully.", account);
+            return Created("Tài khoản đã được tạo thành công.", account);
         }
 
 
@@ -210,7 +210,7 @@ namespace SRMMS.Controllers
         {
             if (model == null || id <= 0)
             {
-                return BadRequest("Invalid account data.");
+                return BadRequest("Dữ liệu tài khoản không hợp lệ.");
             }
 
             var account = await _context.Accounts.FindAsync(id);
@@ -237,7 +237,7 @@ namespace SRMMS.Controllers
             _context.Accounts.Update(account);
             await _context.SaveChangesAsync();
 
-            return Ok(new { message = "Account updated successfully.", account });
+            return Ok(new { message = "Tài khoản đã được cập nhật thành công.", account });
         }
 
 
@@ -256,7 +256,7 @@ namespace SRMMS.Controllers
             _context.Accounts.Remove(customer);
             _context.SaveChanges();
 
-            return Ok(new { message = "Customer deleted successfully." });
+            return Ok(new { message = "Đã xóa tài khoản khách hàng thành công." });
         }
 
         [HttpGet("/api/account/total")]

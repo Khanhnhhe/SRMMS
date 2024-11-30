@@ -42,17 +42,17 @@ namespace SRMMS.Controllers
 
             if (user == null)
             {
-                return Unauthorized("User not found");
+                return Unauthorized("Không tìm thấy người dùng");
             }
 
             if (user.Status != true)
             {
-                return Unauthorized("Account is inactive");
+                return Unauthorized("Tài khoản không hoạt động");
             }
 
             if (!VerifyPassword(model.Password, user.Password))
             {
-                return Unauthorized("Invalid password");
+                return Unauthorized("Mật khẩu không hợp lệ");
             }
 
             // Generate token
@@ -106,7 +106,7 @@ namespace SRMMS.Controllers
 
             if (user == null)
             {
-                return BadRequest("User not found");
+                return BadRequest("Không tìm thấy người dùng");
             }
 
 
@@ -117,12 +117,12 @@ namespace SRMMS.Controllers
 
             if (!VerifyPassword(model.OldPassword, user.Password))
             {
-                return BadRequest("Old password is incorrect");
+                return BadRequest("Mật khẩu cũ không đúng");
             }
 
             if (model.NewPassword != model.ConfirmNewPassword)
             {
-                return BadRequest("New password and confirmation do not match");
+                return BadRequest("Mật khẩu mới và mật khẩu xác nhận không khớp");
             }
 
             user.Password = model.NewPassword;
@@ -130,7 +130,7 @@ namespace SRMMS.Controllers
             _context.Accounts.Update(user);
             _context.SaveChanges();
 
-            return Ok("Password changed successfully");
+            return Ok("Mật khẩu đã được thay đổi thành công");
         }
 
 
@@ -141,7 +141,7 @@ namespace SRMMS.Controllers
             var existingUser = await _context.Accounts.FirstOrDefaultAsync(a => a.Email == model.Email);
             if (existingUser != null)
             {
-                return BadRequest("Email is already registered.");
+                return BadRequest("Email đã được đăng ký.");
             }
 
             if (!IsValidEmail(model.Email))
@@ -268,7 +268,7 @@ namespace SRMMS.Controllers
             var user = await _context.Accounts.FirstOrDefaultAsync(a => a.Phone == model.PhoneNumber);
             if (user == null)
             {
-                return BadRequest("User not found");
+                return BadRequest("Không tìm thấy người dùng");
             }
 
             user.Status = true;

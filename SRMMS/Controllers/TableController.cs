@@ -34,13 +34,13 @@ namespace SRMMS.Controllers
         {
             if (model == null || string.IsNullOrWhiteSpace(model.Table_Name))
             {
-                return BadRequest("Invalid table data.");
+                return BadRequest("Dữ liệu bàn không hợp lệ.");
             }
 
             var existingTable = await _context.Tables.FirstOrDefaultAsync(t => t.TableName == model.Table_Name);
             if (existingTable != null)
             {
-                return Conflict("Table name already exists.");
+                return BadRequest("Tên bàn đã tồn tại.");
             }
 
             var table = new SRMMS.Models.Table
@@ -60,7 +60,7 @@ namespace SRMMS.Controllers
                 TableOfPeople = table.TableOfPeople 
             };
 
-            return Created("Table created successfully.", result);
+            return Created("Bàn đã được tạo thành công.", result);
         }
 
         [HttpPut("/api/table/update/{id}")]
@@ -72,10 +72,10 @@ namespace SRMMS.Controllers
             }
 
             var table = await _context.Tables.FirstOrDefaultAsync(t => t.TableId == id);
-            //if (table == null)
-            //{
-            //    return NotFound(".");
-            //}
+            if (table == null)
+            {
+                return BadRequest("Id không tồn tại");
+            }
 
             if (model.TableOfPeople <= 0)
             {
@@ -225,13 +225,13 @@ namespace SRMMS.Controllers
             var table = await _context.Tables.FirstOrDefaultAsync(t => t.TableId == id);
             if (table == null)
             {
-                return BadRequest("not found");
+                return BadRequest("Không tìm thấy bàn");
             }
 
             _context.Tables.Remove(table);
             await _context.SaveChangesAsync();
 
-            return Ok("delete successfully");
+            return Ok("xóa thành công ");
         }
 
 
