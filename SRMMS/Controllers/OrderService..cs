@@ -8,15 +8,10 @@ using SRMMS.DTOs;
 using SRMMS.Models;
 
 namespace SRMMS.Controllers
-<<<<<<< HEAD:SRMMS/Controllers/OrderService.cs
-{ //test
-	public class OrderService
-	{
-=======
+
 {
     public class OrderService
     {
->>>>>>> 2eafd519971d99ce64a86cc574a66a1a4f888882:SRMMS/Controllers/OrderService..cs
         private readonly SRMMSContext _context;
         private readonly IHubContext<OrderHub> _orderHubContext;
 

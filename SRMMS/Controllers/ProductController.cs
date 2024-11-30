@@ -73,13 +73,7 @@ namespace SRMMS.Controllers
 
 
             var totalProducts = await totalProductsQuery.CountAsync();
-<<<<<<< HEAD
-            //product
-            
-=======
 
-
->>>>>>> 2eafd519971d99ce64a86cc574a66a1a4f888882
             var totalPages = (int)Math.Ceiling((double)totalProducts / pageSize);
 
             var products = await totalProductsQuery
