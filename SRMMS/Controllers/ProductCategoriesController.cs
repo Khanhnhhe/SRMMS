@@ -18,14 +18,14 @@ public class CategoryController : ControllerBase
     [HttpGet("list")]
     public async Task<ActionResult<IEnumerable<ProductCategoriesDTO>>> GetCategories(int pageNumber = 1, int pageSize = 10)
     {
-        
+
         var skip = (pageNumber - 1) * pageSize;
 
-        
+
         var categories = await _context.Categories
-                                       .OrderBy(c => c.CatId) 
-                                       .Skip(skip) 
-                                       .Take(pageSize) 
+                                       .OrderBy(c => c.CatId)
+                                       .Skip(skip)
+                                       .Take(pageSize)
                                        .Select(c => new ProductCategoriesDTO
                                        {
                                            CatId = c.CatId,
@@ -33,26 +33,26 @@ public class CategoryController : ControllerBase
                                            Description = c.Description
                                        }).ToListAsync();
 
-        
+
         if (categories == null || !categories.Any())
         {
-            return NotFound("No categories found.");
+            return Ok(new { Message = "Không tìm thấy category nào !" });
         }
 
-        
+
         return Ok(categories);
     }
 
     [HttpPost("create")]
     public async Task<ActionResult<ProductCategoriesDTO>> AddCategory(ProductCategoriesDTO categoryDto)
     {
-        
+
         if (await _context.Categories.AnyAsync(c => c.CatName == categoryDto.CatName))
         {
-            return BadRequest("A category with this name already exists.");
+            return BadRequest("Category đã tồn tại ");
         }
 
-        
+
         var newCategory = new Category
         {
             CatName = categoryDto.CatName,
@@ -60,11 +60,11 @@ public class CategoryController : ControllerBase
 
         };
 
-        
+
         _context.Categories.Add(newCategory);
         await _context.SaveChangesAsync();
 
-        
+
         var categoryResult = new ProductCategoriesDTO
         {
             CatId = newCategory.CatId,
@@ -73,7 +73,7 @@ public class CategoryController : ControllerBase
 
         };
 
-        
+
         return CreatedAtAction(nameof(GetCategoryById), new { catId = newCategory.CatId }, categoryResult);
     }
 
@@ -87,13 +87,13 @@ public class CategoryController : ControllerBase
                 CatId = c.CatId,
                 CatName = c.CatName,
                 Description = c.Description
-                
+
             })
             .FirstOrDefaultAsync();
 
         if (category == null)
         {
-            return NotFound();
+            return Ok(new { Message = $"Category với ID {catId} không tìm thấy." });
         }
 
         return Ok(category);
@@ -102,36 +102,36 @@ public class CategoryController : ControllerBase
     [HttpDelete("delete/{catId}")]
     public async Task<IActionResult> DeleteCategoryById(int catId)
     {
- 
+
         var category = await _context.Categories.FindAsync(catId);
 
 
         if (category == null)
         {
-            return NotFound("Category not found.");
+            return Ok(new { Message = $"Category với ID {catId} không tìm thấy." });
         }
 
         try
         {
-      
+
             var products = await _context.Products
                 .Where(p => p.CatId == category.CatId)
                 .ToListAsync();
 
-           
+
             _context.Products.RemoveRange(products);
 
-          
+
             _context.Categories.Remove(category);
             await _context.SaveChangesAsync();
         }
         catch (DbUpdateException)
         {
-            
-            return BadRequest("Could not delete the category and its products.");
+
+            return BadRequest("Không thể xóa danh mục và sản phẩm của danh mục đó.");
         }
 
-        
+
         return NoContent();
     }
 
@@ -162,7 +162,7 @@ public class CategoryController : ControllerBase
 
         if (categories == null || !categories.Any())
         {
-            return NotFound("No categories found.");
+            return Ok(new { Message = $"Category không tìm thấy." });
         }
 
         return Ok(categories);
@@ -171,11 +171,11 @@ public class CategoryController : ControllerBase
     [HttpPut("update/{catId}")]
     public async Task<IActionResult> UpdateCategory(int catId, ProductCategoriesDTO categoryDto)
     {
-        
+
         var existingCategory = await _context.Categories.FindAsync(catId);
         if (existingCategory == null)
         {
-            return NotFound("Category not found.");
+            return Ok(new { Message = $"Category  not found." });
         }
 
         if (!string.IsNullOrEmpty(categoryDto.CatName) &&
@@ -186,7 +186,7 @@ public class CategoryController : ControllerBase
 
             if (categoryWithSameName)
             {
-                return BadRequest("A category with this name already exists.");
+                return BadRequest("Một danh mục có tên này đã tồn tại.");
             }
 
             existingCategory.CatName = categoryDto.CatName;
@@ -197,20 +197,20 @@ public class CategoryController : ControllerBase
             existingCategory.Description = categoryDto.Description;
         }
 
-        
+
         _context.Entry(existingCategory).State = EntityState.Modified;
 
         try
         {
-           
+
             await _context.SaveChangesAsync();
         }
         catch (DbUpdateConcurrencyException)
         {
-           
+
             if (!CategoryExists(catId))
             {
-                return NotFound();
+                return Ok(new { Message = $"Không tìm thấy danh mục." });
             }
             else
             {

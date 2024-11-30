@@ -1,12 +1,12 @@
 ﻿namespace SRMMS.DTOs
 {
-    public class DiscountCodeDto
+    public class UpdateDiscountDTO
     {
-        public int CodeId { get; set; }
+       
         public string? CodeDetail { get; set; }
         public double? DiscountValue { get; set; }
-        public String? StartDate { get; set; } 
-        public String? EndDate { get; set; } 
+        public DateOnly? StartDate { get; set; }
+        public DateOnly? EndDate { get; set; }
         public bool? Status { get; set; }
     }
 }

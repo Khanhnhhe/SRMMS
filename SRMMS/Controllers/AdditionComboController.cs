@@ -1,5 +1,4 @@
-
-﻿using CloudinaryDotNet;
+using CloudinaryDotNet;
 using CloudinaryDotNet.Actions;
 using Microsoft.AspNetCore.Mvc;
 using SRMMS.DTOs;
@@ -40,7 +39,10 @@ namespace SRMMS.Controllers
             {
                 return BadRequest("Hình ảnh không tìm thấy.");
             }
-
+            if (comboDto.ComboMoney <= 0)
+            {
+                return BadRequest("Giá combo không được nhỏ hơn hoặc bằng 0.");
+            }
 
             var existingCombo = await _context.Combos.FirstOrDefaultAsync(c => c.ComboName == comboDto.ComboName);
             if (existingCombo != null)
@@ -89,9 +91,10 @@ namespace SRMMS.Controllers
                 }
                 else
                 {
-                    return NotFound($"Sản phẩm '{productName}' không tìm thấy trong cơ sở dữ liệu.");
+                    return Ok(new { message = $"Sản phẩm '{productName}' không tìm thấy trong cơ sở dữ liệu." });
                 }
             }
+
 
 
             _context.Combos.Add(newCombo);
@@ -133,7 +136,7 @@ namespace SRMMS.Controllers
         {
             var query = _context.Combos
                 .Include(c => c.ComboDetails)
-                    .ThenInclude(cd => cd.Pro) 
+                    .ThenInclude(cd => cd.Pro)
                 .AsQueryable();
 
             if (!string.IsNullOrWhiteSpace(cbName))
@@ -160,19 +163,19 @@ namespace SRMMS.Controllers
 
             if (combos == null || !combos.Any())
             {
-                return NotFound("Không tìm thấy combo nào.");
+                return Ok(new { message = $"Không tìm thấy combo nào." });
             }
             foreach (var combo in combos)
             {
-                
+
                 if (combo.ComboDetails == null || !combo.ComboDetails.Any())
                 {
                     combo.ComboStatus = false;
-                    _context.Combos.Update(combo); 
+                    _context.Combos.Update(combo);
                 }
             }
 
-            
+
             await _context.SaveChangesAsync();
 
             var comboDtos = combos.Select(combo => new ListComboProductDTO
@@ -184,7 +187,7 @@ namespace SRMMS.Controllers
                 ComboMoney = combo.ComboMoney,
                 ComboStatus = combo.ComboStatus,
                 ProductNames = combo.ComboDetails
-                                .Select(cd => cd.Pro.ProName) 
+                                .Select(cd => cd.Pro.ProName)
                                 .ToList()
             }).ToList();
 
@@ -202,13 +205,19 @@ namespace SRMMS.Controllers
         [HttpPut("update/{id}")]
         public async Task<IActionResult> UpdateCombo(int id, [FromForm] UpdateComboProductDTO updateDto)
         {
-
             var existingCombo = await _context.Combos.FindAsync(id);
             if (existingCombo == null)
             {
-                return NotFound($"Combo với ID '{id}' không tìm thấy.");
+                return Ok(new { message = $"Không tìm thấy combo nào." });
             }
 
+            
+            if (updateDto.ComboMoney <= 0)
+            {
+                return BadRequest("Giá combo không được nhỏ hơn hoặc bằng 0.");
+            }
+
+            
             if (!string.IsNullOrWhiteSpace(updateDto.ComboName) &&
                 existingCombo.ComboName != updateDto.ComboName)
             {
@@ -220,7 +229,7 @@ namespace SRMMS.Controllers
                 }
             }
 
-
+            
             var missingProducts = new List<string>();
             foreach (var productName in updateDto.ProductNames)
             {
@@ -231,19 +240,34 @@ namespace SRMMS.Controllers
                 }
             }
 
-
             if (missingProducts.Any())
             {
-                return NotFound($"Các sản phẩm không tìm thấy: {string.Join(", ", missingProducts)}.");
+                return Ok(new { message = $"Không tìm thấy sản phẩm nào." });
             }
 
+           
 
-            existingCombo.ComboName = updateDto.ComboName;
-            existingCombo.ComboDiscription = updateDto.ComboDescription;
-            existingCombo.ComboMoney = updateDto.ComboMoney;
-            existingCombo.ComboStatus = updateDto.ComboStatus;
+            if (!string.IsNullOrWhiteSpace(updateDto.ComboName))
+            {
+                existingCombo.ComboName = updateDto.ComboName;
+            }
 
+            if (!string.IsNullOrWhiteSpace(updateDto.ComboDescription))
+            {
+                existingCombo.ComboDiscription = updateDto.ComboDescription;
+            }
 
+            if (updateDto.ComboMoney > 0)
+            {
+                existingCombo.ComboMoney = updateDto.ComboMoney;
+            }
+
+            if (updateDto.ComboStatus.HasValue)
+            {
+                existingCombo.ComboStatus = updateDto.ComboStatus.Value;
+            }
+
+           
             if (updateDto.ComboImg != null && updateDto.ComboImg.Length > 0)
             {
                 var tempFilePath = Path.Combine(Path.GetTempPath(), Guid.NewGuid().ToString() + Path.GetExtension(updateDto.ComboImg.FileName));
@@ -262,24 +286,27 @@ namespace SRMMS.Controllers
                 existingCombo.ComboImg = uploadResult.SecureUrl.ToString();
             }
 
-
-            var currentProductDetails = await _context.ComboDetails
-                .Where(cd => cd.ComboId == existingCombo.ComboId)
-                .ToListAsync();
-
-            _context.ComboDetails.RemoveRange(currentProductDetails);
-
-
-            foreach (var productName in updateDto.ProductNames)
+           
+            if (updateDto.ProductNames.Any())
             {
-                var product = await _context.Products.FirstOrDefaultAsync(p => p.ProName == productName);
-                var comboDetail = new ComboDetail
+                var currentProductDetails = await _context.ComboDetails
+                    .Where(cd => cd.ComboId == existingCombo.ComboId)
+                    .ToListAsync();
+
+                _context.ComboDetails.RemoveRange(currentProductDetails);
+
+                foreach (var productName in updateDto.ProductNames)
                 {
-                    ComboId = existingCombo.ComboId,
-                    ProId = product.ProId
-                };
-                _context.ComboDetails.Add(comboDetail);
+                    var product = await _context.Products.FirstOrDefaultAsync(p => p.ProName == productName);
+                    var comboDetail = new ComboDetail
+                    {
+                        ComboId = existingCombo.ComboId,
+                        ProId = product.ProId
+                    };
+                    _context.ComboDetails.Add(comboDetail);
+                }
             }
+            
 
             await _context.SaveChangesAsync();
 
@@ -290,6 +317,9 @@ namespace SRMMS.Controllers
             });
         }
 
+
+
+
         [HttpPatch("changeStatus/{comboId}")]
         public IActionResult DisableCombo(int comboId)
         {
@@ -298,16 +328,16 @@ namespace SRMMS.Controllers
 
             if (combo == null)
             {
-                return NotFound();
+                return Ok(new { message = $"Không tìm thấy combo nào." });
             }
 
-            
+
             combo.ComboStatus = false;
 
             _context.Combos.Update(combo);
             _context.SaveChanges();
 
-            return NoContent(); 
+            return NoContent();
         }
 
 
@@ -322,7 +352,7 @@ namespace SRMMS.Controllers
 
             if (combo == null)
             {
-                return NotFound($"Combo với ID '{comboId}' không tìm thấy.");
+                return Ok(new { message = $"Không tìm thấy combo nào." });
             }
 
             var comboDetailDto = new ComboProductDetailDTO
@@ -383,7 +413,7 @@ namespace SRMMS.Controllers
 
             if (combos == null || !combos.Any())
             {
-                return NotFound("Không tìm thấy combo nào.");
+                return Ok(new { message = $"Không tìm thấy combo nào." });
             }
 
             var comboDtos = combos.Select(combo => new ListComboProductDTO
@@ -411,7 +441,7 @@ namespace SRMMS.Controllers
         {
             try
             {
-                
+
                 var totalCombos = await _context.Combos.CountAsync();
 
                 return Ok(new { TotalCount = totalCombos });
@@ -423,4 +453,3 @@ namespace SRMMS.Controllers
         }
     }
 }
-

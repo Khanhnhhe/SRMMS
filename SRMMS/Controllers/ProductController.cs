@@ -1,12 +1,12 @@
-﻿    using Microsoft.AspNetCore.Mvc;
-    using Microsoft.EntityFrameworkCore;
-    using Microsoft.AspNetCore.Http;
-    using SRMMS.DTOs;
-    using SRMMS.Models;
-    using System.Collections.Generic;
-    using System.IO;
-    using System.Linq;
-    using System.Threading.Tasks;
+﻿using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.AspNetCore.Http;
+using SRMMS.DTOs;
+using SRMMS.Models;
+using System.Collections.Generic;
+using System.IO;
+using System.Linq;
+using System.Threading.Tasks;
 using Microsoft.IdentityModel.Tokens;
 using CloudinaryDotNet;
 using CloudinaryDotNet.Actions;
@@ -14,22 +14,22 @@ using Account = CloudinaryDotNet.Account;
 
 
 namespace SRMMS.Controllers
-    {
+{
     [Route("api/product")]
     [ApiController]
 
-    
+
     public class ProductController : ControllerBase
     {
         private readonly SRMMSContext _context;
 
         private readonly Cloudinary _clouddinary;
 
-        
+
 
         public ProductController(SRMMSContext context)
         {
-             Account account = new Account("dt92oc9xc", "548166873787419", "-8KA1HUjyTe6J4aHq4DGPXflJiw");
+            Account account = new Account("dt92oc9xc", "548166873787419", "-8KA1HUjyTe6J4aHq4DGPXflJiw");
             _context = context;
             _clouddinary = new Cloudinary(account);
 
@@ -40,7 +40,7 @@ namespace SRMMS.Controllers
         {
             var totalProductsQuery = _context.Products.AsQueryable();
 
-            
+
             name = name?.Trim();
 
             if (!string.IsNullOrEmpty(name))
@@ -59,7 +59,7 @@ namespace SRMMS.Controllers
             }
             else if (!string.IsNullOrEmpty(minPrice))
             {
-                return BadRequest("Invalid minPrice. Please enter a numeric value.");
+                return BadRequest("Giá tối thiểu không hợp lệ. Vui lòng nhập giá trị số.");
             }
 
             if (!string.IsNullOrEmpty(maxPrice) && IsNumeric(maxPrice.Trim(), out decimal parsedMaxPrice))
@@ -68,13 +68,18 @@ namespace SRMMS.Controllers
             }
             else if (!string.IsNullOrEmpty(maxPrice))
             {
-                return BadRequest("Invalid maxPrice. Please enter a numeric value.");
+                return BadRequest("maxPrice không hợp lệ. Vui lòng nhập giá trị số.");
             }
 
-            
+
             var totalProducts = await totalProductsQuery.CountAsync();
+<<<<<<< HEAD
             //product
             
+=======
+
+
+>>>>>>> 2eafd519971d99ce64a86cc574a66a1a4f888882
             var totalPages = (int)Math.Ceiling((double)totalProducts / pageSize);
 
             var products = await totalProductsQuery
@@ -118,7 +123,7 @@ namespace SRMMS.Controllers
             return Ok(result);
         }
 
-        
+
         private bool IsNumeric(string str, out decimal number)
         {
             return decimal.TryParse(str, out number);
@@ -133,35 +138,35 @@ namespace SRMMS.Controllers
             productDto.ProductName = productDto.ProductName?.Trim();
             productDto.Description = productDto.Description?.Trim();
             productDto.Calories = productDto.Calories?.Trim();
-            
+
             var categoryExists = await _context.Categories.AnyAsync(c => c.CatId == productDto.Category);
             if (!categoryExists)
             {
-                return BadRequest("Category does not exist.");
+                return BadRequest("Không có danh mục nào tồn tại.");
             }
 
             var productExists = await _context.Products.AnyAsync(p => p.ProName == productDto.ProductName);
             if (productExists)
             {
-                return BadRequest("A product with this name already exists.");
+                return BadRequest("Một sản phẩm có tên này đã tồn tại.");
             }
 
             if (productDto.Image == null || productDto.Image.Length == 0)
             {
-                return BadRequest("Image not found");
+                return BadRequest("Không tìm thấy hình ảnh");
             }
             if (productDto.Price < 0)
             {
-                return BadRequest("Price cannot be negative.");
+                return BadRequest("Giá không thể âm.");
             }
 
             if (productDto.Category.HasValue && productDto.Category < 0)
             {
-                return BadRequest("Category does not exist.");
+                return BadRequest("Không có danh mục nào tồn tại.");
             }
             if (productDto.Price == 0)
             {
-                return BadRequest("Price is required and must be greater than 0.");
+                return BadRequest("Giá là bắt buộc và phải lớn hơn 0.");
             }
 
             if (string.IsNullOrWhiteSpace(productDto.ProductName) &&
@@ -171,12 +176,12 @@ namespace SRMMS.Controllers
                  productDto.Image == null &&
                  string.IsNullOrWhiteSpace(productDto.Calories))
             {
-                return BadRequest("All fields cannot be null.");
+                return BadRequest("Không được để giá trị null ở tất cả các trường.");
             }
 
             var tempFilePath = Path.Combine(Path.GetTempPath(), Guid.NewGuid().ToString() + Path.GetExtension(productDto.Image.FileName));
 
-            
+
             using (var stream = new FileStream(tempFilePath, FileMode.Create))
             {
                 await productDto.Image.CopyToAsync(stream);
@@ -190,7 +195,7 @@ namespace SRMMS.Controllers
 
             var imageURL = await _clouddinary.UploadAsync(uploadParams);
 
-           
+
             System.IO.File.Delete(tempFilePath);
 
             var newProduct = new Product
@@ -198,7 +203,7 @@ namespace SRMMS.Controllers
                 ProName = productDto.ProductName,
                 ProDiscription = productDto.Description,
                 ProPrice = productDto.Price ?? 0,
-                CatId = productDto.Category.Value, 
+                CatId = productDto.Category.Value,
                 ProImg = imageURL.Url.ToString(),
                 ProCalories = productDto.Calories,
                 ProStatus = productDto.Status ?? true
@@ -219,11 +224,11 @@ namespace SRMMS.Controllers
 
             if (proId == null)
             {
-                return BadRequest("The parameter 'proId' is required.");
+                return BadRequest("Tham số 'proId' là bắt buộc.");
             }
             var product = await _context.Products
         .Include(c => c.Cat)
-        .Where(p => p.ProId == proId) 
+        .Where(p => p.ProId == proId)
         .Select(p => new ListProductDTO
         {
             ProductId = p.ProId,
@@ -239,7 +244,7 @@ namespace SRMMS.Controllers
 
             if (product == null)
             {
-                return NotFound();
+                return Ok(new { Message = $"Không tìm thấy sản phẩm có ID {proId}." });
             }
 
             return Ok(product);
@@ -254,7 +259,7 @@ namespace SRMMS.Controllers
 
             if (existingProduct == null)
             {
-                return NotFound();
+                return Ok(new { Message = $"Không tìm thấy sản phẩm." });
             }
 
             if (!string.IsNullOrEmpty(updateProductDto.ProductName))
@@ -265,31 +270,43 @@ namespace SRMMS.Controllers
 
                 if (productWithSameName != null)
                 {
-                    return BadRequest("Product name already exists.");
+                    return BadRequest("Tên sản phẩm đã tồn tại.");
                 }
 
                 existingProduct.ProName = updateProductDto.ProductName;
             }
-            if (string.IsNullOrEmpty(updateProductDto.ProductName) && !updateProductDto.Price.HasValue && updateProductDto.Image == null && !updateProductDto.Status.HasValue && !updateProductDto.Category.HasValue)
+
+            if (!string.IsNullOrEmpty(updateProductDto.Calories))
             {
-                return Ok("No changes made to the product.");
+                if (int.TryParse(updateProductDto.Calories, out var calories))
+                {
+                    if (calories <= 0)
+                    {
+                        return BadRequest("Lượng calo không thể âm.");
+                    }
+                    existingProduct.ProCalories = calories.ToString();
+                }
+                else
+                {
+                    return BadRequest("Giá trị calo không hợp lệ. Vui lòng cung cấp số hợp lệ.");
+                }
             }
 
             if (updateProductDto.Price.HasValue)
             {
-             
+
                 if (updateProductDto.Price.Value <= 0)
                 {
-                    return BadRequest("Invalid price. Please provide a valid price.");
+                    return BadRequest("Giá không hợp lệ. Vui lòng cung cấp giá hợp lệ.");
                 }
                 existingProduct.ProPrice = updateProductDto.Price.Value;
             }
             if (updateProductDto.Category.HasValue)
             {
-               
+
                 if (updateProductDto.Category.Value < 0)
                 {
-                    return BadRequest("Invalid category. Category cannot be negative.");
+                    return BadRequest("Thể loại không hợp lệ. Thể loại không thể là số âm.");
                 }
 
                 var category = await _context.Categories.FindAsync(updateProductDto.Category.Value);
@@ -300,7 +317,7 @@ namespace SRMMS.Controllers
                 }
                 else
                 {
-                    return BadRequest("Invalid category provided.");
+                    return BadRequest("Danh mục không hợp lệ.");
                 }
             }
 
@@ -336,7 +353,7 @@ namespace SRMMS.Controllers
                 }
                 else
                 {
-                    return BadRequest("Invalid category provided.");
+                    return BadRequest("Danh mục không hợp lệ.");
                 }
             }
 
@@ -350,7 +367,7 @@ namespace SRMMS.Controllers
             {
                 if (!ProductExists(id))
                 {
-                    return NotFound();
+                    return Ok(new { Message = $"Không tìm thấy sản phẩm." });
                 }
                 else
                 {
@@ -370,16 +387,16 @@ namespace SRMMS.Controllers
         [HttpGet("filter/{categoryName}")]
         public async Task<IActionResult> FilterByCategoryName(string categoryName, int pageNumber = 1, int pageSize = 10)
         {
-            
+
             var categories = await _context.Categories.ToListAsync();
 
-            
+
             var category = categories
                 .FirstOrDefault(c => c.CatName.Equals(categoryName, StringComparison.OrdinalIgnoreCase));
 
             if (category == null)
             {
-                return NotFound("Category not found.");
+                return Ok(new { Message = $"Không tìm thấy danh mục." });
             }
 
             var totalProducts = await _context.Products.CountAsync(p => p.CatId == category.CatId);
@@ -404,7 +421,8 @@ namespace SRMMS.Controllers
 
             if (products == null || products.Count == 0)
             {
-                return NotFound("No products found in this category.");
+
+                return Ok(new { Message = $"Không tìm thấy sản phẩm nào trong danh mục này." });
             }
 
             var result = new
@@ -424,17 +442,17 @@ namespace SRMMS.Controllers
         {
             var skip = (pageNumber - 1) * pageSize;
 
-     
+
             var query = _context.Products.Include(p => p.Cat).AsQueryable();
 
-            
+
             if (!string.IsNullOrWhiteSpace(productName))
             {
-          
+
                 query = query.Where(p => p.ProName.ToLower().Contains(productName.ToLower().Trim()));
             }
 
-          
+
             var products = await query
                                      .Skip(skip)
                                      .Take(pageSize)
@@ -450,13 +468,13 @@ namespace SRMMS.Controllers
                                          Category = p.Cat.CatName
                                      }).ToListAsync();
 
-        
+
             if (products == null || !products.Any())
             {
-                return NotFound("No products found.");
+                return Ok(new { Message = $"Product not found." });
             }
 
-          
+
             return Ok(products);
         }
 
@@ -467,21 +485,21 @@ namespace SRMMS.Controllers
             {
                 try
                 {
-                   
+
                     var product = await _context.Products.FindAsync(id);
                     if (product == null)
                     {
-                        return NotFound(new { Message = "Product not found." });
+                        return Ok(new { Message = $"Product not found." });
                     }
 
-                    
-                    product.ProStatus = false;  
 
-                   
+                    product.ProStatus = false;
+
+
                     var comboDetails = _context.ComboDetails.Where(cd => cd.ProId == id).ToList();
                     if (comboDetails.Any())
                     {
-                        _context.ComboDetails.RemoveRange(comboDetails); 
+                        _context.ComboDetails.RemoveRange(comboDetails);
                     }
 
                     var orderDetails = _context.OrderDetails
@@ -493,14 +511,14 @@ namespace SRMMS.Controllers
                     {
                         foreach (var orderDetail in orderDetails)
                         {
-                            if (orderDetail.Order?.Status == false)  
+                            if (orderDetail.Order?.Status == false)
                             {
 
-                                var productInOrder = await _context.Products.FindAsync(orderDetail.ProId); 
+                                var productInOrder = await _context.Products.FindAsync(orderDetail.ProId);
                                 if (productInOrder != null)
                                 {
-                                    productInOrder.ProStatus = false; 
-                                    _context.Products.Update(productInOrder); 
+                                    productInOrder.ProStatus = false;
+                                    _context.Products.Update(productInOrder);
                                 }
 
 
@@ -510,15 +528,15 @@ namespace SRMMS.Controllers
                                     var combo = await _context.Combos.FindAsync(comboDetail.ComboId);
                                     if (combo != null)
                                     {
-                                        combo.ComboStatus = false; 
-                                        _context.Combos.Update(combo); 
+                                        combo.ComboStatus = false;
+                                        _context.Combos.Update(combo);
                                     }
                                 }
                             }
-                            
+
                         }
 
-                        await _context.SaveChangesAsync(); 
+                        await _context.SaveChangesAsync();
                     }
 
 
@@ -526,7 +544,7 @@ namespace SRMMS.Controllers
                     await _context.SaveChangesAsync();
                     await transaction.CommitAsync();
 
-                    return Ok(new { Message = "Product status updated to false successfully." });
+                    return Ok(new { Message = "Trạng thái sản phẩm đã được cập nhật thành sai thành công." });
                 }
                 catch (Exception ex)
                 {
@@ -545,23 +563,23 @@ namespace SRMMS.Controllers
         [HttpGet("detail/{id}")]
         public async Task<IActionResult> GetProductDetail(int id)
         {
-            
+
             if (id <= 0)
             {
-                return BadRequest("Invalid product ID. ID must be greater than 0.");
+                return BadRequest("ID sản phẩm không hợp lệ. ID phải lớn hơn 0.");
             }
 
-            
+
             var product = await _context.Products
                 .Include(p => p.Cat)
                 .FirstOrDefaultAsync(p => p.ProId == id);
 
             if (product == null)
             {
-                return NotFound("Product not found");
+                return Ok(new { Message = $"Không tìm thấy sản phẩm." });
             }
 
-            
+
             var relatedProducts = await _context.Products
                 .Where(p => p.CatId == product.CatId && p.ProId != id)
                 .Select(p => new ListProductDTO
@@ -577,7 +595,7 @@ namespace SRMMS.Controllers
                 })
                 .ToListAsync();
 
-            
+
             var result = new
             {
                 ProductDetail = new
@@ -602,7 +620,7 @@ namespace SRMMS.Controllers
         {
             try
             {
-                
+
                 var totalPro = await _context.Products.CountAsync();
 
                 return Ok(new { TotalCount = totalPro });
