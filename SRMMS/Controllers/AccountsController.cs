@@ -28,14 +28,16 @@ namespace SRMMS.Controllers
             _configuration = configuration;
             _context = context;
         }
-        [HttpGet("/api/account/list")]
-        public async Task<ActionResult> SearchByAccount(string? accountName = "", string? phone = "", int? roleId = null, int pageNumber = 1, int pageSize = 10)
+        [HttpGet("/api/account/list/customers")]
+        public async Task<ActionResult> GetCustomers(string? accountName = "", string? phone = "", int pageNumber = 1, int pageSize = 10)
         {
-            var employeeCount = await _context.Accounts.CountAsync(a => a.RoleId == 2 || a.RoleId == 3 || a.RoleId == 4);
             var customerCount = await _context.Accounts.CountAsync(a => a.RoleId == 5);
 
             var skip = (pageNumber - 1) * pageSize;
-            var query = _context.Accounts.Include(a => a.Role).AsQueryable();
+            var query = _context.Accounts
+                                .Include(a => a.Role)
+                                .Where(a => a.RoleId == 5)
+                                .AsQueryable();
 
             if (!string.IsNullOrWhiteSpace(accountName))
             {
@@ -49,7 +51,56 @@ namespace SRMMS.Controllers
                 query = query.Where(a => a.Phone.Contains(trimmedPhone));
             }
 
-            if (roleId.HasValue)
+            var accounts = await query
+                                 .Skip(skip)
+                                 .Take(pageSize)
+                                 .Select(a => new ListAccountDTO
+                                 {
+                                     AccountId = a.AccId,
+                                     FullName = a.FullName ?? "",
+                                     Phone = a.Phone ?? "",
+                                     Email = a.Email ?? "",
+                                     RoleName = a.Role.RoleName ?? "",
+                                     RoleId = a.RoleId,
+                                     Status = a.Status,
+                                     StartDate = a.StartDate,
+                                     EndDate = a.EndDate
+                                 }).ToListAsync();
+
+            return Ok(new
+            {
+                PageNumber = pageNumber,
+                PageSize = pageSize,
+                TotalCustomers = customerCount,
+                Accounts = accounts
+            });
+        }
+
+
+        [HttpGet("/api/account/list/employees")]
+        public async Task<ActionResult> GetEmployees(string? accountName = "", string? phone = "", int? roleId = null, int pageNumber = 1, int pageSize = 10)
+        {
+            var employeeCount = await _context.Accounts.CountAsync(a => a.RoleId == 2 || a.RoleId == 3 || a.RoleId == 4);
+
+            var skip = (pageNumber - 1) * pageSize;
+            var query = _context.Accounts
+                                .Include(a => a.Role)
+                                .Where(a => a.RoleId == 2 || a.RoleId == 3 || a.RoleId == 4)
+                                .AsQueryable();
+
+            if (!string.IsNullOrWhiteSpace(accountName))
+            {
+                var trimmedAccountName = accountName.Trim();
+                query = query.Where(a => a.FullName.Contains(trimmedAccountName));
+            }
+
+            if (!string.IsNullOrWhiteSpace(phone))
+            {
+                var trimmedPhone = phone.Trim();
+                query = query.Where(a => a.Phone.Contains(trimmedPhone));
+            }
+
+            if (roleId.HasValue && (roleId == 2 || roleId == 3 || roleId == 4))
             {
                 query = query.Where(a => a.RoleId == roleId.Value);
             }
@@ -75,10 +126,12 @@ namespace SRMMS.Controllers
                 PageNumber = pageNumber,
                 PageSize = pageSize,
                 TotalEmployees = employeeCount,
-                TotalCustomers = customerCount,
                 Accounts = accounts
             });
         }
+
+
+
 
 
         [HttpGet("/api/account/getByID/{id}")]
