@@ -68,7 +68,7 @@ namespace SRMMS.Controllers
         {
             if (model == null || string.IsNullOrWhiteSpace(model.Table_Name))
             {
-                return BadRequest("BadRequest");
+                return BadRequest("Tên bàn không được để trống.");
             }
 
             var table = await _context.Tables.FirstOrDefaultAsync(t => t.TableId == id);
@@ -76,6 +76,11 @@ namespace SRMMS.Controllers
             //{
             //    return NotFound(".");
             //}
+
+            if (model.TableOfPeople <= 0)
+            {
+                return BadRequest("Chỗ người tại bàn phải là số nguyên dương và lớn hơn 0.");
+            }
 
             table.TableName = model.Table_Name;
             table.TableOfPeople = model.TableOfPeople;
@@ -93,7 +98,7 @@ namespace SRMMS.Controllers
                 StatusId = table.StatusId
             };
 
-            return Ok("Update successfully");
+            return Ok("Cập nhật thành công ");
         }
 
         [HttpGet("/api/table/{id}")]

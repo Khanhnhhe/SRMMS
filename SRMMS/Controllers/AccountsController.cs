@@ -62,6 +62,7 @@ namespace SRMMS.Controllers
                                      AccountId = a.AccId,
                                      FullName = a.FullName ?? "",
                                      Phone = a.Phone ?? "",
+                                     Email = a.Email ?? "",
                                      RoleName = a.Role.RoleName ?? "",
                                      RoleId = a.RoleId,
                                      Status = a.Status,
@@ -78,28 +79,40 @@ namespace SRMMS.Controllers
                 Accounts = accounts
             });
         }
+
+
         [HttpGet("/api/account/getByID/{id}")]
         public async Task<ActionResult> GetAccountById(int id)
         {
             var account = await _context.Accounts
-                .Where(a => a.AccId == id)
-                .Select(a => new
-                {
-                    a.AccId,
-                    a.FullName,
-                    a.Phone,
-                    a.RoleId,
-                    a.Status,
-                    a.StartDate,
-                    a.EndDate,
-                    RoleName = a.Role.RoleName
-                })
-                .FirstOrDefaultAsync();
+            .Where(a => a.AccId == id)
+            .Include(a => a.PointLists)
+          .Select(a => new
+       {
+           a.AccId,
+           a.FullName,
+           a.Phone,
+           a.RoleId,
+           a.Status,
+           a.StartDate,
+           a.EndDate,
+           RoleName = a.Role.RoleName,
+           Points = a.RoleId == 5 ? a.PointLists.Select(p => new
+           {
+               PointId = p.PointId,
+               Points = p.NumberPonit
+           }).ToList() : null
+       })
+       .FirstOrDefaultAsync();
 
-            //if (account == null)
-            //{
-            //    return NotFound(new { message = "Account not found." });
-            //}
+            if (account == null)
+            {
+                return Ok(new { message = "Account not found." });
+            }
+            if (account.RoleId == 5 && account.Points == null)
+            {
+                return Ok(new { Message = $"Account with ID {id} is not a customer or has no points." });
+            }
 
             return Ok(account);
         }
@@ -210,57 +223,6 @@ namespace SRMMS.Controllers
                 CustomerCount = customerCount
             });
         }
-
-
-        [HttpGet("/api/account/points/details")]
-        public async Task<IActionResult> GetCustomerPointsDetails()
-        {
-            var customerPointsDetails = await _context.Accounts
-                .Where(a => a.RoleId == 5) 
-                .Select(a => new AccountPointDetailDTO
-                {
-                    AccountId = a.AccId,
-                    FullName = a.FullName ?? "",
-                    Phone = a.Phone ?? "",
-                    Points = a.PointLists.Select(p => new PointDetailDTO
-                    {
-                        PointId = p.PointId,
-                        Points = p.NumberPonit,
-                      
-                    }).ToList()
-                })
-                .ToListAsync();
-
-            return Ok(customerPointsDetails);
-        }
-
-        [HttpGet("/api/account/points/details/{id}")]
-        public async Task<IActionResult> GetCustomerPointsById(int id)
-        {
-            var customerPointsDetail = await _context.Accounts
-                .Where(a => a.RoleId == 5 && a.AccId == id) 
-                .Include(a => a.PointLists) 
-                .Select(a => new AccountPointDetailDTO
-                {
-                    AccountId = a.AccId,
-                    FullName = a.FullName ?? "Unknown",
-                    Phone = a.Phone ?? "N/A",
-                    Points = a.PointLists.Select(p => new PointDetailDTO
-                    {
-                        PointId = p.PointId,
-                        Points = p.NumberPonit, 
-                    }).ToList()
-                })
-                .FirstOrDefaultAsync();
-
-            if (customerPointsDetail == null)
-            {
-                return Ok(new { Message = $"Account with ID {id} not found or is not a customer." });
-            }
-
-            return Ok(customerPointsDetail);
-        }
-
 
 
     }
