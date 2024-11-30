@@ -22,28 +22,54 @@ namespace SRMMS.Controllers
 
         // GET: api/Feedbacks
         [HttpGet]
-        public async Task<ActionResult<IEnumerable<FeedbackDto>>> GetFeedbacks()
+        public async Task<ActionResult<IEnumerable<FeedbackDto>>> GetFeedbacks(
+      int? rateStar = null,
+      int pageNumber = 1,
+      int pageSize = 10)
         {
             if (_context.Feedbacks == null)
             {
                 return NotFound();
             }
 
-            var feedbacks = await _context.Feedbacks
+      
+            var feedbackQuery = _context.Feedbacks.AsQueryable();
+
+          
+            if (rateStar.HasValue)
+            {
+                feedbackQuery = feedbackQuery.Where(f => f.RateStar == rateStar.Value);
+            }
+
+            var totalItems = await feedbackQuery.CountAsync(); 
+            var totalPages = (int)Math.Ceiling(totalItems / (double)pageSize); 
+
+            
+            var feedbacks = await feedbackQuery
+                .Skip((pageNumber - 1) * pageSize) 
+                .Take(pageSize) 
                 .Select(f => new FeedbackDto
                 {
                     FeedbackId = f.FeedbackId,
                     Feedback1 = f.Feedback1,
                     RateStar = f.RateStar,
                     AccId = f.AccId,
-                    AccountFullName = f.Acc != null ? f.Acc.FullName : null, // Lấy FullName từ Account
+                    AccountFullName = f.Acc != null ? f.Acc.FullName : null,
                     CreatedAt = f.CreatedAt.HasValue ? f.CreatedAt.Value.ToString("dd/MM/yyyy") : null,
                     UpdatedAt = f.UpdatedAt.HasValue ? f.UpdatedAt.Value.ToString("dd/MM/yyyy") : null
-
                 })
                 .ToListAsync();
 
-            return Ok(feedbacks);
+            var response = new
+            {
+                TotalItems = totalItems,
+                TotalPages = totalPages,
+                PageNumber = pageNumber,
+                PageSize = pageSize,
+                Feedbacks = feedbacks
+            };
+
+            return Ok(response);
         }
 
         // GET: api/Feedbacks/5
@@ -77,7 +103,15 @@ namespace SRMMS.Controllers
             var account = await _context.Accounts.FindAsync(feedbackDto.AccId);
             if (account == null)
             {
-                return NotFound(new { Message = "Account not found." });
+                return BadRequest(new { Message = "Account not found." });
+            }
+            if (feedbackDto.RateStar < 1 || feedbackDto.RateStar > 5)
+            {
+                return BadRequest(new { Message = "RateStar must be between 1 and 5." });
+            }
+            if (_context.Feedbacks == null)
+            {
+                return StatusCode(500, new { Message = "Feedback storage is unavailable." });
             }
             var feedback = new Feedback
             {
@@ -87,7 +121,7 @@ namespace SRMMS.Controllers
                 CreatedAt = DateTime.UtcNow,
                 UpdatedAt = DateTime.UtcNow
             };
-
+            feedback.Acc = account;
             try
             {
                 _context.Feedbacks.Add(feedback);
@@ -102,7 +136,7 @@ namespace SRMMS.Controllers
             {
                 FeedbackId = feedback.FeedbackId,
                 Feedback1 = feedback.Feedback1,
-                RateStar = feedback.RateStar,
+                RateStar = (int)feedback.RateStar,
                 FullName = feedback.Acc?.FullName ?? "Anonymous",
                 CreatedAt = feedback.CreatedAt?.ToString("dd/MM/yyyy")
             };
@@ -130,9 +164,6 @@ namespace SRMMS.Controllers
             return NoContent();
         }
 
-        private bool FeedbackExists(int id)
-        {
-            return (_context.Feedbacks?.Any(e => e.FeedbackId == id)).GetValueOrDefault();
-        }
+     
     }
 }
