@@ -234,6 +234,34 @@ namespace SRMMS.Controllers
             return Ok(customerPointsDetails);
         }
 
+        [HttpGet("/api/account/points/details/{id}")]
+        public async Task<IActionResult> GetCustomerPointsById(int id)
+        {
+            var customerPointsDetail = await _context.Accounts
+                .Where(a => a.RoleId == 5 && a.AccId == id) 
+                .Include(a => a.PointLists) 
+                .Select(a => new AccountPointDetailDTO
+                {
+                    AccountId = a.AccId,
+                    FullName = a.FullName ?? "Unknown",
+                    Phone = a.Phone ?? "N/A",
+                    Points = a.PointLists.Select(p => new PointDetailDTO
+                    {
+                        PointId = p.PointId,
+                        Points = p.NumberPonit, 
+                    }).ToList()
+                })
+                .FirstOrDefaultAsync();
+
+            if (customerPointsDetail == null)
+            {
+                return Ok(new { Message = $"Account with ID {id} not found or is not a customer." });
+            }
+
+            return Ok(customerPointsDetail);
+        }
+
+
 
     }
 }
