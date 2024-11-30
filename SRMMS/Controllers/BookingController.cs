@@ -209,7 +209,7 @@ namespace SRMMS.Controllers
         public static string GetShift(TimeSpan? hourBooking)
         {
             if (!hourBooking.HasValue)
-                return "Unknown";
+                return "Không phải ca làm của nhà hàng";
 
             var hour = hourBooking.Value.Hours;
 
@@ -238,7 +238,7 @@ namespace SRMMS.Controllers
             var booking = await _context.Bookings.FirstOrDefaultAsync(b => b.BookingId == id);
             if (booking == null)
             {
-                return NotFound("Không tìm thấy đơn đặt chỗ.");
+                return BadRequest("Không tìm thấy đơn đặt chỗ.");
             }
 
             
@@ -270,13 +270,13 @@ namespace SRMMS.Controllers
         {
             if (bookingDto == null)
             {
-                return BadRequest("Invalid booking data.");
+                return BadRequest("Dữ liệu đặt chỗ không hợp lệ.");
             }
 
             var existingBooking = await _context.Bookings.FindAsync(id);
             if (existingBooking == null)
             {
-                return NotFound("Booking not found.");
+                return BadRequest("Không tìm thấy đặt chỗ.");
             }
 
             existingBooking.DayBooking = bookingDto.DayBooking ?? existingBooking.DayBooking;
@@ -321,7 +321,7 @@ namespace SRMMS.Controllers
             var existingBooking = await _context.Bookings.FindAsync(id);
             if (existingBooking == null)
             {
-                return NotFound("Booking not found.");
+                return BadRequest("Không tìm thấy đơn đặt bàn.");
             }
 
             _context.Bookings.Remove(existingBooking);
