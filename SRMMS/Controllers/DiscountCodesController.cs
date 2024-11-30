@@ -117,7 +117,7 @@ namespace SRMMS.Controllers
 
                 if (!discountCodes.Any())
                 {
-                    return NotFound(new
+                    return BadRequest(new
                     {
                         message = "Không có mã giảm giá nào phù hợp với tiêu chí tìm kiếm."
                     });
@@ -245,11 +245,14 @@ namespace SRMMS.Controllers
             {
                 return Problem("Entity set 'SRMMSContext.DiscountCodes' is null.");
             }
+            var isCodeDetailExists = await _context.DiscountCodes
+       .AnyAsync(dc => dc.CodeDetail == discountCodeDto.CodeDetail);
 
-            if (!IsDateRangeValid(discountCodeDto.StartDate, discountCodeDto.EndDate))
+            if (isCodeDetailExists)
             {
-                return BadRequest("StartDate must be earlier than or equal to EndDate.");
+                return Conflict(new { message = "CodeDetail đã tồn tại. Vui lòng sử dụng mã khác." });
             }
+          
             if (string.IsNullOrWhiteSpace(discountCodeDto.CodeDetail))
             {
                 return BadRequest(new { message = "Chi tiết mã giảm giá không được để trống." });
@@ -259,8 +262,11 @@ namespace SRMMS.Controllers
             {
                 return BadRequest(new { message = "Giá trị giảm giá phải lớn hơn 0." });
             }
+            if (discountCodeDto.StartDate == null || discountCodeDto.EndDate == null)
+            {
+                return BadRequest(new { message = "Ngày bắt đầu hoặc ngày kết thúc không được để trống." });
+            }
 
-            // Validate StartDate and EndDate
             if (!IsDateRangeValid(discountCodeDto.StartDate, discountCodeDto.EndDate))
             {
                 return BadRequest(new { message = "Ngày bắt đầu phải trước hoặc bằng ngày kết thúc." });
@@ -269,7 +275,8 @@ namespace SRMMS.Controllers
             {
                 CodeDetail = discountCodeDto.CodeDetail,
                 DiscountValue = discountCodeDto.DiscountValue,
-                StartDate = discountCodeDto?.EndDate,
+                StartDate = discountCodeDto.StartDate, 
+                EndDate = discountCodeDto.EndDate,     
                 Status = discountCodeDto.Status
             };
 
@@ -282,7 +289,7 @@ namespace SRMMS.Controllers
             {
                 if (DiscountCodeExists(discountCode.CodeId))
                 {
-                    return Conflict("Discount code with the same ID already exists.");
+                    return Conflict("Mã giảm giá này đã tồn tại.");
                 }
                 else
                 {
