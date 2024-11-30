@@ -128,12 +128,12 @@ namespace SRMMS.Controllers
                 return StatusCode(500, new { Message = "Đã xảy ra lỗi khi đếm đơn hàng.", Error = ex.Message });
             }
         }
-        [HttpPost("CompleteOrder")]
-        public async Task<IActionResult> CompleteOrder(int orderId, int? discountId, decimal? totalMoney)
+        [HttpPost("CompleteOrder/{orderId}")]
+        public async Task<IActionResult> CompleteOrder(int orderId, [FromBody] CompleteOrderDTO completeOrderDto)
         {
             try
             {
-                var result = await _orderService.CompleteOrder(orderId, discountId, totalMoney);
+                var result = await _orderService.CompleteOrder(orderId, completeOrderDto);
                 return Ok(result);
             }
             catch (Exception ex)
@@ -141,6 +141,7 @@ namespace SRMMS.Controllers
                 return BadRequest(new { error = ex.Message });
             }
         }
+
 
 
 

@@ -414,7 +414,8 @@ namespace SRMMS.Controllers
 
             return orders;
         }
-        public async Task<OrderCompleteDTO> CompleteOrder(int orderId, int? discountId, decimal? totalMoney)
+
+        public async Task<OrderCompleteDTO> CompleteOrder(int orderId, CompleteOrderDTO orderComplete)
         {
             var order = await _context.Orders
                 .Include(o => o.Table)
@@ -432,53 +433,54 @@ namespace SRMMS.Controllers
 
             double? discountValue = null;
 
-
-            if (discountId.HasValue)
+            if (orderComplete.discountId.HasValue)
             {
-                var discount = await _context.DiscountCodes.FirstOrDefaultAsync(d => d.CodeId == discountId.Value);
+                var discount = await _context.DiscountCodes.FirstOrDefaultAsync(d => d.CodeId == orderComplete.discountId.Value);
 
                 if (discount == null)
                 {
-                    throw new Exception("Không tìm thấy mã giảm giá");
+                    throw new Exception("Không tìm thấy mã giảm giá.");
                 }
 
-                if (discount.Status != true || discount.StartDate > DateTime.Now || (discount.EndDate != null && discount.EndDate < DateTime.Now))
+                if (!(discount.Status ?? false) || discount.StartDate > DateTime.Now ||
+                (discount.EndDate.HasValue && discount.EndDate.Value < DateTime.Now))
                 {
                     throw new Exception("Mã giảm giá không hợp lệ hoặc đã hết hạn.");
                 }
 
+
+
                 discountValue = discount.DiscountValue;
 
-
-                if (totalMoney.HasValue)
+                if (orderComplete.totalMoney.HasValue)
                 {
-
-                    if (discountValue >= (double)totalMoney.Value)
+                    if (discountValue >= (double)orderComplete.totalMoney.Value)
                     {
-                        totalMoney = 0;
+                        orderComplete.totalMoney = 0;
+                    }
+                    else
+                    {
+                        orderComplete.totalMoney -= (decimal)discountValue;
                     }
                 }
             }
 
-
-            if (totalMoney.HasValue)
+            if (orderComplete.totalMoney.HasValue)
             {
-                order.TotalMoney = totalMoney.Value;
+                order.TotalMoney = orderComplete.totalMoney.Value;
             }
 
-
             order.OrderDate = DateTime.Now;
-            order.CodeId = discountId;
+            order.CodeId = orderComplete.discountId;
 
             if (order.Table != null)
             {
-                order.Table.StatusId = 1;
+                order.Table.StatusId = 1; 
             }
 
-            order.Status = true;
+            order.Status = true; 
 
             await _context.SaveChangesAsync();
-
 
             return new OrderCompleteDTO
             {
