@@ -109,6 +109,12 @@ namespace SRMMS.Controllers
                 return BadRequest("User not found");
             }
 
+
+            if (!IsValidPassword(model.OldPassword))
+            {
+                return BadRequest("Mật khẩu phải có độ dài từ 8 đến 12 ký tự và bao gồm cả chữ cái và số.");
+            }
+
             if (!VerifyPassword(model.OldPassword, user.Password))
             {
                 return BadRequest("Old password is incorrect");

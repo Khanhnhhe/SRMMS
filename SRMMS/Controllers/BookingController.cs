@@ -24,6 +24,8 @@ namespace SRMMS.Controllers
             _twilioService = twilioService;
         }
 
+
+
         [HttpPost("/api/booking/Create")]
         public async Task<IActionResult> CreateBooking([FromBody] CreateBookingDTO bookingDto)
         {
@@ -32,14 +34,42 @@ namespace SRMMS.Controllers
                 return BadRequest("Dữ liệu đặt bàn không hợp lệ.");
             }
 
+            DateTime now = DateTime.Now;
+
             TimeSpan? hourBooking = null;
             if (!string.IsNullOrEmpty(bookingDto.HourBooking))
             {
-                hourBooking = TimeSpan.Parse(bookingDto.HourBooking);
+                if (!TimeSpan.TryParse(bookingDto.HourBooking, out TimeSpan parsedHourBooking))
+                {
+                    return BadRequest("Giờ đặt bàn không hợp lệ.");
+                }
+                hourBooking = parsedHourBooking;
+            }
+
+            if (bookingDto.NumberOfPeople <= 0)
+            {
+                return BadRequest("Số người đặt bàn phải là số nguyên dương và lớn hơn 0.");
+            }
+
+            if (bookingDto.DayBooking < now.Date ||
+                             (bookingDto.DayBooking == now.Date && hourBooking.HasValue && hourBooking <= now.TimeOfDay))
+            {
+                return BadRequest("Ngày và giờ đặt bàn không hợp lệ. Vui lòng chọn ngày và giờ sau mốc thời gian hiện tại .");
+            }
+
+            string? phoneBooking = bookingDto.PhoneBooking;
+            if (string.IsNullOrEmpty(phoneBooking) || !IsValidPhoneNumber(phoneBooking))
+            {
+                return BadRequest("Số điện thoại không hợp lệ. Vui lòng nhập số điện thoại hợp lệ.");
             }
 
             string? nameBooking = bookingDto.NameBooking;
-            string? phoneBooking = bookingDto.PhoneBooking;
+            if (string.IsNullOrEmpty(nameBooking))
+            {
+                return BadRequest("Vui lòng cung cấp tên của bạn.");
+            }
+
+            
 
             if (string.IsNullOrEmpty(nameBooking) || string.IsNullOrEmpty(phoneBooking))
             {
@@ -67,6 +97,10 @@ namespace SRMMS.Controllers
             return CreatedAtAction(nameof(CreateBooking), new { id = booking.BookingId }, booking);
         }
 
+        private bool IsValidPhoneNumber(string phoneNumber)
+        {
+            return System.Text.RegularExpressions.Regex.IsMatch(phoneNumber, @"^\d{10,11}$");
+        }
 
         [HttpGet("/api/booking/getById/{id}")]
         public async Task<IActionResult> GetBookingById(int id)
