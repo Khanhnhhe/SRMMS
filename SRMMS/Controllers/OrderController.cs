@@ -153,8 +153,9 @@ namespace SRMMS.Controllers
         {
             try
             {
-               
-                var result = await _orderService.CalculateTotalRevenue(week, month, year);
+              
+                var result = await _orderService.CalculateTotalRevenue( week, month, year);
+
 
                 return Ok(new
                 {

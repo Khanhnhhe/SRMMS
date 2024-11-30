@@ -8,6 +8,7 @@ using SRMMS.DTOs;
 using SRMMS.Models;
 
 namespace SRMMS.Controllers
+
 {
     public class OrderService
     {
@@ -417,6 +418,7 @@ namespace SRMMS.Controllers
 
         public async Task<OrderCompleteDTO> CompleteOrder(int orderId, CompleteOrderDTO orderComplete)
         {
+            
             var order = await _context.Orders
                 .Include(o => o.Table)
                 .FirstOrDefaultAsync(o => o.OrderId == orderId);
@@ -433,6 +435,7 @@ namespace SRMMS.Controllers
 
             double? discountValue = null;
 
+            
             if (orderComplete.discountId.HasValue)
             {
                 var discount = await _context.DiscountCodes.FirstOrDefaultAsync(d => d.CodeId == orderComplete.discountId.Value);
@@ -443,12 +446,10 @@ namespace SRMMS.Controllers
                 }
 
                 if (!(discount.Status ?? false) || discount.StartDate > DateTime.Now ||
-                (discount.EndDate.HasValue && discount.EndDate.Value < DateTime.Now))
+                    (discount.EndDate.HasValue && discount.EndDate.Value < DateTime.Now))
                 {
                     throw new Exception("Mã giảm giá không hợp lệ hoặc đã hết hạn.");
                 }
-
-
 
                 discountValue = discount.DiscountValue;
 
@@ -480,6 +481,32 @@ namespace SRMMS.Controllers
 
             order.Status = true; 
 
+           
+            if (orderComplete.accId.HasValue)
+            {
+                var account = await _context.Accounts.FirstOrDefaultAsync(a => a.AccId == orderComplete.accId.Value);
+
+                if (account == null)
+                {
+                    throw new Exception("Không tìm thấy tài khoản khách hàng.");
+                }
+
+               
+                var points = (int)(order.TotalMoney / 100);
+
+              
+                var pointList = new PointList
+                {
+                    AccId = account.AccId,
+                    NumberPonit = points,
+                    OrderId = order.OrderId,
+                    
+                };
+
+                _context.PointLists.Add(pointList);
+               
+            }
+
             await _context.SaveChangesAsync();
 
             return new OrderCompleteDTO
@@ -493,6 +520,7 @@ namespace SRMMS.Controllers
                 DiscountValue = discountValue
             };
         }
+
 
 
         public async Task<(List<GetOrderByOrderIdDTO> Orders, decimal TotalRevenue)> CalculateTotalRevenue(int? weekNumber = null, int? month = null, int? year = null)
