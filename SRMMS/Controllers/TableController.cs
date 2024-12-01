@@ -121,10 +121,10 @@ namespace SRMMS.Controllers
                 })
                 .FirstOrDefaultAsync();
 
-            //if (table == null)
-            //{
-            //    return NotFound("not found table");
-            //}
+            if (table == null)
+            {
+                return BadRequest("not found table");
+            }
 
             return Ok(table);
         }

@@ -209,23 +209,29 @@ namespace SRMMS.Controllers
             {
                 return BadRequest("Dữ liệu tài khoản không hợp lệ.");
             }
-
             var account = await _context.Accounts.FindAsync(id);
             if (account == null)
             {
-                return BadRequest(new { message = "Account not found." });
+                return BadRequest(new { message = "Không tìm thấy tài khoản." });
             }
-
-            if (account.Status == true && model.Status == false)
+            if (account.Status == true && model.Status == false) 
             {
                 account.EndDate = DateTime.Now; 
             }
-
+            else if (account.Status == false && model.Status == true)
+            {
+                account.EndDate = null; 
+            }
             account.FullName = model.FullName ?? account.FullName;
             account.Phone = model.Phone ?? account.Phone;
             account.RoleId = model.RoleId ?? account.RoleId;
             account.StartDate = model.StartDate ?? account.StartDate;
-            account.EndDate = model.EndDate ?? account.EndDate;
+
+            if (model.EndDate.HasValue)
+            {
+                account.EndDate = model.EndDate;
+            }
+
             if (model.Status.HasValue)
             {
                 account.Status = model.Status.Value;
@@ -233,9 +239,14 @@ namespace SRMMS.Controllers
 
             _context.Accounts.Update(account);
             await _context.SaveChangesAsync();
-
-            return Ok(new { message = "Tài khoản đã được cập nhật thành công.", account });
+            return Ok(new
+            {
+                message = "Tài khoản đã được cập nhật thành công.",
+                data = account
+            });
         }
+
+
 
 
 
