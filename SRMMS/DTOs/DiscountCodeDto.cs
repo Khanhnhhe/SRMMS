@@ -8,5 +8,9 @@
         public String? StartDate { get; set; } 
         public String? EndDate { get; set; } 
         public bool? Status { get; set; }
+
+        public int DiscountType { get; set; }
+
+
     }
 }

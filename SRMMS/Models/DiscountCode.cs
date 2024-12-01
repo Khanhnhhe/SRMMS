@@ -16,6 +16,7 @@ namespace SRMMS.Models
         public DateTime? StartDate { get; set; }
         public DateTime? EndDate { get; set; }
         public bool? Status { get; set; }
+        public int? DiscountType { get; set; }
 
         public virtual ICollection<Order> Orders { get; set; }
     }
