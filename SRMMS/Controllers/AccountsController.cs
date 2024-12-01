@@ -210,6 +210,23 @@ namespace SRMMS.Controllers
                 return BadRequest("Dữ liệu tài khoản không hợp lệ.");
             }
             var account = await _context.Accounts.FindAsync(id);
+
+            if (account == null)
+            {
+                return BadRequest(new { message = "Tài khoản không tồn tại." });
+            }
+
+            
+            if (!string.IsNullOrWhiteSpace(model.Phone))
+            {
+                var phoneRegex = @"^0\d{9,10}$"; 
+                if (!System.Text.RegularExpressions.Regex.IsMatch(model.Phone, phoneRegex))
+                {
+                    return BadRequest(new { message = "Số điện thoại không hợp lệ. Số điện thoại phải bắt đầu bằng 0 và có từ 10 đến 11 chữ số." });
+                }
+                account.Phone = model.Phone;
+            }
+
             if (account.Status == true && model.Status == false)
             {
                 account.EndDate = DateTime.Now; 
@@ -223,7 +240,6 @@ namespace SRMMS.Controllers
                 account.EndDate = null; 
             }
             account.FullName = model.FullName ?? account.FullName;
-            account.Phone = model.Phone ?? account.Phone;
             account.RoleId = model.RoleId ?? account.RoleId;
 
 
