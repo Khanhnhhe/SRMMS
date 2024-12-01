@@ -493,15 +493,29 @@ namespace SRMMS.Controllers
 
                 discountValue = discount.DiscountValue;
 
-                if (orderComplete.totalMoney.HasValue)
+                if (discount.DiscountType == (int)DiscountType.Percentage)
                 {
-                    if (discountValue >= (double)orderComplete.totalMoney.Value)
+
+                    if (orderComplete.totalMoney.HasValue)
                     {
-                        orderComplete.totalMoney = 0;
+                        var discountAmount = (double)orderComplete.totalMoney.Value * (discountValue.Value / 100);
+
+                        orderComplete.totalMoney -= (decimal)discountAmount;
                     }
-                    else
+                }
+                else if (discount.DiscountType == (int)DiscountType.Fixed)
+                {
+
+                    if (orderComplete.totalMoney.HasValue)
                     {
-                        orderComplete.totalMoney -= (decimal)discountValue;
+                        if (discountValue >= (double)orderComplete.totalMoney.Value)
+                        {
+                            orderComplete.totalMoney = 0;
+                        }
+                        else
+                        {
+                            orderComplete.totalMoney -= (decimal)discountValue;
+                        }
                     }
                 }
             }

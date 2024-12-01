@@ -275,13 +275,20 @@ namespace SRMMS.Controllers
             {
                 return BadRequest(new { message = "Ngày bắt đầu phải trước hoặc bằng ngày kết thúc." });
             }
+
+            if (discountCodeDto.DiscountType == DiscountType.Percentage && discountCodeDto.DiscountValue > 100)
+            {
+                return BadRequest(new { message = "Giảm giá phần trăm không được vượt quá 100%." });
+            }
+
             var discountCode = new DiscountCode
             {
                 CodeDetail = discountCodeDto.CodeDetail,
                 DiscountValue = discountCodeDto.DiscountValue,
                 StartDate = discountCodeDto.StartDate, 
                 EndDate = discountCodeDto.EndDate,     
-                Status = discountCodeDto.Status
+                Status = discountCodeDto.Status,
+                DiscountType = (int?)discountCodeDto.DiscountType
             };
 
             _context.DiscountCodes.Add(discountCode);
@@ -308,7 +315,8 @@ namespace SRMMS.Controllers
                 DiscountValue = discountCode.DiscountValue,
                 StartDate = discountCode?.StartDate.Value.ToString("yyyy-MM-dd hh:mm:ss"),
                 EndDate = discountCode?.EndDate.Value.ToString("yyyy-MM-dd hh:mm:ss"),
-                Status = discountCode.Status
+                Status = discountCode.Status,
+                DiscountType = discountCode.DiscountType ?? 0
             };
 
             return CreatedAtAction("GetDiscountCode", new { id = discountCode.CodeId }, responseDto);
