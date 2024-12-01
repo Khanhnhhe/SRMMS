@@ -246,18 +246,28 @@ namespace SRMMS.Controllers
         [HttpDelete("/api/account/delete/{id}")]
         public IActionResult DeleteCustomer(int id)
         {
-            var customer = _context.Accounts.FirstOrDefault(c => c.AccId == id);
+
+            var customer = _context.Accounts
+                .Include(a => a.Feedbacks) 
+                .Include(a => a.PointLists) 
+                .FirstOrDefault(c => c.AccId == id);
 
             if (customer == null)
             {
                 return BadRequest(new { message = "Customer not found." });
             }
 
+            _context.Feedbacks.RemoveRange(customer.Feedbacks);
+
+            _context.PointLists.RemoveRange(customer.PointLists);
+
             _context.Accounts.Remove(customer);
+
             _context.SaveChanges();
 
-            return Ok(new { message = "Đã xóa tài khoản khách hàng thành công." });
+            return Ok(new { message = "Đã xóa tài khoản khách hàng cùng với các dữ liệu liên quan thành công." });
         }
+
 
         [HttpGet("/api/account/total")]
         public async Task<IActionResult> GetAccountTotals()
