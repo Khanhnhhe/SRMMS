@@ -60,6 +60,30 @@ namespace SRMMS.Controllers
             }
         }
 
+        [HttpGet("GetConversionPoint")]
+        public async Task<IActionResult> GetConversionPoint()
+        {
+            try
+            {
+                var conversionPoint = await _context.ConversionPoints.FirstOrDefaultAsync();
+
+                if (conversionPoint == null)
+                {
+                    return NotFound(new { Message = "Chưa có thiết lập tỷ lệ quy đổi điểm." });
+                }
+
+                return Ok(new
+                {
+                    MoneyToPointRate = conversionPoint.MoneyToPointRate,
+                    PointToMoneyRate = conversionPoint.PointToMoneyRate
+                });
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { Message = "Đã xảy ra lỗi khi lấy tỷ lệ quy đổi.", Error = ex.Message });
+            }
+        }
+
 
 
     }
