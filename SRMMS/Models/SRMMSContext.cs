@@ -29,6 +29,7 @@ namespace SRMMS.Models
         public virtual DbSet<PointList> PointLists { get; set; } = null!;
         public virtual DbSet<Product> Products { get; set; } = null!;
         public virtual DbSet<Role> Roles { get; set; } = null!;
+        public virtual DbSet<StatusBooking> StatusBookings { get; set; } = null!;
         public virtual DbSet<StatusTable> StatusTables { get; set; } = null!;
         public virtual DbSet<Table> Tables { get; set; } = null!;
 
@@ -103,7 +104,12 @@ namespace SRMMS.Models
 
                 entity.Property(e => e.Shift).HasMaxLength(50);
 
-                entity.Property(e => e.Status).HasColumnName("status");
+                entity.Property(e => e.StatusId).HasColumnName("Status_id");
+
+                entity.HasOne(d => d.Status)
+                    .WithMany(p => p.Bookings)
+                    .HasForeignKey(d => d.StatusId)
+                    .HasConstraintName("FK_Booking_Status_Booking");
             });
 
             modelBuilder.Entity<Category>(entity =>
@@ -371,6 +377,19 @@ namespace SRMMS.Models
                 entity.Property(e => e.RoleName)
                     .HasMaxLength(50)
                     .HasColumnName("role_name");
+            });
+
+            modelBuilder.Entity<StatusBooking>(entity =>
+            {
+                entity.HasKey(e => e.StatusId);
+
+                entity.ToTable("Status_Booking");
+
+                entity.Property(e => e.StatusId).HasColumnName("Status_id");
+
+                entity.Property(e => e.StatusName)
+                    .HasMaxLength(50)
+                    .HasColumnName("Status_name");
             });
 
             modelBuilder.Entity<StatusTable>(entity =>
