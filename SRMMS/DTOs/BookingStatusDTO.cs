@@ -2,6 +2,6 @@
 {
     public class BookingStatusDTO
     {
-        public bool Status { get; set; }
+        public int? StatusId { get; set; }
     }
 }

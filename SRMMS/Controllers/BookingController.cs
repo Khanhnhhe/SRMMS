@@ -6,6 +6,7 @@ using SRMMS.DTOs;
 using SRMMS.Hubs;
 using SRMMS.Models;
 using SRMMS.SMS;
+using System.Net.NetworkInformation;
 
 namespace SRMMS.Controllers
 {
@@ -69,7 +70,7 @@ namespace SRMMS.Controllers
                 return BadRequest("Vui lòng cung cấp tên của bạn.");
             }
 
-            
+
 
             if (string.IsNullOrEmpty(nameBooking) || string.IsNullOrEmpty(phoneBooking))
             {
@@ -83,7 +84,7 @@ namespace SRMMS.Controllers
                 NumberOfPeople = bookingDto.NumberOfPeople,
                 NameBooking = nameBooking,
                 PhoneBooking = phoneBooking,
-                Status = true,
+                StatusId = 1,
                 Shift = GetShift(hourBooking),
             };
 
@@ -138,13 +139,12 @@ namespace SRMMS.Controllers
 
         [HttpGet("/api/booking/getList")]
         public async Task<ActionResult<IEnumerable<Booking>>> SearchBookings(
-        string? nameBooking = "",
-        DateTime? bookingDate = null,
-        bool? status = null,
-        int pageNumber = 1,
-        int pageSize = 10)
+                string? nameBooking = "",
+                DateTime? bookingDate = null,
+                int? statusId = null,
+                int pageNumber = 1,
+                int pageSize = 10)
         {
-
             var query = _context.Bookings.AsQueryable();
 
             if (!string.IsNullOrWhiteSpace(nameBooking))
@@ -159,9 +159,9 @@ namespace SRMMS.Controllers
                 query = query.Where(b => b.DayBooking.HasValue && b.DayBooking.Value.Date == bookingDate.Value.Date);
             }
 
-            if (status.HasValue)
+            if (statusId.HasValue)
             {
-                query = query.Where(b => b.Status == status.Value);
+                query = query.Where(b => b.StatusId == statusId.Value); 
             }
 
             var totalBookings = await query.CountAsync();
@@ -171,17 +171,21 @@ namespace SRMMS.Controllers
             var bookings = await query
                 .Skip(skip)
                 .Take(pageSize)
-                .Select(b => new
+                .Join(_context.StatusBookings,
+              booking => booking.StatusId,
+              status => status.StatusId,
+              (booking, status) => new
                 {
-                    b.BookingId,
-                    DayBooking = b.DayBooking,
-                    HourBooking = b.HourBooking,
-                    b.NumberOfPeople,
-                    b.NameBooking,
-                    b.PhoneBooking,
-                    Shift = BookingController.GetShift(b.HourBooking),
-                    b.Status
-                })
+                  booking.BookingId,
+                  booking.DayBooking,
+                  booking.HourBooking,
+                  booking.NumberOfPeople,
+                  booking.NameBooking,
+                  booking.PhoneBooking,
+                  Shift = BookingController.GetShift(booking.HourBooking),
+                  booking.StatusId,
+                  StatusName = status.StatusName
+              })
                 .ToListAsync();
 
             var result = bookings.Select(b => new
@@ -193,7 +197,8 @@ namespace SRMMS.Controllers
                 b.NameBooking,
                 b.PhoneBooking,
                 b.Shift,
-                b.Status
+                StatusId = b.StatusId,
+                b.StatusName
             }).ToList();
 
             return Ok(new
@@ -204,6 +209,7 @@ namespace SRMMS.Controllers
                 Bookings = result
             });
         }
+
 
 
         public static string GetShift(TimeSpan? hourBooking)
@@ -229,7 +235,6 @@ namespace SRMMS.Controllers
         [HttpPut("/api/booking/updateStatus/{id}")]
         public async Task<IActionResult> UpdateStatusBooking(int id, [FromBody] BookingStatusDTO model)
         {
-            
             if (model == null)
             {
                 return BadRequest("Dữ liệu không hợp lệ.");
@@ -241,19 +246,40 @@ namespace SRMMS.Controllers
                 return BadRequest("Không tìm thấy đơn đặt chỗ.");
             }
 
-            
-            booking.Status = model.Status;
+
+            if (model.StatusId == 2)
+            {
+                booking.StatusId = 2; 
+            }
+            else if (model.StatusId == 3)
+            {
+                booking.StatusId = 3; 
+            }
+            else
+            {
+                return BadRequest("Trạng thái không hợp lệ.");
+            }
+
             _context.Bookings.Update(booking);
             await _context.SaveChangesAsync();
 
-            
-            string message = model.Status
-                ? $"Xin chào {booking.NameBooking}, đơn đặt chỗ của bạn cho {booking.NumberOfPeople} người vào ngày {booking.DayBooking?.ToString("dd/MM/yyyy")} lúc {booking.HourBooking?.ToString(@"hh\:mm")} đã được chấp nhận. Cảm ơn bạn đã chọn dịch vụ của chúng tôi!"
-                : $"Xin chào {booking.NameBooking}, rất tiếc đơn đặt chỗ của bạn cho ngày {booking.DayBooking?.ToString("dd/MM/yyyy")} vào lúc {booking.HourBooking?.ToString(@"hh\:mm")} không được chấp nhận. Vui lòng liên hệ với chúng tôi để biết thêm chi tiết.";
+
+            string message;
+            if (booking.StatusId == 2) 
+            {
+                message = $"Xin chào {booking.NameBooking}, đơn đặt chỗ của bạn cho {booking.NumberOfPeople} người vào ngày {booking.DayBooking?.ToString("dd/MM/yyyy")} lúc {booking.HourBooking?.ToString(@"hh\:mm")} đã được chấp nhận. Cảm ơn bạn đã chọn dịch vụ của chúng tôi!";
+            }
+            else if (booking.StatusId == 3) 
+            {
+                message = $"Xin chào {booking.NameBooking}, rất tiếc đơn đặt chỗ của bạn cho ngày {booking.DayBooking?.ToString("dd/MM/yyyy")} vào lúc {booking.HourBooking?.ToString(@"hh\:mm")} không được chấp nhận. Vui lòng liên hệ với chúng tôi để biết thêm chi tiết.";
+            }
+            else
+            {
+                return BadRequest("Trạng thái không hợp lệ.");
+            }
 
             try
             {
-                
                 await _twilioService.SendSmsAsync(booking.PhoneBooking, message);
                 return Ok("Cập nhật trạng thái và gửi thông báo thành công.");
             }
@@ -263,6 +289,9 @@ namespace SRMMS.Controllers
                 return StatusCode(500, "Cập nhật trạng thái thành công, nhưng không gửi được thông báo SMS.");
             }
         }
+
+
+
 
 
         [HttpPut("/api/booking/update/{id}")]
@@ -302,7 +331,15 @@ namespace SRMMS.Controllers
             }
 
             existingBooking.NumberOfPeople = bookingDto.NumberOfPeople ?? existingBooking.NumberOfPeople;
-            existingBooking.Status = bookingDto.Status ?? existingBooking.Status;
+            if (bookingDto.StatusId.HasValue)
+            {
+                var status = await _context.StatusBookings.FindAsync(bookingDto.StatusId.Value);
+                if (status == null)
+                {
+                    return BadRequest("Trạng thái không hợp lệ.");
+                }
+                existingBooking.Status = status;
+            }
 
             _context.Bookings.Update(existingBooking);
             await _context.SaveChangesAsync();
@@ -311,6 +348,20 @@ namespace SRMMS.Controllers
             await _hubContext.Clients.All.SendAsync("ReceiveBookingUpdate", bookings);
 
             return Ok(existingBooking);
+        }
+
+
+        [HttpGet("/api/booking/statusList")]
+        public async Task<ActionResult<IEnumerable<StatusBooking>>> GetStatusList()
+        {
+            var statusList = await _context.StatusBookings.ToListAsync(); 
+
+            if (statusList == null || !statusList.Any())
+            {
+                return NotFound("Không tìm thấy trạng thái.");
+            }
+
+            return Ok(statusList);
         }
 
 

@@ -8,7 +8,7 @@
         public DateTime? DayBooking { get; set; }
         public string HourBooking { get; set; }
         public int? NumberOfPeople { get; set; }
-        public bool? Status { get; set; }
+        public int? StatusId { get; set; }
         public string? Shift { get; set; }
     }
 }
