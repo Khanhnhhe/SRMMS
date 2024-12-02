@@ -219,15 +219,20 @@ namespace SRMMS.Controllers
         }
 
         [HttpPost("/api/table/SetBookingForTable")]
-        public async Task<IActionResult> SetBookingForTable(int tableId, int bookingId)
+        public async Task<IActionResult> SetBookingForTable([FromBody] SetBookingForTableRequest request)
         {
-            var table = await _context.Tables.FindAsync(tableId);
+            if (request == null || request.TableId <= 0 || request.BookingId <= 0)
+            {
+                return BadRequest(new { message = "Dữ liệu không hợp lệ" });
+            }
+
+            var table = await _context.Tables.FindAsync(request.TableId);
             if (table == null)
             {
                 return BadRequest(new { message = "Không tìm thấy bàn" });
             }
 
-            table.BookingId = bookingId;
+            table.BookingId = request.BookingId;
             table.StatusId = 3; 
 
             try
