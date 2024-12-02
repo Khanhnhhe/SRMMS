@@ -218,6 +218,28 @@ namespace SRMMS.Controllers
             return Ok(statuses);
         }
 
+        [HttpPost("/api/table/SetBookingForTable")]
+        public async Task<IActionResult> SetBookingForTable(int tableId, int bookingId)
+        {
+            var table = await _context.Tables.FindAsync(tableId);
+            if (table == null)
+            {
+                return BadRequest(new { message = "Không tìm thấy bàn" });
+            }
+
+            table.BookingId = bookingId;
+            table.StatusId = 3; 
+
+            try
+            {
+                await _context.SaveChangesAsync();
+                return Ok(new { message = "Đặt bàn đã được cập nhật thành công" });
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { message = "Đã xảy ra lỗi khi cập nhật bảng", error = ex.Message });
+            }
+        }
 
         [HttpDelete("/api/table/delete/{id}")]
         public async Task<IActionResult> DeleteTable(int id)
