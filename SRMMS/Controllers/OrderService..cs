@@ -614,7 +614,8 @@ namespace SRMMS.Controllers
 
             if (order.Table != null)
             {
-                order.Table.StatusId = 1; 
+                order.Table.StatusId = 1;
+                order.Table.BookingId = null;
             }
 
             order.Status = true; 
