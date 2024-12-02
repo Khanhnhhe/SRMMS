@@ -1,4 +1,5 @@
 ﻿using System;
+using CloudinaryDotNet;
 using CloudinaryDotNet.Actions;
 using Microsoft.AspNetCore.SignalR;
 using Microsoft.EntityFrameworkCore;
@@ -525,17 +526,56 @@ namespace SRMMS.Controllers
                 order.TotalMoney = orderComplete.totalMoney.Value;
             }
 
-            order.OrderDate = DateTime.Now;
-            order.CodeId = orderComplete.discountId;
 
-            if (order.Table != null)
+            if (orderComplete.accId.HasValue && orderComplete.usedPoints.HasValue && orderComplete.usedPoints > 0)
             {
-                order.Table.StatusId = 1; 
+                var account = await _context.Accounts.FirstOrDefaultAsync(a => a.AccId == orderComplete.accId.Value);
+
+                if (account == null)
+                {
+                    throw new Exception("Không tìm thấy tài khoản khách hàng.");
+                }
+
+                var conversionSettings = await _context.ConversionPoints.FirstOrDefaultAsync();
+
+                if (conversionSettings == null)
+                {
+                    throw new Exception("Chưa có tỷ lệ quy đổi điểm.");
+                }
+
+                var pointsToMoney = orderComplete.usedPoints.Value * conversionSettings.PointToMoneyRate;
+
+                var totalPoints = await _context.PointLists
+                    .Where(p => p.AccId == orderComplete.accId.Value)
+                    .SumAsync(p => p.NumberPonit);
+
+                if (totalPoints < orderComplete.usedPoints.Value)
+                {
+                    throw new Exception("Số điểm sử dụng vượt quá số điểm hiện có.");
+                }
+
+                if (order.TotalMoney < pointsToMoney)
+                {
+                    order.TotalMoney = 0;
+                }
+                else
+                {
+                    order.TotalMoney -= pointsToMoney;
+                }
+
+                var pointRecord = await _context.PointLists
+                    .Where(p => p.AccId == orderComplete.accId.Value)
+                    .FirstOrDefaultAsync();
+
+                if (pointRecord != null)
+                {
+                    pointRecord.NumberPonit -= orderComplete.usedPoints.Value;
+                    _context.PointLists.Update(pointRecord);
+                }
+
+               
             }
 
-            order.Status = true; 
-
-           
             if (orderComplete.accId.HasValue)
             {
                 var account = await _context.Accounts.FirstOrDefaultAsync(a => a.AccId == orderComplete.accId.Value);
@@ -545,21 +585,39 @@ namespace SRMMS.Controllers
                     throw new Exception("Không tìm thấy tài khoản khách hàng.");
                 }
 
-
-                var points = (int)(order.TotalMoney * (decimal)0.05);
-
-
-                var pointList = new PointList
+                var conversionSettings = await _context.ConversionPoints.FirstOrDefaultAsync();
+                if (conversionSettings != null)
                 {
-                    AccId = account.AccId,
-                    NumberPonit = points,
-                    OrderId = order.OrderId,
-                    
-                };
+                    var pointsEarned = (long)(order.TotalMoney / conversionSettings.MoneyToPointRate); 
+                    var pointRecord = await _context.PointLists
+                        .Where(p => p.AccId == orderComplete.accId.Value)
+                        .FirstOrDefaultAsync();
 
-                _context.PointLists.Add(pointList);
-               
+                    if (pointRecord != null)
+                    {
+                        pointRecord.NumberPonit += pointsEarned;
+                        _context.PointLists.Update(pointRecord);
+                    }
+                    else
+                    {
+                        _context.PointLists.Add(new PointList
+                        {
+                            AccId = orderComplete.accId.Value,
+                            NumberPonit = pointsEarned
+                        });
+                    }
+                }
             }
+
+            order.OrderDate = DateTime.Now;
+            order.CodeId = orderComplete.discountId;
+
+            if (order.Table != null)
+            {
+                order.Table.StatusId = 1; 
+            }
+
+            order.Status = true; 
 
             await _context.SaveChangesAsync();
 

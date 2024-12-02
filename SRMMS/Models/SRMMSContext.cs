@@ -21,6 +21,7 @@ namespace SRMMS.Models
         public virtual DbSet<Category> Categories { get; set; } = null!;
         public virtual DbSet<Combo> Combos { get; set; } = null!;
         public virtual DbSet<ComboDetail> ComboDetails { get; set; } = null!;
+        public virtual DbSet<ConversionPoint> ConversionPoints { get; set; } = null!;
         public virtual DbSet<DiscountCode> DiscountCodes { get; set; } = null!;
         public virtual DbSet<Feedback> Feedbacks { get; set; } = null!;
         public virtual DbSet<Order> Orders { get; set; } = null!;
@@ -166,6 +167,17 @@ namespace SRMMS.Models
                     .WithMany() // Nếu không cần thuộc tính điều hướng ngược lại
                     .HasForeignKey(d => d.ProId)
                     .HasConstraintName("FK_Combo_Detail_Menu");
+            });
+
+            modelBuilder.Entity<ConversionPoint>(entity =>
+            {
+                entity.HasKey(e => e.SettingId);
+
+                entity.ToTable("ConversionPoint");
+
+                entity.Property(e => e.MoneyToPointRate).HasColumnType("decimal(10, 2)");
+
+                entity.Property(e => e.PointToMoneyRate).HasColumnType("decimal(10, 2)");
             });
 
             modelBuilder.Entity<DiscountCode>(entity =>
