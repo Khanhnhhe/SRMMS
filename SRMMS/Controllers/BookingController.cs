@@ -71,12 +71,6 @@ namespace SRMMS.Controllers
             }
 
 
-
-            if (string.IsNullOrEmpty(nameBooking) || string.IsNullOrEmpty(phoneBooking))
-            {
-                return BadRequest("Vui lòng cung cấp tên và số điện thoại của khách.");
-            }
-
             var booking = new Booking
             {
                 DayBooking = bookingDto.DayBooking,
