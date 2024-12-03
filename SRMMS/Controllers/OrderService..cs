@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Net.NetworkInformation;
 using CloudinaryDotNet;
 using CloudinaryDotNet.Actions;
 using Microsoft.AspNetCore.SignalR;
@@ -21,30 +22,41 @@ namespace SRMMS.Controllers
             _context = context;
             _orderHubContext = orderHubContext;
         }
+
+        // người dùng đặt món 
         public async Task<int> CreateOrder(OrderDTO orderDto)
         {
-           
             var table = await _context.Tables.FindAsync(orderDto.TableId);
             if (table == null)
             {
                 throw new Exception("TableId không tồn tại.");
             }
 
-            
-            if (table.StatusId == 2) 
+            if (table.StatusId == 2)
             {
-                
                 var existingOrder = await _context.Orders
-                    .Where(o => o.TableId == orderDto.TableId && o.Status == false) 
+                    .Where(o => o.TableId == orderDto.TableId)
                     .Include(o => o.OrderDetails)
                     .FirstOrDefaultAsync();
 
                 if (existingOrder != null)
                 {
-                   
+
+                    if (existingOrder.StatusId == 3)
+                    {
+                        
+                        var status = await _context.StatusOrders.FirstOrDefaultAsync(s => s.StatusId == 1);
+                        if (status == null)
+                        {
+                            throw new Exception("Trạng thái đơn hàng không hợp lệ.");
+                        }
+
+                        existingOrder.StatusId = status.StatusId; 
+                    }
+
                     await AddOrderDetails(existingOrder, orderDto);
 
-                   
+                    
                     existingOrder.TotalMoney += orderDto.TotalMoney;
 
                    
@@ -53,35 +65,48 @@ namespace SRMMS.Controllers
                    
                     await _orderHubContext.Clients.All.SendAsync("ReceiveOrder", existingOrder);
 
-                    return existingOrder.OrderId; 
+                   
+                    return existingOrder.OrderId;
+                }
+                else
+                {
+                    
+                    var status = await _context.StatusOrders.FirstOrDefaultAsync(s => s.StatusId == 1); 
+                    if (status == null)
+                    {
+                        throw new Exception("Trạng thái đơn hàng không hợp lệ.");
+                    }
+
+                    var newOrder = new Order
+                    {
+                        TableId = orderDto.TableId,
+                        TotalMoney = orderDto.TotalMoney,
+                        StatusId = status.StatusId, 
+                        OrderDetails = new List<OrderDetail>()
+                    };
+
+                    
+                    await AddOrderDetails(newOrder, orderDto);
+
+                   
+                    _context.Orders.Add(newOrder);
+                    await _context.SaveChangesAsync();
+
+                   
+                    await _orderHubContext.Clients.All.SendAsync("ReceiveOrder", newOrder);
+
+                    
+                    return newOrder.OrderId;
                 }
             }
 
-            
-            var newOrder = new Order
-            {
-                TableId = orderDto.TableId,
-                TotalMoney = orderDto.TotalMoney, 
-                Status = false, 
-                OrderDetails = new List<OrderDetail>()
-            };
-
-           
-            await AddOrderDetails(newOrder, orderDto);
-
-          
-            _context.Orders.Add(newOrder);
-            await _context.SaveChangesAsync();
-
-            
-            await _orderHubContext.Clients.All.SendAsync("ReceiveOrder", newOrder);
-
-            return newOrder.OrderId;
+            throw new Exception("Bàn không có trạng thái 'Đang sử dụng'.");
         }
 
-       
+
         private async Task AddOrderDetails(Order order, OrderDTO orderDto)
         {
+          
             bool hasCombo = false;
             bool hasProduct = false;
 
@@ -107,6 +132,7 @@ namespace SRMMS.Controllers
                         throw new Exception($"Số lượng combo với ID {comboDetail.ComboId} phải lớn hơn 0.");
                     }
 
+                   
                     var orderDetail = order.OrderDetails.FirstOrDefault(od => od.ComboId == comboDetail.ComboId);
                     if (orderDetail != null)
                     {
@@ -115,7 +141,7 @@ namespace SRMMS.Controllers
                     }
                     else
                     {
-                       
+                        
                         orderDetail = new OrderDetail
                         {
                             ComboId = comboDetail.ComboId,
@@ -128,7 +154,7 @@ namespace SRMMS.Controllers
                 hasCombo = true;
             }
 
-           
+            
             if (orderDto.ProductDetails != null && orderDto.ProductDetails.Any())
             {
                 foreach (var productDetail in orderDto.ProductDetails)
@@ -150,10 +176,11 @@ namespace SRMMS.Controllers
                         throw new Exception($"Số lượng sản phẩm với ID {productDetail.ProId} phải lớn hơn 0.");
                     }
 
+                    
                     var orderDetail = order.OrderDetails.FirstOrDefault(od => od.ProId == productDetail.ProId);
                     if (orderDetail != null)
                     {
-                       
+                        
                         orderDetail.Quantiity += productDetail.Quantity;
                     }
                     else
@@ -171,11 +198,150 @@ namespace SRMMS.Controllers
                 hasProduct = true;
             }
 
+           
             if (!hasCombo && !hasProduct)
             {
                 throw new Exception("Đơn hàng phải có ít nhất một sản phẩm hoặc combo.");
             }
         }
+
+        //staff xác nhận và update 
+        public async Task<int> UpdateOrder(int orderId, OrderDTO orderDto)
+        {
+            
+            var existingOrder = await _context.Orders
+                .Where(o => o.OrderId == orderId)
+                .Include(o => o.OrderDetails)
+                .FirstOrDefaultAsync();
+
+            if (existingOrder == null)
+            {
+                throw new Exception("Đơn hàng không tồn tại.");
+            }
+
+            
+            if (existingOrder.TableId != orderDto.TableId)
+            {
+                throw new Exception("Không thể cập nhật đơn hàng sang bàn khác.");
+            }
+
+           
+
+           
+            foreach (var comboDto in orderDto.ComboDetails)
+            {
+                var existingComboDetail = existingOrder.OrderDetails
+                    .FirstOrDefault(od => od.ComboId == comboDto.ComboId);
+
+                if (existingComboDetail != null)
+                {
+                   
+                    if (existingComboDetail.Quantiity != comboDto.Quantity)
+                    {
+                        existingComboDetail.Quantiity += comboDto.Quantity;
+                 
+                    }
+                }
+                else
+                {
+                   
+                    var newComboDetail = new OrderDetail
+                    {
+                        ComboId = comboDto.ComboId,
+                        Quantiity = comboDto.Quantity,
+                        Price = comboDto.Price,
+                        OrderId = orderId
+                    };
+                    existingOrder.OrderDetails.Add(newComboDetail);
+                
+                }
+            }
+
+            
+            foreach (var productDto in orderDto.ProductDetails)
+            {
+                var existingProductDetail = existingOrder.OrderDetails
+                    .FirstOrDefault(od => od.ProId == productDto.ProId);
+
+                if (existingProductDetail != null)
+                {
+                   
+                    if (existingProductDetail.Quantiity != productDto.Quantity)
+                    {
+                        existingProductDetail.Quantiity += productDto.Quantity;
+                        
+                    }
+                }
+                else
+                {
+                 
+                    var newProductDetail = new OrderDetail
+                    {
+                        ProId = productDto.ProId,
+                        Quantiity = productDto.Quantity,
+                        Price = productDto.Price,
+                        OrderId = orderId
+                    };
+                    existingOrder.OrderDetails.Add(newProductDetail);
+                   
+                }
+            }
+
+           
+           
+                existingOrder.TotalMoney = (decimal)orderDto.TotalMoney;
+           
+
+           
+            
+           
+                existingOrder.StatusId = 2; 
+          
+
+            
+            await _context.SaveChangesAsync();
+
+           
+            await _orderHubContext.Clients.All.SendAsync("ReceiveOrder", existingOrder);
+
+            return existingOrder.OrderId;
+        }
+
+
+
+        // bếp hoàn thành
+
+        public async Task<int> ChangeOrderStatusToComplete(int orderId)
+        {
+            
+            var existingOrder = await _context.Orders
+                .Where(o => o.OrderId == orderId)
+                .Include(o => o.Table) 
+                .FirstOrDefaultAsync();
+
+            if (existingOrder == null)
+            {
+                throw new Exception("Đơn hàng không tồn tại.");
+            }
+
+           
+            if (existingOrder.StatusId != 2) 
+            {
+                throw new Exception("Đơn hàng không thể chuyển trạng thái vì không phải trạng thái 'Đang sử dụng'.");
+            }
+
+            
+            existingOrder.StatusId = 3;
+
+            
+            await _context.SaveChangesAsync();
+
+           
+            await _orderHubContext.Clients.All.SendAsync("ReceiveOrder", existingOrder);
+
+            return existingOrder.OrderId;
+        }
+
 
 
 
@@ -244,7 +410,7 @@ namespace SRMMS.Controllers
                     OrderId = o.OrderId,
                     OrderDate = o.OrderDate.Value.ToString("yyyy-MM-dd hh:mm:ss"),
                     TotalMoney = o.TotalMoney,
-                    Status = o.Status,
+                    Status = o.Status.StatusName,
                     TableId = o.Table.TableId,
                     TableName = o.Table.TableName,
                     Products = o.OrderDetails
@@ -298,7 +464,7 @@ namespace SRMMS.Controllers
                 OrderId = order.OrderId,
                 OrderDate = order.OrderDate.HasValue ? (DateTime)order.OrderDate : null,
                 TotalMoney = (double)order.TotalMoney,
-                Status = (bool)order.Status,
+                Status = order.Status.StatusName,
                 TableId = order.Table.TableId,
                 TableName = order.Table.TableName,
                 Products = order.OrderDetails
@@ -339,7 +505,7 @@ namespace SRMMS.Controllers
 
 
 
-
+        // chờ xác nhận 
         public List<GetOrderByTableNameDTO> GetOrdersByTable(int tableId, int pageNumber = 1, int pageSize = 10)
         {
             var tableExists = _context.Tables.Any(t => t.TableId == tableId);
@@ -351,7 +517,7 @@ namespace SRMMS.Controllers
             }
 
             var query = _context.Orders
-                .Where(o => o.TableId == tableId && (o.Status == false))
+                .Where(o => o.TableId == tableId && (o.Status.StatusId == 1))
 
                 .Include(o => o.OrderDetails)
                     .ThenInclude(od => od.Pro)
@@ -366,7 +532,7 @@ namespace SRMMS.Controllers
                     OrderId = o.OrderId,
                     OrderDate = o.OrderDate.Value.ToString("yyyy-MM-dd hh:mm:ss"),
                     TotalMoney = o.TotalMoney,
-                    Status = o.Status,
+                    Status = o.Status.StatusName,
                     TableId = o.Table.TableId,
                     TableName = o.Table.TableName,
                     Products = o.OrderDetails
@@ -430,7 +596,7 @@ namespace SRMMS.Controllers
                     OrderId = o.OrderId,
                     OrderDate = o.OrderDate.Value.ToString("yyyy-MM-dd hh:mm:ss"),
                     TotalMoney = o.TotalMoney,
-                    Status = o.Status,
+                    Status = o.Status.StatusName,
                     Products = o.OrderDetails
                         .Where(od => od.Pro != null)
                         .Select(od => new GetProductDTO
@@ -469,7 +635,7 @@ namespace SRMMS.Controllers
                 throw new Exception("Không tìm thấy Order.");
             }
 
-            if (order.Status == true)
+            if (order.Status.StatusId == 5)
             {
                 throw new Exception("Đơn hàng này đã hoàn tất và không thể sửa đổi.");
             }
@@ -618,7 +784,7 @@ namespace SRMMS.Controllers
                 order.Table.BookingId = null;
             }
 
-            order.Status = true; 
+            order.Status.StatusId = 5; 
 
             await _context.SaveChangesAsync();
 
@@ -628,7 +794,7 @@ namespace SRMMS.Controllers
                 TotalMoney = order.TotalMoney,
                 TableId = order.TableId,
                 OrderDate = order.OrderDate,
-                Status = order.Status,
+                Status = order.Status.StatusName,
                 DiscountId = order.CodeId,
                 DiscountValue = discountValue
             };
@@ -639,7 +805,7 @@ namespace SRMMS.Controllers
         public async Task<(List<GetOrderByOrderIdDTO> Orders, decimal TotalRevenue)> CalculateTotalRevenue(int? weekNumber = null, int? month = null, int? year = null)
         {
             var query = _context.Orders
-                                .Where(o => o.Status == true);
+                                .Where(o => o.Status.StatusId == 5);
 
 
             if (weekNumber.HasValue && month.HasValue && year.HasValue)
@@ -707,7 +873,7 @@ namespace SRMMS.Controllers
                     OrderId = o.OrderId,
                     OrderDate = (DateTime)o.OrderDate,
                     TotalMoney = (double)o.TotalMoney,
-                    Status = (bool)o.Status,
+                    Status = o.Status.StatusName,
                     TableId = o.Table.TableId,
                     TableName = o.Table.TableName,
                     Products = o.OrderDetails
@@ -753,7 +919,7 @@ namespace SRMMS.Controllers
 
         public int CountOrders()
         {
-            return _context.Orders.Count(o => o.Status == true);
+            return _context.Orders.Count(o => o.Status.StatusId == 5);
         }
 
     }

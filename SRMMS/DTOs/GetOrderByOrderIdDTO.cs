@@ -6,7 +6,7 @@ namespace SRMMS.DTOs
         public int OrderId { get; set; }
         public DateTime? OrderDate { get; set; }
         public double TotalMoney { get; set; }
-        public bool Status { get; set; }
+        public String? Status { get; set; }
         public int TableId { get; set; }
         public String? TableName { get; set; }
         public List<GetProductDTO> Products { get; set; }

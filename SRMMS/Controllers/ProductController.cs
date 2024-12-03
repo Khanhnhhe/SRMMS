@@ -505,7 +505,7 @@ namespace SRMMS.Controllers
                     {
                         foreach (var orderDetail in orderDetails)
                         {
-                            if (orderDetail.Order?.Status == false)
+                            if (orderDetail.Order?.Status.StatusId == 5)
                             {
 
                                 var productInOrder = await _context.Products.FindAsync(orderDetail.ProId);
