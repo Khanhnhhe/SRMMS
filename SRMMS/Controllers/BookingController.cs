@@ -179,7 +179,10 @@ namespace SRMMS.Controllers
                           Shift = BookingController.GetShift(booking.HourBooking),
                           booking.StatusId,
                           StatusName = status.StatusName,
-                          Table = _context.Tables.FirstOrDefault(t => t.BookingId == booking.BookingId) 
+                          Tables = _context.Tables
+                           .Where(t => t.BookingId == booking.BookingId)
+                           .Select(t => t.TableName)
+                           .ToList()
                       })
                 .ToListAsync();
 
@@ -192,7 +195,7 @@ namespace SRMMS.Controllers
                 b.NameBooking,
                 b.PhoneBooking,
                 b.Shift,
-                TableName = b.Table?.TableName, 
+                TableNames = b.Tables,
                 StatusId = b.StatusId,
                 b.StatusName
             }).ToList();
