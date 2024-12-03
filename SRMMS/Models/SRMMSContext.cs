@@ -30,6 +30,7 @@ namespace SRMMS.Models
         public virtual DbSet<Product> Products { get; set; } = null!;
         public virtual DbSet<Role> Roles { get; set; } = null!;
         public virtual DbSet<StatusBooking> StatusBookings { get; set; } = null!;
+        public virtual DbSet<StatusOrder> StatusOrders { get; set; } = null!;
         public virtual DbSet<StatusTable> StatusTables { get; set; } = null!;
         public virtual DbSet<Table> Tables { get; set; } = null!;
 
@@ -38,7 +39,7 @@ namespace SRMMS.Models
             if (!optionsBuilder.IsConfigured)
             {
 #warning To protect potentially sensitive information in your connection string, you should move it out of source code. You can avoid scaffolding the connection string by using the Name= syntax to read it from configuration - see https://go.microsoft.com/fwlink/?linkid=2131148. For more guidance on storing connection strings, see http://go.microsoft.com/fwlink/?LinkId=723263.
-                optionsBuilder.UseSqlServer("Server=DESKTOP-Q5D4AD1\\SQLEXPRESS;database=SRMMS;Trusted_Connection=SSPI;Encrypt=false;TrustServerCertificate=true");
+                optionsBuilder.UseSqlServer("Server=localhost;Database=SRMMS;User Id=SA;Password=Admin2002@;");
             }
         }
 
@@ -253,7 +254,7 @@ namespace SRMMS.Models
                     .HasColumnType("datetime")
                     .HasColumnName("order_date");
 
-                entity.Property(e => e.Status).HasColumnName("status");
+                entity.Property(e => e.StatusId).HasColumnName("status_id");
 
                 entity.Property(e => e.TableId).HasColumnName("table_id");
 
@@ -265,6 +266,11 @@ namespace SRMMS.Models
                     .WithMany(p => p.Orders)
                     .HasForeignKey(d => d.CodeId)
                     .HasConstraintName("FK_Order_Discount_code");
+
+                entity.HasOne(d => d.Status)
+                    .WithMany(p => p.Orders)
+                    .HasForeignKey(d => d.StatusId)
+                    .HasConstraintName("FK_Order_Status_Order");
 
                 entity.HasOne(d => d.Table)
                     .WithMany(p => p.Orders)
@@ -390,6 +396,17 @@ namespace SRMMS.Models
                 entity.Property(e => e.StatusName)
                     .HasMaxLength(50)
                     .HasColumnName("Status_name");
+            });
+
+            modelBuilder.Entity<StatusOrder>(entity =>
+            {
+                entity.HasKey(e => e.StatusId);
+
+                entity.ToTable("Status_Order");
+
+                entity.Property(e => e.StatusId).ValueGeneratedNever();
+
+                entity.Property(e => e.StatusName).HasMaxLength(50);
             });
 
             modelBuilder.Entity<StatusTable>(entity =>

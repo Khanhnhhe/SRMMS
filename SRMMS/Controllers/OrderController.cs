@@ -29,6 +29,47 @@ namespace SRMMS.Controllers
             return Ok(new { OrderId = orderId });
         }
 
+        [HttpPut("staffUpdate/{orderId}")]
+        public async Task<IActionResult> UpdateOrder(int orderId, [FromBody] OrderDTO orderDto)
+        {
+            if (orderDto == null)
+            {
+                return BadRequest("Dữ liệu đơn hàng không hợp lệ.");
+            }
+
+            try
+            {
+                // Gọi service để cập nhật đơn hàng
+                int updatedOrderId = await _orderService.UpdateOrder(orderId, orderDto);
+
+                // Trả về mã ID của đơn hàng sau khi cập nhật
+                return Ok(new { OrderId = updatedOrderId });
+            }
+            catch (Exception ex)
+            {
+                // Xử lý lỗi và trả về thông báo lỗi
+                return BadRequest(new { message = ex.Message });
+            }
+        }
+
+        [HttpPut("kitchen-status/{orderId}")]
+        public async Task<IActionResult> ChangeOrderStatusToComplete(int orderId)
+        {
+            try
+            {
+               
+                int updatedOrderId = await _orderService.ChangeOrderStatusToComplete(orderId);
+
+                
+                return Ok(new { message = "Trạng thái đơn hàng đã được thay đổi", orderId = updatedOrderId });
+            }
+            catch (Exception ex)
+            {
+                
+                return BadRequest(new { message = ex.Message });
+            }
+        }
+
         [HttpGet("list")]
         public IActionResult GetOrders(
      [FromQuery] int pageNumber = 1,
