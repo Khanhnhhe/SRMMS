@@ -43,6 +43,12 @@ namespace SRMMS.Controllers
                 return BadRequest("Tên bàn đã tồn tại.");
             }
 
+            if (model.TableOfPeople <= 0)
+            {
+                return BadRequest("Chỗ người tại bàn phải là số nguyên dương và lớn hơn 0.");
+            }
+
+
             var table = new SRMMS.Models.Table
             {
                 TableName = model.Table_Name,
