@@ -133,11 +133,11 @@ namespace SRMMS.Controllers
 
         [HttpGet("/api/booking/getList")]
         public async Task<ActionResult<IEnumerable<Booking>>> SearchBookings(
-                string? nameBooking = "",
-                DateTime? bookingDate = null,
-                int? statusId = null,
-                int pageNumber = 1,
-                int pageSize = 10)
+        string? nameBooking = "",
+        DateTime? bookingDate = null,
+        int? statusId = null,
+        int pageNumber = 1,
+        int pageSize = 10)
         {
             var query = _context.Bookings.AsQueryable();
 
@@ -155,7 +155,7 @@ namespace SRMMS.Controllers
 
             if (statusId.HasValue)
             {
-                query = query.Where(b => b.StatusId == statusId.Value); 
+                query = query.Where(b => b.StatusId == statusId.Value);
             }
 
             var totalBookings = await query.CountAsync();
@@ -166,20 +166,21 @@ namespace SRMMS.Controllers
                 .Skip(skip)
                 .Take(pageSize)
                 .Join(_context.StatusBookings,
-              booking => booking.StatusId,
-              status => status.StatusId,
-              (booking, status) => new
-                {
-                  booking.BookingId,
-                  booking.DayBooking,
-                  booking.HourBooking,
-                  booking.NumberOfPeople,
-                  booking.NameBooking,
-                  booking.PhoneBooking,
-                  Shift = BookingController.GetShift(booking.HourBooking),
-                  booking.StatusId,
-                  StatusName = status.StatusName
-              })
+                      booking => booking.StatusId,
+                      status => status.StatusId,
+                      (booking, status) => new
+                      {
+                          booking.BookingId,
+                          booking.DayBooking,
+                          booking.HourBooking,
+                          booking.NumberOfPeople,
+                          booking.NameBooking,
+                          booking.PhoneBooking,
+                          Shift = BookingController.GetShift(booking.HourBooking),
+                          booking.StatusId,
+                          StatusName = status.StatusName,
+                          Table = _context.Tables.FirstOrDefault(t => t.BookingId == booking.BookingId) 
+                      })
                 .ToListAsync();
 
             var result = bookings.Select(b => new
@@ -191,6 +192,7 @@ namespace SRMMS.Controllers
                 b.NameBooking,
                 b.PhoneBooking,
                 b.Shift,
+                TableName = b.Table?.TableName, 
                 StatusId = b.StatusId,
                 b.StatusName
             }).ToList();
@@ -203,6 +205,7 @@ namespace SRMMS.Controllers
                 Bookings = result
             });
         }
+
 
 
 
