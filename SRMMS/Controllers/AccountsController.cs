@@ -191,7 +191,7 @@ namespace SRMMS.Controllers
             _context.Accounts.Add(account);
             await _context.SaveChangesAsync();
 
-            return Created("Tài khoản đã được tạo thành công.", account);
+            return Ok(new { message = "Tài khoản đã được tạo thành công.", account });
         }
 
 
