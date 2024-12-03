@@ -15,6 +15,7 @@ namespace SRMMS.Models
         public int? StatusId { get; set; }
         public int? BookingId { get; set; }
         public int? TableOfPeople { get; set; }
+        public string? ShiftTable { get; set; }
 
         public virtual Booking? Booking { get; set; }
         public virtual StatusTable? StatusTable { get; set; }
