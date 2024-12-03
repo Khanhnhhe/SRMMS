@@ -14,6 +14,7 @@ using Microsoft.EntityFrameworkCore.Metadata.Internal;
 using Microsoft.IdentityModel.Tokens;
 using SRMMS.DTOs;
 using SRMMS.Models;
+using SRMMS.SMS;
 
 namespace SRMMS.Controllers
 {
@@ -22,11 +23,13 @@ namespace SRMMS.Controllers
     public class TableController : ControllerBase
     {
         private readonly SRMMSContext _context;
+        private readonly ITwilioService _twilioService;
 
-        public TableController(SRMMSContext context)
+        public TableController(SRMMSContext context, ITwilioService twilioService)
         {
             _context = context;
-            
+            _twilioService = twilioService;
+
         }
 
         [HttpPost("/api/table/create")]
@@ -238,17 +241,36 @@ namespace SRMMS.Controllers
                 return BadRequest(new { message = "Không tìm thấy bàn" });
             }
 
+            var booking = await _context.Bookings.FirstOrDefaultAsync(b => b.BookingId == request.BookingId);
+            if (booking == null)
+            {
+                return BadRequest(new { message = "Không tìm thấy đơn đặt chỗ." });
+            }
+
             table.BookingId = request.BookingId;
             table.StatusId = 3; 
 
+            
+            booking.StatusId = 2; 
+
+            string message = $"Xin chào {booking.NameBooking}, đơn đặt chỗ của bạn cho {booking.NumberOfPeople} người vào ngày {booking.DayBooking?.ToString("dd/MM/yyyy")} lúc {booking.HourBooking?.ToString(@"hh\:mm")} đã được chấp nhận. Cảm ơn bạn đã chọn dịch vụ của chúng tôi!";
+
             try
             {
+                
+                _context.Tables.Update(table);
+                _context.Bookings.Update(booking);
                 await _context.SaveChangesAsync();
-                return Ok(new { message = "Đặt bàn đã được cập nhật thành công" });
+
+                
+                await _twilioService.SendSmsAsync(booking.PhoneBooking, message);
+
+                return Ok(new { message = "Cập nhật đặt bàn thành công và thông báo đã được gửi." });
             }
             catch (Exception ex)
             {
-                return StatusCode(500, new { message = "Đã xảy ra lỗi khi cập nhật bảng", error = ex.Message });
+                Console.WriteLine($"Lỗi khi xử lý: {ex.Message}");
+                return StatusCode(500, new { message = "Đã xảy ra lỗi khi cập nhật hoặc gửi thông báo.", error = ex.Message });
             }
         }
 

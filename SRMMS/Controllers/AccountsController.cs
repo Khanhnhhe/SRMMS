@@ -264,7 +264,7 @@ namespace SRMMS.Controllers
 
             if (customer == null)
             {
-                return BadRequest(new { message = "Customer not found." });
+                return BadRequest(new { message = "Không tìm thấy tài khoản" });
             }
 
             _context.Feedbacks.RemoveRange(customer.Feedbacks);
@@ -275,7 +275,7 @@ namespace SRMMS.Controllers
 
             _context.SaveChanges();
 
-            return Ok(new { message = "Đã xóa tài khoản khách hàng cùng với các dữ liệu liên quan thành công." });
+            return Ok(new { message = "Đã xóa tài khoản cùng với các dữ liệu liên quan thành công." });
         }
 
 
