@@ -29,8 +29,8 @@ namespace SRMMS.Controllers
             return Ok(new { OrderId = orderId });
         }
 
-        [HttpPut("staffUpdate/{orderId}")]
-        public async Task<IActionResult> UpdateOrder(int orderId, [FromBody] OrderDTO orderDto)
+        [HttpPut("staffUpdate/{tableId}")]
+        public async Task<IActionResult> UpdateOrder(int tableId, [FromBody] ComfirmOrderDTO orderDto)
         {
             if (orderDto == null)
             {
@@ -40,7 +40,7 @@ namespace SRMMS.Controllers
             try
             {
                 // Gọi service để cập nhật đơn hàng
-                int updatedOrderId = await _orderService.UpdateOrder(orderId, orderDto);
+                int updatedOrderId = await _orderService.ConfirmOrder(tableId, orderDto);
 
                 // Trả về mã ID của đơn hàng sau khi cập nhật
                 return Ok(new { OrderId = updatedOrderId });
