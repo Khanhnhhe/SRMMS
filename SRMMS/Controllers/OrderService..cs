@@ -163,25 +163,25 @@ namespace SRMMS.Controllers
             {
                 foreach (var productDetail in orderDto.ProductDetails)
                 {
-                    var product = await _context.Products.FindAsync(productDetail.ProId);
+                    var product = await _context.Products.FindAsync(productDetail.ProductId);
 
                     if (product == null)
                     {
-                        throw new Exception($"Sản phẩm với ID {productDetail.ProId} không tồn tại.");
+                        throw new Exception($"Sản phẩm với ID {productDetail.ProductId} không tồn tại.");
                     }
 
                     if (product.ProStatus == false)
                     {
-                        throw new Exception($"Sản phẩm với ID {productDetail.ProId} đã bị vô hiệu hóa.");
+                        throw new Exception($"Sản phẩm với ID {productDetail.ProductId} đã bị vô hiệu hóa.");
                     }
 
                     if (productDetail.Quantity <= 0)
                     {
-                        throw new Exception($"Số lượng sản phẩm với ID {productDetail.ProId} phải lớn hơn 0.");
+                        throw new Exception($"Số lượng sản phẩm với ID {productDetail.ProductId} phải lớn hơn 0.");
                     }
 
                     
-                    var orderDetail = order.OrderDetails.FirstOrDefault(od => od.ProId == productDetail.ProId);
+                    var orderDetail = order.OrderDetails.FirstOrDefault(od => od.ProId == productDetail.ProductId);
                     if (orderDetail != null)
                     {
                         
@@ -192,7 +192,7 @@ namespace SRMMS.Controllers
                        
                         orderDetail = new OrderDetail
                         {
-                            ProId = productDetail.ProId,
+                            ProId = productDetail.ProductId,
                             Quantiity = productDetail.Quantity,
                             Price = productDetail.Price
                         };
@@ -264,7 +264,7 @@ namespace SRMMS.Controllers
             foreach (var productDto in orderDto.ProductDetails)
             {
                 var existingProductDetail = existingOrder.OrderDetails
-                    .FirstOrDefault(od => od.ProId == productDto.ProId);
+                    .FirstOrDefault(od => od.ProId == productDto.ProductId);
 
                 if (existingProductDetail != null)
                 {
@@ -276,7 +276,7 @@ namespace SRMMS.Controllers
                    
                     var newProductDetail = new OrderDetail
                     {
-                        ProId = productDto.ProId,
+                        ProId = productDto.ProductId,
                         Quantiity = productDto.Quantity,
                         Price = productDto.Price,
                         OrderId = existingOrder.OrderId 

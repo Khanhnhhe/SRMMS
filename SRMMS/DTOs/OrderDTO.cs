@@ -11,7 +11,7 @@ namespace SRMMS.DTOs
         public int? Status { get; set; }
         public List<ComboDetailDTO> ComboDetails { get; set; }  
         public List<ProductDetailOrderDTO> ProductDetails { get; set; }
-        
+        public List<OrderDetailDTO> OrderDetails { get; set; }
     }
 }
 
