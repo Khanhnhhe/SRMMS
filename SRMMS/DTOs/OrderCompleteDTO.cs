@@ -7,7 +7,7 @@ namespace SRMMS.DTOs
         public decimal? TotalMoney { get; set; }
         public int? TableId { get; set; }
         public DateTime? OrderDate { get; set; }
-        public String? Status { get; set; }
+        public int? Status { get; set; }
         public int? DiscountId { get; set; }
         public double? DiscountValue { get; set; }
     }

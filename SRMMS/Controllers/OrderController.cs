@@ -129,15 +129,25 @@ namespace SRMMS.Controllers
 
 
         [HttpGet("listOrderByTable/{tableId}")]
-        public IActionResult GetOrdersByTable(int tableId, int pageNumber = 1, int pageSize = 10)
+        public IActionResult GetOrdersByTable(int tableId, [FromQuery] List<int>? statusIds, int pageNumber = 1, int pageSize = 10)
         {
-            var orders = _orderService.GetOrdersByTable(tableId, pageNumber, pageSize);
-            if (orders == null || orders.Count == 0)
+            try
             {
-                return Ok(new { Message = $"Không tìm thấy đơn hàng nào cho bàn với id {tableId}" });
+                var orders = _orderService.GetOrdersByTable(tableId, statusIds, pageNumber, pageSize);
+
+                if (orders == null || orders.Count == 0)
+                {
+                    return Ok(new { Message = $"Không tìm thấy đơn hàng nào cho bàn với ID {tableId}" });
+                }
+
+                return Ok(orders);
             }
-            return Ok(orders);
+            catch (Exception ex)
+            {
+                return BadRequest(new { Message = ex.Message });
+            }
         }
+
 
         [HttpGet("searchByTableName")]
         public IActionResult SearchOrdersByTableName([FromQuery] string? tableName, [FromQuery] int pageNumber = 1, [FromQuery] int pageSize = 10)
