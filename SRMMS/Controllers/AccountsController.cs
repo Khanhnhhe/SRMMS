@@ -177,12 +177,6 @@ namespace SRMMS.Controllers
                 return BadRequest("Dữ liệu tài khoản không hợp lệ.");
             }
 
-            var existingAccount = await _context.Accounts.FirstOrDefaultAsync(a => a.Phone == model.Phone);
-            if (existingAccount != null)
-            {
-                return BadRequest("Số điện thoại đã tồn tại.");
-            }
-
             var account = new Account
             {
                 FullName = model.FullName,
