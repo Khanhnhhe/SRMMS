@@ -39,15 +39,15 @@ namespace SRMMS.Controllers
 
             try
             {
-                // Gọi service để cập nhật đơn hàng
+               
                 int updatedOrderId = await _orderService.ConfirmOrder(tableId, orderDto);
 
-                // Trả về mã ID của đơn hàng sau khi cập nhật
+               
                 return Ok(new { OrderId = updatedOrderId });
             }
             catch (Exception ex)
             {
-                // Xử lý lỗi và trả về thông báo lỗi
+               
                 return BadRequest(new { message = ex.Message });
             }
         }
@@ -70,13 +70,49 @@ namespace SRMMS.Controllers
             }
         }
 
-        [HttpGet("list")]
-        public IActionResult GetOrders(
+        [HttpGet("listStatus2")]
+        public IActionResult GetOrdersStatus2(
      [FromQuery] int pageNumber = 1,
      [FromQuery] int pageSize = 10,
      [FromQuery] string? tableName = null,
      [FromQuery] String? fromDate = null,
      [FromQuery] String? toDate = null)
+        {
+            try
+            {
+
+                var result = _orderService.GetOrdersStatus2(pageNumber, pageSize, tableName, fromDate, toDate);
+
+
+                var orders = result.Orders;
+                var totalOrders = result.TotalOrders;
+
+
+                var totalPages = (int)Math.Ceiling(totalOrders / (double)pageSize);
+
+
+                return Ok(new
+                {
+                    Orders = orders,
+                    TotalOrders = totalOrders,
+                    TotalPages = totalPages,
+                    PageNumber = pageNumber,
+                    PageSize = pageSize
+                });
+            }
+            catch (Exception ex)
+            {
+
+                return BadRequest(new { Message = ex.Message });
+            }
+        }
+        [HttpGet("listStatus4")]
+        public IActionResult GetOrders(
+    [FromQuery] int pageNumber = 1,
+    [FromQuery] int pageSize = 10,
+    [FromQuery] string? tableName = null,
+    [FromQuery] String? fromDate = null,
+    [FromQuery] String? toDate = null)
         {
             try
             {
@@ -106,6 +142,7 @@ namespace SRMMS.Controllers
                 return BadRequest(new { Message = ex.Message });
             }
         }
+
 
 
 
