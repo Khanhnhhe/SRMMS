@@ -40,7 +40,7 @@ namespace SRMMS.Controllers
                 return BadRequest("Dữ liệu bàn không hợp lệ.");
             }
 
-            var existingTable = await _context.Tables.FirstOrDefaultAsync(t => t.TableName == model.Table_Name);
+            var existingTable = await _context.Tables.FirstOrDefaultAsync(t => t.TableName == model.Table_Name && t.ShiftTable == null);
             if (existingTable != null)
             {
                 return BadRequest("Tên bàn đã tồn tại.");
@@ -51,40 +51,35 @@ namespace SRMMS.Controllers
                 return BadRequest("Chỗ người tại bàn phải là số nguyên dương và lớn hơn 0.");
             }
 
-            var tableBase = new SRMMS.Models.Table
+            var tableLunchShift = new SRMMS.Models.Table
             {
                 TableName = model.Table_Name,
                 TableOfPeople = model.TableOfPeople,
-                StatusId = 1 
-            };
-
-            var tableLunchShift = new SRMMS.Models.Table
-            {
-                TableName = $"{model.Table_Name} - Ca Trưa",
-                TableOfPeople = model.TableOfPeople,
-                StatusId = 1 
+                StatusId = 1,
+                ShiftTable = "Lunch"
             };
 
             var tableDinnerShift = new SRMMS.Models.Table
             {
-                TableName = $"{model.Table_Name} - Ca Tối",
+                TableName = model.Table_Name,
                 TableOfPeople = model.TableOfPeople,
-                StatusId = 1 
+                StatusId = 1,
+                ShiftTable = "Dinner"
             };
 
-            _context.Tables.AddRange(tableBase, tableLunchShift, tableDinnerShift);
+            _context.Tables.AddRange( tableLunchShift, tableDinnerShift);
             await _context.SaveChangesAsync();
 
             var result = new List<TableDTO>
-             {
-                new TableDTO { Table_Id = tableBase.TableId, Table_Name = tableBase.TableName, TableOfPeople = tableBase.TableOfPeople },
-                new TableDTO { Table_Id = tableLunchShift.TableId, Table_Name = tableLunchShift.TableName, TableOfPeople = tableLunchShift.TableOfPeople },
-                new TableDTO { Table_Id = tableDinnerShift.TableId, Table_Name = tableDinnerShift.TableName, TableOfPeople = tableDinnerShift.TableOfPeople }
-            
-             };
+    {
+       
+        new TableDTO { Table_Id = tableLunchShift.TableId, Table_Name = tableLunchShift.TableName, TableOfPeople = tableLunchShift.TableOfPeople, Shift = tableLunchShift.ShiftTable },
+        new TableDTO { Table_Id = tableDinnerShift.TableId, Table_Name = tableDinnerShift.TableName, TableOfPeople = tableDinnerShift.TableOfPeople, Shift = tableDinnerShift.ShiftTable }
+    };
 
             return Ok(new { message = "Bàn đã được tạo thành công.", data = result });
         }
+
 
 
         [HttpPut("/api/table/update/{id}")]
@@ -219,7 +214,8 @@ namespace SRMMS.Controllers
                         : null,
 
                     BookingId = t.BookingId,
-                    TableOfPeople = t.TableOfPeople
+                    TableOfPeople = t.TableOfPeople,
+                    Shift = t.ShiftTable
                 })
                 .ToListAsync();
 
@@ -230,7 +226,7 @@ namespace SRMMS.Controllers
         public async Task<IActionResult> GetLunchTables()
         {
             var lunchTables = await _context.Tables
-                .Where(t => t.TableName.Contains("Ca Trưa"))
+                .Where(t => t.ShiftTable == "Lunch")
                 .Select(t => new ListTableDTO
                 {
                     TableId = t.TableId,
@@ -254,7 +250,7 @@ namespace SRMMS.Controllers
         public async Task<IActionResult> GetDinnerTables()
         {
             var dinnerTables = await _context.Tables
-                .Where(t => t.TableName.Contains("Ca Tối"))
+                .Where(t => t.ShiftTable == "Dinner")
                 .Select(t => new ListTableDTO
                 {
                     TableId = t.TableId,
@@ -315,30 +311,27 @@ namespace SRMMS.Controllers
             }
 
             string shift = booking.HourBooking.HasValue ? (booking.HourBooking.Value.Hours >= 10 && booking.HourBooking.Value.Hours < 14
-               ? "Ca Trưa" : booking.HourBooking.Value.Hours >= 16 && booking.HourBooking.Value.Hours <= 23
-                ? "Ca Tối" : null) : null;
+                ? "Lunch" : booking.HourBooking.Value.Hours >= 16 && booking.HourBooking.Value.Hours <= 23
+                ? "Dinner" : null) : null;
 
-            if (shift == null || !table.TableName.Contains(shift))
+            if (shift == null || table.ShiftTable != shift)
             {
                 return BadRequest(new { message = "Bàn không phù hợp với ca đặt chỗ." });
             }
 
             table.BookingId = request.BookingId;
-            table.StatusId = 3; 
+            table.StatusId = 3;
 
-            
-            booking.StatusId = 2; 
+            booking.StatusId = 2;
 
             string message = $"Xin chào {booking.NameBooking}, đơn đặt chỗ của bạn cho {booking.NumberOfPeople} người vào ngày {booking.DayBooking?.ToString("dd/MM/yyyy")} lúc {booking.HourBooking?.ToString(@"hh\:mm")} đã được chấp nhận. Cảm ơn bạn đã chọn dịch vụ của chúng tôi!";
 
             try
             {
-                
                 _context.Tables.Update(table);
                 _context.Bookings.Update(booking);
                 await _context.SaveChangesAsync();
 
-                
                 await _twilioService.SendSmsAsync(booking.PhoneBooking, message);
 
                 return Ok(new { message = "Cập nhật đặt bàn thành công và thông báo đã được gửi." });
@@ -349,6 +342,7 @@ namespace SRMMS.Controllers
                 return StatusCode(500, new { message = "Đã xảy ra lỗi khi cập nhật hoặc gửi thông báo.", error = ex.Message });
             }
         }
+
 
         [HttpDelete("/api/table/delete/{id}")]
         public async Task<IActionResult> DeleteTable(int id)
@@ -364,17 +358,6 @@ namespace SRMMS.Controllers
 
             return Ok("xóa thành công ");
         }
-
-
-
-
-
-
-
-
-
-
-
 
     }
 }

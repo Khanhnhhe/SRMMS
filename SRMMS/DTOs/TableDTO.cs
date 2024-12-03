@@ -8,7 +8,7 @@
         public int? StatusId { get; set; } = 1;
         public int? TableOfPeople { get; set; }
 
-
+        public string? Shift { get; set; }
 
     }
 }

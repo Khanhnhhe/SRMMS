@@ -8,6 +8,8 @@
         public int? StatusId { get; set; }
         public string? StatusName { get; set; }
         public int? BookingId { get; set; }
+
+        public string Shift { get; set; }
         public int? TableOfPeople { get; set; }
 
 
