@@ -166,11 +166,11 @@ namespace SRMMS.Controllers
 
 
         [HttpGet("listOrderByTable/{tableId}")]
-        public IActionResult GetOrdersByTable(int tableId, [FromQuery] List<int>? statusIds, int pageNumber = 1, int pageSize = 10)
+        public IActionResult GetOrdersByTable(int tableId)
         {
             try
             {
-                var orders = _orderService.GetOrdersByTable(tableId, statusIds, pageNumber, pageSize);
+                var orders = _orderService.GetOrdersByTable(tableId);
 
                 if (orders == null || orders.Count == 0)
                 {

@@ -622,36 +622,35 @@ namespace SRMMS.Controllers
 
 
 
-        public List<GetOrderByTableNameDTO> GetOrdersByTable(int tableId, List<int> statusIds, int pageNumber = 1, int pageSize = 10)
+        public List<GetOrderByTableNameDTO> GetOrdersByTable(int tableId)
         {
+           
             var tableExists = _context.Tables.Any(t => t.TableId == tableId);
-
             if (!tableExists)
             {
                 throw new Exception($"Bàn với ID '{tableId}' không tồn tại");
             }
 
+            
             var query = _context.Orders
-                .Where(o => o.TableId == tableId)
+                .Where(o => o.TableId == tableId) 
+                .Where(o => o.StatusId == 1 || o.StatusId == 2 || o.StatusId == 3) 
                 .Include(o => o.OrderDetails)
                     .ThenInclude(od => od.Pro)
                 .Include(o => o.OrderDetails)
                     .ThenInclude(od => od.Combo)
                 .AsQueryable();
 
-            
-            if (statusIds != null && statusIds.Any())
-            {
-                query = query.Where(o => statusIds.Contains(o.Status.StatusId));
-            }
-
+          
             var orders = query
                 .Select(o => new GetOrderByTableNameDTO
                 {
                     OrderId = o.OrderId,
-                    OrderDate = o.OrderDate.Value.ToString("yyyy-MM-dd hh:mm:ss"),  
+                    OrderDate = o.OrderDate.HasValue
+                        ? o.OrderDate.Value.ToString("yyyy-MM-dd HH:mm:ss")
+                        : null, 
                     TotalMoney = o.TotalMoney,
-                    Status = o.StatusId,  
+                    Status = o.StatusId,
                     TableId = o.Table.TableId,
                     TableName = o.Table.TableName,
                     Products = o.OrderDetails
@@ -673,8 +672,6 @@ namespace SRMMS.Controllers
                             Price = od.Price
                         }).ToList()
                 })
-                .Skip((pageNumber - 1) * pageSize)
-                .Take(pageSize)
                 .ToList();
 
             return orders;
