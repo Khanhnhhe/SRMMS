@@ -80,12 +80,12 @@ namespace SRMMS.Controllers
         [HttpGet("/api/account/list/employees")]
         public async Task<ActionResult> GetEmployees(string? accountName = "", string? phone = "", int? roleId = null, int pageNumber = 1, int pageSize = 10)
         {
-            var employeeCount = await _context.Accounts.CountAsync(a => a.RoleId == 2 || a.RoleId == 3 || a.RoleId == 4);
+            var employeeCount = await _context.Accounts.CountAsync(a => a.RoleId == 2 || a.RoleId == 3 || a.RoleId == 4 || a.RoleId == 6);
 
             var skip = (pageNumber - 1) * pageSize;
             var query = _context.Accounts
                                 .Include(a => a.Role)
-                                .Where(a => a.RoleId == 2 || a.RoleId == 3 || a.RoleId == 4)
+                                .Where(a => a.RoleId == 2 || a.RoleId == 3 || a.RoleId == 4 || a.RoleId == 6)
                                 .AsQueryable();
 
             if (!string.IsNullOrWhiteSpace(accountName))
@@ -100,7 +100,7 @@ namespace SRMMS.Controllers
                 query = query.Where(a => a.Phone.Contains(trimmedPhone));
             }
 
-            if (roleId.HasValue && (roleId == 2 || roleId == 3 || roleId == 4))
+            if (roleId.HasValue && (roleId == 2 || roleId == 3 || roleId == 4 || roleId == 6))
             {
                 query = query.Where(a => a.RoleId == roleId.Value);
             }
