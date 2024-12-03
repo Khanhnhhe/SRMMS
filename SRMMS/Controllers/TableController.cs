@@ -239,7 +239,8 @@ namespace SRMMS.Controllers
                             .FirstOrDefault()
                         : null,
                     BookingId = t.BookingId,
-                    TableOfPeople = t.TableOfPeople
+                    TableOfPeople = t.TableOfPeople,
+                    Shift = t.ShiftTable
                 })
                 .ToListAsync();
 
@@ -263,7 +264,8 @@ namespace SRMMS.Controllers
                             .FirstOrDefault()
                         : null,
                     BookingId = t.BookingId,
-                    TableOfPeople = t.TableOfPeople
+                    TableOfPeople = t.TableOfPeople,
+                    Shift = t.ShiftTable
                 })
                 .ToListAsync();
 
