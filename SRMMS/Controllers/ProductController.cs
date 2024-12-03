@@ -465,7 +465,7 @@ namespace SRMMS.Controllers
 
             if (products == null || !products.Any())
             {
-                return Ok(new { Message = $"Product not found." });
+                return Ok(new { Message = $"Không tìm thấy sản phẩm" });
             }
 
 
@@ -505,7 +505,7 @@ namespace SRMMS.Controllers
                     {
                         foreach (var orderDetail in orderDetails)
                         {
-                            if (orderDetail.Order?.Status.StatusId == 5)
+                            if (orderDetail.Order?.StatusId == 4)
                             {
 
                                 var productInOrder = await _context.Products.FindAsync(orderDetail.ProId);
@@ -538,7 +538,7 @@ namespace SRMMS.Controllers
                     await _context.SaveChangesAsync();
                     await transaction.CommitAsync();
 
-                    return Ok(new { Message = "Trạng thái sản phẩm đã được cập nhật thành sai thành công." });
+                    return Ok(new { Message = "Trạng thái sản phẩm đã được vô hiệu hóa thành công." });
                 }
                 catch (Exception ex)
                 {
