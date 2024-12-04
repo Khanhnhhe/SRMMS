@@ -17,8 +17,7 @@ namespace SRMMS.Models
         public decimal? ComboMoney { get; set; }
         public bool? ComboStatus { get; set; }
 
-        public virtual ICollection<OrderDetail> OrderDetails { get; set; }
-
         public virtual ICollection<ComboDetail> ComboDetails { get; set; } = new List<ComboDetail>();
+        public virtual ICollection<OrderDetail> OrderDetails { get; set; }
     }
 }

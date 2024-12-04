@@ -8,5 +8,7 @@
         public DateOnly? StartDate { get; set; }
         public DateOnly? EndDate { get; set; }
         public bool? Status { get; set; }
+
+        public int DiscountType { get; set; }
     }
 }

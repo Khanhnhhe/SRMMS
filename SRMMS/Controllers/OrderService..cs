@@ -24,7 +24,7 @@ namespace SRMMS.Controllers
             _orderHubContext = orderHubContext;
         }
 
-        // người dùng đặt món 
+       
         public async Task<int> CreateOrder(OrderDTO orderDto)
         {
             var table = await _context.Tables.FindAsync(orderDto.TableId);
@@ -36,15 +36,22 @@ namespace SRMMS.Controllers
             if (table.StatusId == 2)  // Kiểm tra bàn có trạng thái "Đang sử dụng"
             {
                 var existingOrder = await _context.Orders
-                    .Where(o => o.TableId == orderDto.TableId)
-                    .Include(o => o.OrderDetails)
-                    .FirstOrDefaultAsync();
+                .Where(o => o.TableId == orderDto.TableId && o.StatusId != 4) 
+                .Include(o => o.OrderDetails)
+                .FirstOrDefaultAsync();
 
-                if (existingOrder != null)
+
+                if (existingOrder != null && existingOrder.StatusId < 4)
                 {
-                    // Kiểm tra trạng thái đơn hàng hiện tại
-                    if (existingOrder.StatusId == 4) // Trạng thái đã thanh toán, tạo đơn hàng mới
+
+                    if (existingOrder.StatusId != 1)
                     {
+                        existingOrder.StatusId = 1; 
+                    }
+
+                    if (existingOrder.StatusId == 3)
+                    {
+                        
                         var status = await _context.StatusOrders.FirstOrDefaultAsync(s => s.StatusId == 1);
                         if (status == null)
                         {
@@ -93,18 +100,13 @@ namespace SRMMS.Controllers
                         // Gửi thông báo qua SignalR để cập nhật giao diện
                         await _orderHubContext.Clients.All.SendAsync("ReceiveOrder", existingOrder);
 
-                        // Trả về OrderId của đơn hàng hiện tại
-                        return existingOrder.OrderId;
-                    }
-                    else
-                    {
-                        throw new Exception("Trạng thái đơn hàng không hợp lệ.");
-                    }
+                   
+                    return existingOrder.OrderId;
                 }
-                else
+                else if(existingOrder == null ||  existingOrder.StatusId == 4)
                 {
-                    // Nếu không có đơn hàng nào trước đó, tạo đơn hàng mới
-                    var status = await _context.StatusOrders.FirstOrDefaultAsync(s => s.StatusId == 1);
+                    
+                    var status = await _context.StatusOrders.FirstOrDefaultAsync(s => s.StatusId == 1); 
                     if (status == null)
                     {
                         throw new Exception("Trạng thái đơn hàng không hợp lệ.");
@@ -569,6 +571,121 @@ namespace SRMMS.Controllers
                     PointNumbers = o.PointLists != null
             ? o.PointLists.Select(pl => (double?)pl.NumberPonit).ToList()
             : new List<double?>()
+                })
+                .Skip((pageNumber - 1) * pageSize)
+                .Take(pageSize)
+                .ToList();
+
+            return (orders, totalOrders);
+        }
+
+        public (List<GetOrderByOrderIdDTO> Orders, int TotalOrders) GetOrdersAllStatus(
+    int pageNumber = 1,
+    int pageSize = 10,
+    string? tableName = null,
+    string? fromDate = null,
+    string? toDate = null,
+    int? statusId = null) 
+        {
+            var query = _context.Orders
+                .Include(o => o.Table)
+                .Include(o => o.OrderDetails)
+                .ThenInclude(od => od.Pro)
+                .Include(o => o.OrderDetails)
+                .ThenInclude(od => od.Combo)
+                .AsQueryable();
+
+          
+            if (statusId.HasValue)
+            {
+                query = query.Where(o => o.StatusId == statusId.Value);
+            }
+
+            if (!string.IsNullOrEmpty(tableName))
+            {
+                string normalizedTableName = tableName.Replace(" ", "");
+                var tableExists = _context.Tables
+                    .Any(t => t.TableName.Replace(" ", "").Contains(normalizedTableName));
+
+                if (!tableExists)
+                {
+                    throw new Exception($"Bàn với tên '{tableName}' không tồn tại");
+                }
+
+                query = query.Where(o => o.Table.TableName.Replace(" ", "").Contains(normalizedTableName));
+            }
+
+            if (!string.IsNullOrEmpty(fromDate))
+            {
+                if (DateTime.TryParse(fromDate, out var parsedFromDate))
+                {
+                    query = query.Where(o => o.OrderDate.HasValue && o.OrderDate.Value >= parsedFromDate);
+                }
+                else
+                {
+                    throw new Exception($"Định dạng fromDate không hợp lệ: '{fromDate}'. Định dạng dự kiến ​​là yyyy-MM-dd.");
+                }
+            }
+
+            if (!string.IsNullOrEmpty(toDate))
+            {
+                if (DateTime.TryParse(toDate, out var parsedToDate))
+                {
+                    parsedToDate = parsedToDate.AddDays(1);
+                    query = query.Where(o => o.OrderDate.HasValue && o.OrderDate.Value < parsedToDate);
+                }
+                else
+                {
+                    throw new Exception($"Định dạng toDate không hợp lệ: '{toDate}'. Định dạng dự kiến ​​là yyyy-MM-dd.");
+                }
+            }
+
+            var totalOrders = query.Count();
+
+            var orders = query
+                .Select(o => new GetOrderByOrderIdDTO
+                {
+                    OrderId = o.OrderId,
+                    OrderDate = o.OrderDate,
+                    TotalMoney = (double)o.TotalMoney,
+                    Status = o.StatusId,
+                    TableId = o.Table.TableId,
+                    TableName = o.Table.TableName,
+                    Products = o.OrderDetails
+                        .Where(od => od.Pro != null)
+                        .Select(od => new GetProductDTO
+                        {
+                            ProductId = od.Pro.ProId,
+                            Quantity = (int)od.Quantiity,
+                            ProName = od.Pro.ProName,
+                            Price = od.Price
+                        }).ToList(),
+                    Combos = o.OrderDetails
+                        .Where(od => od.Combo != null)
+                        .Select(od => new GetComboDTO
+                        {
+                            ComboId = od.Combo.ComboId,
+                            Quantity = (int)od.Quantiity,
+                            ComboName = od.Combo.ComboName,
+                            Price = od.Price
+                        }).ToList(),
+                    Customers = o.PointLists != null
+                        ? o.PointLists
+                            .Where(pl => pl.Acc != null)
+                            .Select(pl => new GetAccountDTO
+                            {
+                                AccId = pl.Acc.AccId,
+                                FullName = pl.Acc.FullName,
+                                Email = pl.Acc.Email,
+                                Phone = pl.Acc.Phone
+                            }).ToList()
+                        : new List<GetAccountDTO>(),
+                    DiscountId = o.Code != null ? o.Code.CodeId : null,
+                    DiscountValue = o.Code != null ? o.Code.DiscountValue : null,
+                    PointIds = o.PointLists != null ? o.PointLists.Select(pl => pl.PointId).ToList() : new List<int>(),
+                    PointNumbers = o.PointLists != null
+                        ? o.PointLists.Select(pl => (double?)pl.NumberPonit).ToList()
+                        : new List<double?>()
                 })
                 .Skip((pageNumber - 1) * pageSize)
                 .Take(pageSize)
