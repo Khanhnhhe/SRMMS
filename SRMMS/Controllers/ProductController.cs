@@ -483,7 +483,7 @@ namespace SRMMS.Controllers
                     var product = await _context.Products.FindAsync(id);
                     if (product == null)
                     {
-                        return Ok(new { Message = $"Product not found." });
+                        return Ok(new { Message = "Không tìm thấy sản phẩm" });
                     }
 
 

@@ -33,7 +33,7 @@ namespace SRMMS.Controllers
                 throw new Exception("TableId không tồn tại.");
             }
 
-            if (table.StatusId == 2)
+            if (table.StatusId == 2)  // Kiểm tra bàn có trạng thái "Đang sử dụng"
             {
                 var existingOrder = await _context.Orders
                     .Where(o => o.TableId == orderDto.TableId)
@@ -42,40 +42,69 @@ namespace SRMMS.Controllers
 
                 if (existingOrder != null)
                 {
-                    if (existingOrder.StatusId != 1)
+                    // Kiểm tra trạng thái đơn hàng hiện tại
+                    if (existingOrder.StatusId == 4) // Trạng thái đã thanh toán, tạo đơn hàng mới
                     {
-                        existingOrder.StatusId = 1; 
-                    }
-                    if (existingOrder.StatusId == 3)
-                    {
-                        
                         var status = await _context.StatusOrders.FirstOrDefaultAsync(s => s.StatusId == 1);
                         if (status == null)
                         {
                             throw new Exception("Trạng thái đơn hàng không hợp lệ.");
                         }
 
-                        existingOrder.StatusId = status.StatusId; 
+                        // Tạo đơn hàng mới khi trạng thái là đã thanh toán (4)
+                        var newOrder = new Order
+                        {
+                            TableId = orderDto.TableId,
+                            TotalMoney = orderDto.TotalMoney,
+                            StatusId = status.StatusId, // Đặt trạng thái cho đơn hàng mới
+                            OrderDetails = new List<OrderDetail>()
+                        };
+
+                        // Thêm chi tiết vào đơn hàng mới
+                        await AddOrderDetails(newOrder, orderDto);
+
+                        // Lưu đơn hàng mới
+                        _context.Orders.Add(newOrder);
+                        await _context.SaveChangesAsync();
+
+                        // Gửi thông báo qua SignalR
+                        await _orderHubContext.Clients.All.SendAsync("ReceiveOrder", newOrder);
+
+                        return newOrder.OrderId;
                     }
+                    else if (existingOrder.StatusId == 1 || existingOrder.StatusId == 2 || existingOrder.StatusId == 3)
+                    {
+                        // Nếu trạng thái là 1, 2 hoặc 3, cập nhật đơn hàng hiện tại
+                        // Cập nhật trạng thái nếu cần
+                        if (existingOrder.StatusId != 1)
+                        {
+                            existingOrder.StatusId = 1; // Đặt lại trạng thái là "Đang xử lý"
+                        }
 
-                    await AddOrderDetails(existingOrder, orderDto);
+                        // Thêm chi tiết vào đơn hàng hiện tại
+                        await AddOrderDetails(existingOrder, orderDto);
 
-                    
-                    existingOrder.TotalMoney += orderDto.TotalMoney;
+                        // Cộng thêm tổng tiền vào đơn hàng hiện tại
+                        existingOrder.TotalMoney += orderDto.TotalMoney;
 
-                   
-                    await _context.SaveChangesAsync();
+                        // Lưu thay đổi vào cơ sở dữ liệu
+                        await _context.SaveChangesAsync();
 
-                   
-                    await _orderHubContext.Clients.All.SendAsync("ReceiveOrder", existingOrder);
+                        // Gửi thông báo qua SignalR để cập nhật giao diện
+                        await _orderHubContext.Clients.All.SendAsync("ReceiveOrder", existingOrder);
 
-                   
-                    return existingOrder.OrderId;
+                        // Trả về OrderId của đơn hàng hiện tại
+                        return existingOrder.OrderId;
+                    }
+                    else
+                    {
+                        throw new Exception("Trạng thái đơn hàng không hợp lệ.");
+                    }
                 }
                 else
                 {
-                    
-                    var status = await _context.StatusOrders.FirstOrDefaultAsync(s => s.StatusId == 1); 
+                    // Nếu không có đơn hàng nào trước đó, tạo đơn hàng mới
+                    var status = await _context.StatusOrders.FirstOrDefaultAsync(s => s.StatusId == 1);
                     if (status == null)
                     {
                         throw new Exception("Trạng thái đơn hàng không hợp lệ.");
@@ -85,21 +114,20 @@ namespace SRMMS.Controllers
                     {
                         TableId = orderDto.TableId,
                         TotalMoney = orderDto.TotalMoney,
-                        StatusId = status.StatusId, 
+                        StatusId = status.StatusId, // Đặt trạng thái cho đơn hàng mới
                         OrderDetails = new List<OrderDetail>()
                     };
 
-                    
+                    // Thêm chi tiết vào đơn hàng mới
                     await AddOrderDetails(newOrder, orderDto);
 
-                   
+                    // Lưu đơn hàng mới
                     _context.Orders.Add(newOrder);
                     await _context.SaveChangesAsync();
 
-                   
+                    // Gửi thông báo qua SignalR
                     await _orderHubContext.Clients.All.SendAsync("ReceiveOrder", newOrder);
 
-                    
                     return newOrder.OrderId;
                 }
             }
