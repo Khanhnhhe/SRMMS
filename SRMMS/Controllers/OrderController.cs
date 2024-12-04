@@ -70,7 +70,7 @@ namespace SRMMS.Controllers
             }
         }
 
-        [HttpGet("listStatus2")]
+        [HttpGet("listStatus2and3")]
         public IActionResult GetOrdersStatus2(
      [FromQuery] int pageNumber = 1,
      [FromQuery] int pageSize = 10,
@@ -81,7 +81,7 @@ namespace SRMMS.Controllers
             try
             {
 
-                var result = _orderService.GetOrdersStatus2(pageNumber, pageSize, tableName, fromDate, toDate);
+                var result = _orderService.GetOrdersStatus23(pageNumber, pageSize, tableName, fromDate, toDate);
 
 
                 var orders = result.Orders;
