@@ -142,6 +142,40 @@ namespace SRMMS.Controllers
                 return BadRequest(new { Message = ex.Message });
             }
         }
+        [HttpGet("listAllStatus")]
+        public IActionResult GetOrdersAllStatus(
+    [FromQuery] int pageNumber = 1,
+    [FromQuery] int pageSize = 10,
+    [FromQuery] string? tableName = null,
+    [FromQuery] string? fromDate = null,
+    [FromQuery] string? toDate = null,
+    [FromQuery] int? statusId = null)  
+        {
+            try
+            {
+                // Truyền thêm tham số statusId vào service
+                var result = _orderService.GetOrdersAllStatus(pageNumber, pageSize, tableName, fromDate, toDate, statusId);
+
+                var orders = result.Orders;
+                var totalOrders = result.TotalOrders;
+
+                var totalPages = (int)Math.Ceiling(totalOrders / (double)pageSize);
+
+                return Ok(new
+                {
+                    Orders = orders,
+                    TotalOrders = totalOrders,
+                    TotalPages = totalPages,
+                    PageNumber = pageNumber,
+                    PageSize = pageSize
+                });
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(new { Message = ex.Message });
+            }
+        }
+
 
 
 
