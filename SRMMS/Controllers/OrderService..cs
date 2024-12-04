@@ -341,7 +341,7 @@ namespace SRMMS.Controllers
         }
 
 
-        public (List<GetOrderByTableNameDTO> Orders, int TotalOrders) GetOrdersStatus2(
+        public (List<GetOrderByTableNameDTO> Orders, int TotalOrders) GetOrdersStatus23(
      int pageNumber = 1,
      int pageSize = 10,
      string? tableName = null,
@@ -354,7 +354,7 @@ namespace SRMMS.Controllers
                     .ThenInclude(od => od.Pro)
                 .Include(o => o.OrderDetails)
                     .ThenInclude(od => od.Combo)
-                .Where(o => o.StatusId == 2) 
+                .Where(o => o.StatusId == 2 || o.StatusId == 3) 
                 .AsQueryable();
 
             
