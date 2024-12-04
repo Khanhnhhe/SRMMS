@@ -24,7 +24,7 @@ namespace SRMMS.Controllers
             _orderHubContext = orderHubContext;
         }
 
-        // người dùng đặt món 
+       
         public async Task<int> CreateOrder(OrderDTO orderDto)
         {
             var table = await _context.Tables.FindAsync(orderDto.TableId);
@@ -36,16 +36,14 @@ namespace SRMMS.Controllers
             if (table.StatusId == 2)
             {
                 var existingOrder = await _context.Orders
-                    .Where(o => o.TableId == orderDto.TableId)
-                    .Include(o => o.OrderDetails)
-                    .FirstOrDefaultAsync();
+                .Where(o => o.TableId == orderDto.TableId && o.StatusId != 4) 
+                .Include(o => o.OrderDetails)
+                .FirstOrDefaultAsync();
 
-                if (existingOrder != null)
+
+                if (existingOrder != null && existingOrder.StatusId < 4)
                 {
-                    if (existingOrder.StatusId == 4)
-                     {
-                      throw new Exception("Không thể thêm sản phẩm vào đơn hàng đã thanh toán. Vui lòng tạo đơn hàng mới.");
-                     }
+
                     if (existingOrder.StatusId != 1)
                     {
                         existingOrder.StatusId = 1; 
@@ -77,7 +75,7 @@ namespace SRMMS.Controllers
                    
                     return existingOrder.OrderId;
                 }
-                else
+                else if(existingOrder == null ||  existingOrder.StatusId == 4)
                 {
                     
                     var status = await _context.StatusOrders.FirstOrDefaultAsync(s => s.StatusId == 1); 
