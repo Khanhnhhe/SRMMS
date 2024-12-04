@@ -312,21 +312,27 @@ namespace SRMMS.Controllers
 
             if (!string.IsNullOrEmpty(bookingDto.HourBooking))
             {
-                existingBooking.HourBooking = TimeSpan.Parse(bookingDto.HourBooking);
-
-                int hour = existingBooking.HourBooking.Value.Hours;
-
-                if (hour >= 10 && hour <= 14)
+                if (TimeSpan.TryParse(bookingDto.HourBooking, out TimeSpan parsedTime))
                 {
-                    existingBooking.Shift = "Ca Trưa";
-                }
-                else if (hour >= 16 && hour <= 23)
-                {
-                    existingBooking.Shift = "Ca Tối";
+                    existingBooking.HourBooking = parsedTime;
+
+                    int hour = parsedTime.Hours;
+                    if (hour >= 10 && hour <= 14)
+                    {
+                        existingBooking.Shift = "Ca Trưa";
+                    }
+                    else if (hour >= 16 && hour <= 23)
+                    {
+                        existingBooking.Shift = "Ca Tối";
+                    }
+                    else
+                    {
+                        existingBooking.Shift = "Khác";
+                    }
                 }
                 else
                 {
-                    existingBooking.Shift = "Khác";
+                    return BadRequest("Giờ đặt chỗ không hợp lệ.");
                 }
             }
 
@@ -338,17 +344,26 @@ namespace SRMMS.Controllers
                 {
                     return BadRequest("Trạng thái không hợp lệ.");
                 }
-                existingBooking.Status = status;
+                existingBooking.StatusId = bookingDto.StatusId.Value;
             }
 
             _context.Bookings.Update(existingBooking);
             await _context.SaveChangesAsync();
+            var bookings = await _context.Bookings
+                .Include(b => b.Status) 
+                .Select(b => new
+                {
+                    b.BookingId,
+                    b.DayBooking,
+                    HourBooking = b.HourBooking.Value.ToString(@"hh\:mm"),
+                    b.Shift,
+                    b.NumberOfPeople,
+                    StatusName = b.Status.StatusName
+                }).ToListAsync();
 
-            var bookings = await _context.Bookings.ToListAsync();
-            await _hubContext.Clients.All.SendAsync("ReceiveBookingUpdate", bookings);
-
-            return Ok(existingBooking);
+            return Ok(bookings); 
         }
+
 
 
         [HttpGet("/api/booking/statusList")]
