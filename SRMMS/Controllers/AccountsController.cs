@@ -181,6 +181,7 @@ namespace SRMMS.Controllers
             {
                 FullName = model.FullName,
                 Password = model.Password, 
+                Email = model.Email,
                 Phone = model.Phone,
                 RoleId = model.RoleId,
                 Status = model.Status,
