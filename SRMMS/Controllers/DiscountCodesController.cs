@@ -114,7 +114,8 @@ namespace SRMMS.Controllers
                         DiscountValue = d.DiscountValue,
                         StartDate = d.StartDate.HasValue ? d.StartDate.Value.ToString("yyyy-MM-dd HH:mm:ss") : null,
                         EndDate = d.EndDate.HasValue ? d.EndDate.Value.ToString("yyyy-MM-dd HH:mm:ss") : null,
-                        Status = d.Status
+                        Status = d.Status,
+                        DiscountType = d.DiscountType ?? 0
                     })
                     .ToListAsync();
 
@@ -187,7 +188,8 @@ namespace SRMMS.Controllers
                 DiscountValue = discountCode.DiscountValue,
                 StartDate = discountCode.StartDate.Value.ToString("yyyy-MM-dd hh:mm:ss"),
                 EndDate = discountCode.EndDate.Value.ToString("yyyy-MM-dd hh:mm:ss"),
-                Status = discountCode.Status
+                Status = discountCode.Status,
+                DiscountType = discountCode.DiscountType ?? 0
             };
 
             return Ok(discountCodeDto);
@@ -233,6 +235,11 @@ namespace SRMMS.Controllers
 
             if (discountCodeDto.Status.HasValue)
                 discountCode.Status = discountCodeDto.Status.Value;
+
+            if (discountCodeDto.DiscountType != 0)
+            {
+                discountCode.DiscountType = discountCodeDto.DiscountType;
+            }
 
             await _context.SaveChangesAsync();
 
