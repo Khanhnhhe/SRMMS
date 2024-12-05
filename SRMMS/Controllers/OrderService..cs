@@ -880,6 +880,11 @@ namespace SRMMS.Controllers
                 throw new Exception("Đơn hàng này đã hoàn tất và không thể sửa đổi.");
             }
 
+            if (order.StatusId != 3)
+            {
+                throw new Exception("Đơn hàng này không thể thanh toán vì có món chưa được hoàn thành");
+            }
+
             double? discountValue = null;
 
             
