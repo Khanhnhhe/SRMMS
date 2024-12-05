@@ -110,7 +110,7 @@ namespace SRMMS.Controllers
             }
 
 
-            if (!IsValidPassword(model.OldPassword))
+            if (!IsValidPassword(model.NewPassword))
             {
                 return BadRequest("Mật khẩu phải có độ dài từ 8 đến 12 ký tự và bao gồm cả chữ cái và số.");
             }
