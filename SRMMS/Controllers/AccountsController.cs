@@ -35,9 +35,10 @@ namespace SRMMS.Controllers
 
             var skip = (pageNumber - 1) * pageSize;
             var query = _context.Accounts
-                                .Include(a => a.Role)
-                                .Where(a => a.RoleId == 5)
-                                .AsQueryable();
+                        .Include(a => a.Role)
+                        .Include(a => a.PointLists)
+                        .Where(a => a.RoleId == 5)
+                        .AsQueryable();
 
             if (!string.IsNullOrWhiteSpace(accountName))
             {
@@ -64,7 +65,8 @@ namespace SRMMS.Controllers
                                      RoleId = a.RoleId,
                                      Status = a.Status,
                                      StartDate = a.StartDate,
-                                     EndDate = a.EndDate
+                                     EndDate = a.EndDate,
+                                     TotalPoints = a.PointLists.Sum(p => p.NumberPonit)
                                  }).ToListAsync();
 
             return Ok(new
