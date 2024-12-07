@@ -270,6 +270,11 @@ namespace SRMMS.Controllers
                 existingProduct.ProName = updateProductDto.ProductName;
             }
 
+            if (!string.IsNullOrEmpty(updateProductDto.Description))
+            {
+                existingProduct.ProDiscription = updateProductDto.Description; 
+            }
+
             if (!string.IsNullOrEmpty(updateProductDto.Calories))
             {
                 if (int.TryParse(updateProductDto.Calories, out var calories))
