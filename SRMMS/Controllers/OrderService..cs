@@ -360,7 +360,7 @@ namespace SRMMS.Controllers
             
             if (!string.IsNullOrEmpty(tableName))
             {
-                string normalizedTableName = tableName.Replace(" ", "").ToLower();
+                string normalizedTableName = tableName.Trim().Replace(" ", "").ToLower();
                 var tableExists = _context.Tables
                     .Any(t => t.TableName.Replace(" ", "").ToLower().Contains(normalizedTableName));
 
@@ -460,7 +460,7 @@ namespace SRMMS.Controllers
 
             if (!string.IsNullOrEmpty(tableName))
             {
-                string normalizedTableName = tableName.Replace(" ", "");
+                string normalizedTableName = tableName.Trim().Replace(" ", "").ToLower();
                 var tableExists = _context.Tables
                     .Any(t => t.TableName.Replace(" ", "").Contains(normalizedTableName));
 
@@ -576,7 +576,7 @@ namespace SRMMS.Controllers
 
             if (!string.IsNullOrEmpty(tableName))
             {
-                string normalizedTableName = tableName.Replace(" ", "");
+                string normalizedTableName = tableName.Trim().Replace(" ", "").ToLower();
                 var tableExists = _context.Tables
                     .Any(t => t.TableName.Replace(" ", "").Contains(normalizedTableName));
 

@@ -81,6 +81,8 @@ namespace SRMMS.Controllers
 
                 if (!string.IsNullOrEmpty(codeDetail))
                 {
+                    codeDetail = codeDetail.Trim().ToLower();
+
                     query = query.Where(d => d.CodeDetail.Contains(codeDetail));
                 }
 
