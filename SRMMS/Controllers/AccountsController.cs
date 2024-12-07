@@ -224,6 +224,16 @@ namespace SRMMS.Controllers
                 account.Phone = model.Phone;
             }
 
+            if (!string.IsNullOrWhiteSpace(model.Email))
+            {
+                var emailRegex = @"^[^@\s]+@[^@\s]+\.[^@\s]+$"; 
+                if (!System.Text.RegularExpressions.Regex.IsMatch(model.Email, emailRegex))
+                {
+                    return BadRequest(new { message = "Email không hợp lệ." });
+                }
+                account.Email = model.Email;
+            }
+
             if (account.Status == true && model.Status == false)
             {
                 account.EndDate = DateTime.Now; 
