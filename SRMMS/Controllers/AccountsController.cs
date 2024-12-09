@@ -146,6 +146,7 @@ namespace SRMMS.Controllers
                     a.AccId,
                     a.FullName,
                     a.Phone,
+                    a.Email,
                     a.RoleId,
                     a.Status,
                     a.StartDate,
