@@ -99,41 +99,41 @@ public class CategoryController : ControllerBase
         return Ok(category);
     }
 
-    [HttpDelete("delete/{catId}")]
-    public async Task<IActionResult> DeleteCategoryById(int catId)
-    {
+    //[HttpDelete("delete/{catId}")]
+    //public async Task<IActionResult> DeleteCategoryById(int catId)
+    //{
 
-        var category = await _context.Categories.FindAsync(catId);
-
-
-        if (category == null)
-        {
-            return Ok(new { Message = $"Category với ID {catId} không tìm thấy." });
-        }
-
-        try
-        {
-
-            var products = await _context.Products
-                .Where(p => p.CatId == category.CatId)
-                .ToListAsync();
+    //    var category = await _context.Categories.FindAsync(catId);
 
 
-            _context.Products.RemoveRange(products);
+    //    if (category == null)
+    //    {
+    //        return Ok(new { Message = $"Category với ID {catId} không tìm thấy." });
+    //    }
+
+    //    try
+    //    {
+
+    //        var products = await _context.Products
+    //            .Where(p => p.CatId == category.CatId)
+    //            .ToListAsync();
 
 
-            _context.Categories.Remove(category);
-            await _context.SaveChangesAsync();
-        }
-        catch (DbUpdateException)
-        {
-
-            return BadRequest("Không thể xóa danh mục và sản phẩm của danh mục đó.");
-        }
+    //        _context.Products.RemoveRange(products);
 
 
-        return NoContent();
-    }
+    //        _context.Categories.Remove(category);
+    //        await _context.SaveChangesAsync();
+    //    }
+    //    catch (DbUpdateException)
+    //    {
+
+    //        return BadRequest("Không thể xóa danh mục và sản phẩm của danh mục đó.");
+    //    }
+
+
+    //    return NoContent();
+    //}
 
 
 
