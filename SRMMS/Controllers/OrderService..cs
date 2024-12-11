@@ -216,18 +216,18 @@ namespace SRMMS.Controllers
         //staff xác nhận và update 
         public async Task<int> ConfirmOrder(int tableId, ComfirmOrderDTO orderDto)
         {
-           
             var table = await _context.Tables.FirstOrDefaultAsync(t => t.TableId == tableId);
+
             if (table == null)
             {
                 throw new Exception("Không tìm thấy bàn này.");
             }
+
             if (table.StatusId != 2)
             {
                 throw new Exception("Bàn không ở trạng thái chờ xử lý.");
             }
 
-           
             var existingOrder = await _context.Orders
                 .Where(o => o.TableId == tableId && o.StatusId == 1)
                 .Include(o => o.OrderDetails)
@@ -238,58 +238,29 @@ namespace SRMMS.Controllers
                 throw new Exception("Không tìm thấy đơn hàng cho bàn này hoặc đơn hàng không ở trạng thái chờ xử lý.");
             }
 
-           
-            var comboIdsFromFE = orderDto.ComboDetails.Select(c => c.ComboId).ToList();
-            var productIdsFromFE = orderDto.ProductDetails.Select(p => p.ProId).ToList();
+            // Lấy danh sách các ID sản phẩm và combo từ dữ liệu mới
+            var newProductIds = orderDto.ProductDetails.Select(p => p.ProId).ToList();
+            var newComboIds = orderDto.ComboDetails.Select(c => c.ComboId).ToList();
 
-           
-            var combosToRemove = existingOrder.OrderDetails
-                .Where(od => od.ComboId != null && !comboIdsFromFE.Contains(od.Combo.ComboId))
-                .ToList(); 
-
-            foreach (var combo in combosToRemove)
+            // Xóa các sản phẩm cũ không còn trong danh sách mới
+            var removedProductDetails = existingOrder.OrderDetails
+                .Where(od => od.ProId != null && !newProductIds.Contains(od.ProId.Value))
+                .ToList();
+            foreach (var detail in removedProductDetails)
             {
-                existingOrder.OrderDetails.Remove(combo);
+                existingOrder.OrderDetails.Remove(detail);
             }
 
-           
-            var productsToRemove = existingOrder.OrderDetails
-                .Where(od => od.ProId != null && !productIdsFromFE.Contains(od.Pro.ProId))
-                .ToList(); 
-
-            foreach (var product in productsToRemove)
+            // Xóa các combo cũ không còn trong danh sách mới
+            var removedComboDetails = existingOrder.OrderDetails
+                .Where(od => od.ComboId != null && !newComboIds.Contains(od.ComboId.Value))
+                .ToList();
+            foreach (var detail in removedComboDetails)
             {
-                existingOrder.OrderDetails.Remove(product);
+                existingOrder.OrderDetails.Remove(detail);
             }
 
-
-           
-            foreach (var comboDto in orderDto.ComboDetails)
-            {
-                var existingComboDetail = existingOrder.OrderDetails
-                    .FirstOrDefault(od => od.ComboId == comboDto.ComboId);
-
-                if (existingComboDetail != null)
-                {
-                   
-                    existingComboDetail.Quantiity = comboDto.Quantity;
-                    existingComboDetail.Price = comboDto.Price;
-                }
-                else
-                {
-                    
-                    var newComboDetail = new OrderDetail
-                    {
-                        ComboId = comboDto.ComboId,
-                        Quantiity = comboDto.Quantity,
-                        Price = comboDto.Price,
-                        OrderId = existingOrder.OrderId
-                    };
-                    existingOrder.OrderDetails.Add(newComboDetail);
-                }
-            }
-
-            
+            // Thêm hoặc cập nhật sản phẩm
             foreach (var productDto in orderDto.ProductDetails)
             {
                 var existingProductDetail = existingOrder.OrderDetails
@@ -297,13 +268,10 @@ namespace SRMMS.Controllers
 
                 if (existingProductDetail != null)
                 {
-                    
                     existingProductDetail.Quantiity = productDto.Quantity;
-                    existingProductDetail.Price = productDto.Price;
                 }
                 else
                 {
-                    
                     var newProductDetail = new OrderDetail
                     {
                         ProId = productDto.ProId,
@@ -315,16 +283,39 @@ namespace SRMMS.Controllers
                 }
             }
 
-            
+            // Thêm hoặc cập nhật combo
+            foreach (var comboDto in orderDto.ComboDetails)
+            {
+                var existingComboDetail = existingOrder.OrderDetails
+                    .FirstOrDefault(od => od.ComboId == comboDto.ComboId);
+
+                if (existingComboDetail != null)
+                {
+                    existingComboDetail.Quantiity = comboDto.Quantity;
+                }
+                else
+                {
+                    var newComboDetail = new OrderDetail
+                    {
+                        ComboId = comboDto.ComboId,
+                        Quantiity = comboDto.Quantity,
+                        Price = comboDto.Price,
+                        OrderId = existingOrder.OrderId
+                    };
+                    existingOrder.OrderDetails.Add(newComboDetail);
+                }
+            }
+
+            // Cập nhật tổng tiền
             existingOrder.TotalMoney = (decimal)orderDto.TotalMoney;
 
-          
+            // Cập nhật trạng thái đơn hàng
             existingOrder.StatusId = 2;
 
-            
+            // Lưu thay đổi vào cơ sở dữ liệu
             await _context.SaveChangesAsync();
 
-           
+            // Thông báo qua SignalR
             await _orderHubContext.Clients.All.SendAsync("ReceiveOrderConfirmation", existingOrder);
 
             return existingOrder.OrderId;
