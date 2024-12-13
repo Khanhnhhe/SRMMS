@@ -1,8 +1,8 @@
 ﻿//using Xunit;
 //using Moq;
-//using YourProjectNamespace.Services;
-//using YourProjectNamespace.Models;
-//using YourProjectNamespace.Controllers;
+
+//using SRMMS.Models;
+//using S.Controllers;
 //using Microsoft.AspNetCore.Mvc;
 //using System.Threading.Tasks;
 //using NuGet.Protocol.Plugins;

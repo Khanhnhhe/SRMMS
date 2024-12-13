@@ -381,16 +381,17 @@ namespace SRMMS.Controllers
         [HttpGet("filter/{categoryName}")]
         public async Task<IActionResult> FilterByCategoryName(string categoryName, int pageNumber = 1, int pageSize = 10)
         {
+            
+            categoryName = categoryName.Trim();
 
             var categories = await _context.Categories.ToListAsync();
-
 
             var category = categories
                 .FirstOrDefault(c => c.CatName.Equals(categoryName, StringComparison.OrdinalIgnoreCase));
 
             if (category == null)
             {
-                return Ok(new { Message = $"Không tìm thấy danh mục." });
+                return NotFound(new { Message = $"Không tìm thấy danh mục." });
             }
 
             var totalProducts = await _context.Products.CountAsync(p => p.CatId == category.CatId);
@@ -415,7 +416,6 @@ namespace SRMMS.Controllers
 
             if (products == null || products.Count == 0)
             {
-
                 return Ok(new { Message = $"Không tìm thấy sản phẩm nào trong danh mục này." });
             }
 
@@ -431,43 +431,45 @@ namespace SRMMS.Controllers
         }
 
 
+
         [HttpGet("searchProductName")]
         public async Task<ActionResult<IEnumerable<ListProductDTO>>> SearchByProductName(string? productName = "", int pageNumber = 1, int pageSize = 10)
         {
-            var skip = (pageNumber - 1) * pageSize;
+            // Nếu productName rỗng hoặc chỉ chứa khoảng trắng, trả về BadRequest
+            if (string.IsNullOrWhiteSpace(productName))
+            {
+                return BadRequest("Tên sản phẩm không thể trống.");
+            }
 
+            var skip = (pageNumber - 1) * pageSize;
 
             var query = _context.Products.Include(p => p.Cat).AsQueryable();
 
-
             if (!string.IsNullOrWhiteSpace(productName))
             {
-
                 query = query.Where(p => p.ProName.ToLower().Contains(productName.ToLower().Trim()));
             }
 
-
             var products = await query
-                                     .Skip(skip)
-                                     .Take(pageSize)
-                                     .Select(p => new ListProductDTO
-                                     {
-                                         ProductId = p.ProId,
-                                         ProductName = p.ProName,
-                                         Image = p.ProImg,
-                                         Description = p.ProDiscription,
-                                         Price = p.ProPrice,
-                                         Calories = p.ProCalories,
-                                         Status = p.ProStatus,
-                                         Category = p.Cat.CatName
-                                     }).ToListAsync();
-
+                                   .Skip(skip)
+                                   .Take(pageSize)
+                                   .Select(p => new ListProductDTO
+                                   {
+                                       ProductId = p.ProId,
+                                       ProductName = p.ProName,
+                                       Image = p.ProImg,
+                                       Description = p.ProDiscription,
+                                       Price = p.ProPrice,
+                                       Calories = p.ProCalories,
+                                       Status = p.ProStatus,
+                                       Category = p.Cat.CatName
+                                   })
+                                   .ToListAsync();
 
             if (products == null || !products.Any())
             {
-                return Ok(new { Message = $"Không tìm thấy sản phẩm" });
+                return Ok(new { Message = "Không tìm thấy sản phẩm" });
             }
-
 
             return Ok(products);
         }

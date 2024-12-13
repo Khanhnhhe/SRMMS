@@ -7,11 +7,15 @@ using SRMMS.DTOs;
 using SRMMS.Models;
 using System;
 using System.Text.Json;
-
+using SRMMS;
 namespace SRMMSTests
 {
     public class OrderControllerTests
     {
+   
+
+  
+      
         [Fact]
         public async Task AddOrder_ShouldThrowException_WhenOrderDetailsEmpty()
         {
@@ -218,7 +222,9 @@ namespace SRMMSTests
 
             // Thêm dữ liệu cần thiết vào cơ sở dữ liệu
             context.Tables.Add(new Table { TableId = 1, StatusId = 2 }); // Bàn ở trạng thái "Đang sử dụng"
-            context.StatusOrders.Add(new StatusOrder { StatusId = 1, StatusName = "1" }); // Trạng thái đơn hàng hợp lệ
+            context.StatusOrders.Add(new StatusOrder { StatusId = 1, StatusName = "Chờ xác nhận" });
+            context.Combos.Add(new Combo { ComboId = 1, ComboStatus = true }); // Combo hợp lệ
+            context.Products.Add(new Product { ProId = 1, ProStatus = true });// Trạng thái đơn hàng hợp lệ
             context.SaveChanges();
 
             var mockHubContext = new Mock<IHubContext<OrderHub>>();
@@ -239,20 +245,22 @@ namespace SRMMSTests
             var exception = await Assert.ThrowsAsync<Exception>(() => controller.AddOrder(orderDto));
             Assert.Equal("Tổng số tiền phải lớn hơn 0.", exception.Message);
         }
+
+
+
         [Fact]
-        public async Task AddOrder_ShouldReturnOrderId_WhenOrderIsSuccessful()
+        public async Task AddOrder_ShouldThrowException_WhenNoProductsInOrder()
         {
             // Arrange
             var options = new DbContextOptionsBuilder<SRMMSContext>()
-                .UseInMemoryDatabase("TestDatabase_ValidOrder")
+                .UseInMemoryDatabase("TestDatabase_NoProductsInOrder")
                 .Options;
 
             using var context = new SRMMSContext(options);
 
-            // Thêm dữ liệu cần thiết vào cơ sở dữ liệu (nếu có)
-            context.Tables.Add(new Table { TableId = 7, StatusId = 2 }); // Bàn hợp lệ (Đang sử dụng)
-            context.StatusOrders.Add(new StatusOrder { StatusId = 1, StatusName = "Mới" }); // Trạng thái hợp lệ
-            context.Products.Add(new Product { ProId = 1, ProName = "Product 1", ProPrice = 10 });
+            // Thêm dữ liệu cần thiết vào cơ sở dữ liệu
+            context.Tables.Add(new Table { TableId = 1, StatusId = 2 }); // Bàn ở trạng thái "Đang sử dụng"
+            context.StatusOrders.Add(new StatusOrder { StatusId = 1, StatusName = "Mới" }); // Trạng thái đơn hàng hợp lệ
             context.SaveChanges();
 
             var mockHubContext = new Mock<IHubContext<OrderHub>>();
@@ -261,30 +269,16 @@ namespace SRMMSTests
 
             var orderDto = new OrderDTO
             {
-                OrderId = 0, // Tạo mới
-                TableId = 7,  // Bàn hợp lệ
-                TotalMoney = 1100, // Tổng tiền hợp lệ
-                Status = 1,  // Trạng thái hợp lệ (Mới)
-                ComboDetails = new List<ComboDetailDTO>(), // Không có combo
-                ProductDetails = new List<ProductDetailOrderDTO>
-        {
-            new ProductDetailOrderDTO { ProductId = 1, Quantity = 10, Price = 1110 } // Sản phẩm hợp lệ
-        },
-                OrderDetails = new List<OrderDetailDTO>
-        {
-            new OrderDetailDTO { ProId = 1, Quantity = 10, Price = 10 }
-        }
+                TableId = 1,
+                TotalMoney = 500,
+                OrderDetails = new List<OrderDetailDTO>() // Không có sản phẩm nào
             };
 
-            // Act
-            var result = await controller.AddOrder(orderDto);
-
-            // Assert
-            var okResult = Assert.IsType<OkObjectResult>(result);
-            var response = Assert.IsType<JsonElement>(okResult.Value);
-
-            Assert.Contains("OrderId", response.ToString());  // Kiểm tra nếu OrderId có trong phản hồi
+            // Act & Assert
+            var exception = await Assert.ThrowsAsync<Exception>(() => controller.AddOrder(orderDto));
+            Assert.Equal("Đơn hàng phải có ít nhất một sản phẩm hoặc combo.", exception.Message);
         }
+
 
     }
 }

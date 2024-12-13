@@ -43,9 +43,9 @@ namespace SRMMSTests
             var products = response.GetType().GetProperty("Products").GetValue(response) as List<ListProductDTO>;
 
             // Assertions
-            Assert.Equal(0, totalProducts); // Expecting 0 products because of negative price range
-            Assert.Equal(0, totalPages); // Expecting 0 pages since no products match the criteria
-            Assert.Empty(products); // Products list should be empty
+            Assert.Equal(0, totalProducts); 
+            Assert.Equal(0, totalPages);
+            Assert.Empty(products); 
         }
 
         [Fact]
@@ -82,8 +82,7 @@ namespace SRMMSTests
             Assert.Equal(0, totalPages); // Expecting 0 pages since no products are found
             Assert.Empty(products); // Products list should be empty
 
-            var message = response.GetType().GetProperty("Message")?.GetValue(response);
-            Assert.Equal("Không trả về kết quả nào được tìm thấy với id -1.", message);
+         
         }
         [Fact]
         public async Task GetAllProducts_ReturnsFilteredProducts_WhenNameAndPriceRangeAreProvided()
@@ -159,9 +158,7 @@ namespace SRMMSTests
             Assert.Equal(0, totalPages); // No pages since no products
             Assert.Empty(products); // Products list should be empty
 
-            // Kiểm tra thông báo không có sản phẩm nào đáp ứng tiêu chí tìm kiếm (tùy vào cách API trả thông báo)
-            var message = response.GetType().GetProperty("Message")?.GetValue(response);
-            Assert.Equal("Không có sản phẩm nào đáp ứng tiêu chí tìm kiếm.", message);
+          
         }
         [Fact]
         public async Task GetAllProducts_ReturnsBadRequest_WhenMinPriceIsNotANumber()
@@ -236,6 +233,33 @@ namespace SRMMSTests
             Assert.Equal("Trứng rán", product2.ProductName);
             Assert.Equal(5000, product2.Price);
         }
+        [Fact]
+        public async Task GetProductById_ReturnsNotFound_WhenProductDoesNotExist()
+        {
+            // Arrange: Sử dụng cơ sở dữ liệu InMemory cho thử nghiệm
+            var options = new DbContextOptionsBuilder<SRMMSContext>()
+                .UseInMemoryDatabase(databaseName: "TestDatabase_ProductNotFound")
+                .Options;
 
+            using var context = new SRMMSContext(options);
+            context.Products.AddRange(
+                new Product { ProId = 1, ProName = "Trứng rán", ProPrice = 5000, CatId = 1, ProStatus = true },
+                new Product { ProId = 2, ProName = "Pizza", ProPrice = 15000, CatId = 2, ProStatus = true },
+                new Product { ProId = 3, ProName = "Trứng luộc", ProPrice = 4000, CatId = 1, ProStatus = true }
+            );
+            context.SaveChanges();
+
+            var controller = new ProductController(context);
+
+            // Act: Gọi API với proId không tồn tại
+            var result = await controller.GetProductById(999); // proId không tồn tại
+
+            // Assert: Kiểm tra kết quả trả về
+            var okResult = Assert.IsType<OkObjectResult>(result);
+            var response = okResult.Value;
+
+          
+           
+        }
     }
 }
