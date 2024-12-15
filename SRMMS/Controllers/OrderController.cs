@@ -153,7 +153,7 @@ namespace SRMMS.Controllers
         {
             try
             {
-                // Truyền thêm tham số statusId vào service
+                
                 var result = _orderService.GetOrdersAllStatus(pageNumber, pageSize, tableName, fromDate, toDate, statusId);
 
                 var orders = result.Orders;
