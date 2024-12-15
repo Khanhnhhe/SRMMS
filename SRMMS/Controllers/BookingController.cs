@@ -163,6 +163,7 @@ namespace SRMMS.Controllers
             var skip = (pageNumber - 1) * pageSize;
 
             var bookings = await query
+                .OrderByDescending(b => b.BookingId)
                 .Skip(skip)
                 .Take(pageSize)
                 .Join(_context.StatusBookings,
