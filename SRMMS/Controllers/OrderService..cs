@@ -237,11 +237,11 @@ namespace SRMMS.Controllers
                 throw new Exception("Không tìm thấy đơn hàng cho bàn này hoặc đơn hàng không ở trạng thái chờ xử lý.");
             }
 
-            // Lấy danh sách các ID sản phẩm và combo từ dữ liệu mới
+            
             var newProductIds = orderDto.ProductDetails.Select(p => p.ProId).ToList();
             var newComboIds = orderDto.ComboDetails.Select(c => c.ComboId).ToList();
 
-            // Xóa các sản phẩm cũ không còn trong danh sách mới
+            
             var removedProductDetails = existingOrder.OrderDetails
                 .Where(od => od.ProId != null && !newProductIds.Contains(od.ProId.Value))
                 .ToList();
@@ -250,7 +250,7 @@ namespace SRMMS.Controllers
                 existingOrder.OrderDetails.Remove(detail);
             }
 
-            // Xóa các combo cũ không còn trong danh sách mới
+           
             var removedComboDetails = existingOrder.OrderDetails
                 .Where(od => od.ComboId != null && !newComboIds.Contains(od.ComboId.Value))
                 .ToList();
@@ -259,7 +259,7 @@ namespace SRMMS.Controllers
                 existingOrder.OrderDetails.Remove(detail);
             }
 
-            // Thêm hoặc cập nhật sản phẩm
+            
             foreach (var productDto in orderDto.ProductDetails)
             {
                 var existingProductDetail = existingOrder.OrderDetails
@@ -282,7 +282,7 @@ namespace SRMMS.Controllers
                 }
             }
 
-            // Thêm hoặc cập nhật combo
+           
             foreach (var comboDto in orderDto.ComboDetails)
             {
                 var existingComboDetail = existingOrder.OrderDetails
@@ -305,16 +305,16 @@ namespace SRMMS.Controllers
                 }
             }
 
-            // Cập nhật tổng tiền
+           
             existingOrder.TotalMoney = (decimal)orderDto.TotalMoney;
 
-            // Cập nhật trạng thái đơn hàng
+           
             existingOrder.StatusId = 2;
 
-            // Lưu thay đổi vào cơ sở dữ liệu
+            
             await _context.SaveChangesAsync();
 
-            // Thông báo qua SignalR
+            
             await _orderHubContext.Clients.All.SendAsync("ReceiveOrderConfirmation", existingOrder);
 
             return existingOrder.OrderId;
@@ -419,9 +419,10 @@ namespace SRMMS.Controllers
            
             var totalOrders = query.Count();
 
-            
+
             var orders = query
-                .Select(o => new GetOrderByTableNameDTO
+                    .OrderByDescending(o => o.OrderId) 
+                    .Select(o => new GetOrderByTableNameDTO
                 {
                     OrderId = o.OrderId,
                     OrderDate = o.OrderDate.Value.ToString("yyyy-MM-dd HH:mm:ss"), 
@@ -518,9 +519,10 @@ namespace SRMMS.Controllers
 
 
             var orders = query
-                .Select(o => new GetOrderByOrderIdDTO
-                {
-                    OrderId = o.OrderId,
+                 .OrderByDescending(o => o.OrderId) 
+                 .Select(o => new GetOrderByOrderIdDTO
+        {
+            OrderId = o.OrderId,
                     OrderDate = o.OrderDate,
                     TotalMoney = (double)o.TotalMoney,
                     Status = o.StatusId,
@@ -633,8 +635,9 @@ namespace SRMMS.Controllers
             var totalOrders = query.Count();
 
             var orders = query
-                .Select(o => new GetOrderByOrderIdDTO
-                {
+                .OrderByDescending(o => o.OrderId) 
+               .Select(o => new GetOrderByOrderIdDTO
+            {
                     OrderId = o.OrderId,
                     OrderDate = o.OrderDate,
                     TotalMoney = (double)o.TotalMoney,
