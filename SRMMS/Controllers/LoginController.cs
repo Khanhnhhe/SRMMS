@@ -5,6 +5,7 @@ using System.Security.Claims;
 using System.Text;
 using System.Text.RegularExpressions;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.DotNet.Scaffolding.Shared.Messaging;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.Configuration;
@@ -42,17 +43,18 @@ namespace SRMMS.Controllers
 
             if (user == null)
             {
-                return Unauthorized("Không tìm thấy người dùng");
+                return Unauthorized(new { Message = "Không tìm thấy người dùng" });
+                    
             }
 
             if (user.Status != true)
             {
-                return Unauthorized("Tài khoản không hoạt động");
+                return Unauthorized(new { Message = "Tài khoản không hoạt động" });
             }
 
             if (!VerifyPassword(model.Password, user.Password))
             {
-                return Unauthorized("Mật khẩu không hợp lệ");
+                return Unauthorized(new { Message = "Mật khẩu không hợp lệ" });
             }
 
             // Generate token
@@ -106,23 +108,23 @@ namespace SRMMS.Controllers
 
             if (user == null)
             {
-                return BadRequest("Không tìm thấy người dùng");
+                return BadRequest(new { Message = "Không tìm thấy người dùng" });
             }
 
 
             if (!IsValidPassword(model.NewPassword))
             {
-                return BadRequest("Mật khẩu phải có độ dài từ 8 đến 12 ký tự và bao gồm cả chữ cái và số.");
+                return BadRequest(new { Message = "Mật khẩu phải có độ dài từ 8 đến 12 ký tự và bao gồm cả chữ cái và số." });
             }
 
             if (!VerifyPassword(model.OldPassword, user.Password))
             {
-                return BadRequest("Mật khẩu cũ không đúng");
+                return BadRequest(new { Message = "Mật khẩu cũ không đúng" });
             }
 
             if (model.NewPassword != model.ConfirmNewPassword)
             {
-                return BadRequest("Mật khẩu mới và mật khẩu xác nhận không khớp");
+                return BadRequest(new { Message = "Mật khẩu mới và mật khẩu xác nhận không khớp" });
             }
 
             user.Password = model.NewPassword;
@@ -130,7 +132,7 @@ namespace SRMMS.Controllers
             _context.Accounts.Update(user);
             _context.SaveChanges();
 
-            return Ok("Mật khẩu đã được thay đổi thành công");
+            return Ok(new { Message = "Mật khẩu đã được thay đổi thành công" });
         }
 
 
@@ -141,17 +143,17 @@ namespace SRMMS.Controllers
             var existingUser = await _context.Accounts.FirstOrDefaultAsync(a => a.Email == model.Email);
             if (existingUser != null)
             {
-                return BadRequest("Email đã được đăng ký.");
+                return BadRequest(new { Message = "Email đã được đăng ký." });
             }
 
             if (!IsValidEmail(model.Email))
             {
-                return BadRequest("Email không hợp lệ ");
+                return BadRequest(new { Message = "Email không hợp lệ " });
             }
 
             if (!IsValidPassword(model.Password))
             {
-                return BadRequest("Mật khẩu phải có độ dài từ 8 đến 12 ký tự và bao gồm cả chữ cái và số.");
+                return BadRequest(new { Message = "Mật khẩu phải có độ dài từ 8 đến 12 ký tự và bao gồm cả chữ cái và số." });
             }
 
             try
@@ -212,10 +214,10 @@ namespace SRMMS.Controllers
             }
             else
             {
-                return Ok("Mã xác nhận đã được gửi trước đó. Vui lòng kiểm tra điện thoại của bạn.");
+                return Ok(new { Message = "Mã xác nhận đã được gửi trước đó. Vui lòng kiểm tra điện thoại của bạn." });
             }
 
-            return Ok("Mã xác nhận đã được gửi lại đến số điện thoại của bạn.");
+            return Ok(new { Message = "Mã xác nhận đã được gửi lại đến số điện thoại của bạn." });
         }
 
 
@@ -253,7 +255,7 @@ namespace SRMMS.Controllers
             _context.Accounts.Update(user);
             await _context.SaveChangesAsync();
 
-            return Ok("Mật khẩu đã được thay đổi thành công.");
+            return Ok(new { Message = "Mật khẩu đã được thay đổi thành công." });
         }
 
 
@@ -262,13 +264,13 @@ namespace SRMMS.Controllers
         {
             if (!_memoryCache.TryGetValue(model.PhoneNumber, out string cachedOtp) || cachedOtp != model.VerificationCode)
             {
-                return BadRequest("Mã OTP không chính xác hoặc đã hết hạn.");
+                return BadRequest(new { Message = "Mã OTP không chính xác hoặc đã hết hạn." });
             }
 
             var user = await _context.Accounts.FirstOrDefaultAsync(a => a.Phone == model.PhoneNumber);
             if (user == null)
             {
-                return BadRequest("Không tìm thấy người dùng");
+                return BadRequest(new { Message = "Không tìm thấy người dùng" });
             }
 
             user.Status = true;
@@ -277,7 +279,7 @@ namespace SRMMS.Controllers
 
             _memoryCache.Remove(model.PhoneNumber);
 
-            return Ok("Xác thực thành công! Bạn có thể đăng nhập.");
+            return Ok(new { Message = "Xác thực thành công! Bạn có thể đăng nhập." });
         }
 
         private string GenerateVerificationCode()

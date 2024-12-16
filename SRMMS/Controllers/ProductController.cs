@@ -136,31 +136,31 @@ namespace SRMMS.Controllers
             var categoryExists = await _context.Categories.AnyAsync(c => c.CatId == productDto.Category);
             if (!categoryExists)
             {
-                return BadRequest("Không có danh mục nào tồn tại.");
+                return BadRequest(new { Message = "Không có danh mục nào tồn tại." });
             }
 
             var productExists = await _context.Products.AnyAsync(p => p.ProName == productDto.ProductName);
             if (productExists)
             {
-                return BadRequest("Một sản phẩm có tên này đã tồn tại.");
+                return BadRequest(new { Message = "Một sản phẩm có tên này đã tồn tại." });
             }
 
             if (productDto.Image == null || productDto.Image.Length == 0)
             {
-                return BadRequest("Không tìm thấy hình ảnh");
+                return BadRequest(new { Message = "Không tìm thấy hình ảnh" });
             }
             if (productDto.Price < 0)
             {
-                return BadRequest("Giá không thể âm.");
+                return BadRequest(new { Message = "Giá không thể âm." });
             }
 
             if (productDto.Category.HasValue && productDto.Category < 0)
             {
-                return BadRequest("Không có danh mục nào tồn tại.");
+                return BadRequest(new { Message = "Không có danh mục nào tồn tại." });
             }
             if (productDto.Price == 0)
             {
-                return BadRequest("Giá là bắt buộc và phải lớn hơn 0.");
+                return BadRequest(new { Message = "Giá là bắt buộc và phải lớn hơn 0." });
             }
 
             if (string.IsNullOrWhiteSpace(productDto.ProductName) &&
@@ -170,7 +170,7 @@ namespace SRMMS.Controllers
                  productDto.Image == null &&
                  string.IsNullOrWhiteSpace(productDto.Calories))
             {
-                return BadRequest("Không được để giá trị null ở tất cả các trường.");
+                return BadRequest(new { Message = "Không được để giá trị null ở tất cả các trường." });
             }
 
             var tempFilePath = Path.Combine(Path.GetTempPath(), Guid.NewGuid().ToString() + Path.GetExtension(productDto.Image.FileName));

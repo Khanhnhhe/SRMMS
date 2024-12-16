@@ -34,7 +34,7 @@ namespace SRMMS.Controllers
         {
             if (orderDto == null)
             {
-                return BadRequest("Dữ liệu đơn hàng không hợp lệ.");
+                return BadRequest(new { Message = "Dữ liệu đơn hàng không hợp lệ." });
             }
 
             try

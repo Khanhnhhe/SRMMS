@@ -32,7 +32,7 @@ namespace SRMMS.Controllers
         {
             if (bookingDto == null)
             {
-                return BadRequest("Dữ liệu đặt bàn không hợp lệ.");
+                return BadRequest(new { Message = "Dữ liệu đặt bàn không hợp lệ." });
             }
 
             DateTime now = DateTime.Now;
@@ -42,32 +42,32 @@ namespace SRMMS.Controllers
             {
                 if (!TimeSpan.TryParse(bookingDto.HourBooking, out TimeSpan parsedHourBooking))
                 {
-                    return BadRequest("Giờ đặt bàn không hợp lệ.");
+                    return BadRequest(new { Message = "Giờ đặt bàn không hợp lệ." });
                 }
                 hourBooking = parsedHourBooking;
             }
 
             if (bookingDto.NumberOfPeople <= 0)
             {
-                return BadRequest("Số người đặt bàn phải là số nguyên dương và lớn hơn 0.");
+                return BadRequest(new { Message = "Số người đặt bàn phải là số nguyên dương và lớn hơn 0." });
             }
 
             if (bookingDto.DayBooking < now.Date ||
                              (bookingDto.DayBooking == now.Date && hourBooking.HasValue && hourBooking <= now.TimeOfDay))
             {
-                return BadRequest("Ngày và giờ đặt bàn không hợp lệ. Vui lòng chọn ngày và giờ sau mốc thời gian hiện tại .");
+                return BadRequest(new { Message = "Ngày và giờ đặt bàn không hợp lệ. Vui lòng chọn ngày và giờ sau mốc thời gian hiện tại ." });
             }
 
             string? phoneBooking = bookingDto.PhoneBooking;
             if (string.IsNullOrEmpty(phoneBooking) || !IsValidPhoneNumber(phoneBooking))
             {
-                return BadRequest("Số điện thoại không hợp lệ. Vui lòng nhập số điện thoại hợp lệ.");
+                return BadRequest(new { Message = "Số điện thoại không hợp lệ. Vui lòng nhập số điện thoại hợp lệ." });
             }
 
             string? nameBooking = bookingDto.NameBooking;
             if (string.IsNullOrEmpty(nameBooking))
             {
-                return BadRequest("Vui lòng cung cấp tên của bạn.");
+                return BadRequest(new { Message = "Vui lòng cung cấp tên của bạn." });
             }
 
 
@@ -300,13 +300,13 @@ namespace SRMMS.Controllers
         {
             if (bookingDto == null)
             {
-                return BadRequest("Dữ liệu đặt chỗ không hợp lệ.");
+                return BadRequest(new { Message = "Dữ liệu đặt chỗ không hợp lệ." });
             }
 
             var existingBooking = await _context.Bookings.FindAsync(id);
             if (existingBooking == null)
             {
-                return BadRequest("Không tìm thấy đặt chỗ.");
+                return BadRequest(new { Message = "Không tìm thấy đặt chỗ." });
             }
 
             existingBooking.DayBooking = bookingDto.DayBooking ?? existingBooking.DayBooking;
@@ -333,7 +333,7 @@ namespace SRMMS.Controllers
                 }
                 else
                 {
-                    return BadRequest("Giờ đặt chỗ không hợp lệ.");
+                    return BadRequest(new { Message = "Giờ đặt chỗ không hợp lệ." });
                 }
             }
 
@@ -343,7 +343,7 @@ namespace SRMMS.Controllers
                 var status = await _context.StatusBookings.FindAsync(bookingDto.StatusId.Value);
                 if (status == null)
                 {
-                    return BadRequest("Trạng thái không hợp lệ.");
+                    return BadRequest(new { Message = "Trạng thái không hợp lệ." });
                 }
                 existingBooking.StatusId = bookingDto.StatusId.Value;
             }
