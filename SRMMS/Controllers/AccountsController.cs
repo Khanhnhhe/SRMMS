@@ -177,7 +177,7 @@ namespace SRMMS.Controllers
         {
             if (model == null || string.IsNullOrWhiteSpace(model.Phone) || string.IsNullOrWhiteSpace(model.Password))
             {
-                return BadRequest("Dữ liệu tài khoản không hợp lệ.");
+                return BadRequest(new { Message = "Dữ liệu tài khoản không hợp lệ." });
             }
 
             var account = new Account
@@ -205,7 +205,7 @@ namespace SRMMS.Controllers
         {
             if (model == null || id <= 0)
             {
-                return BadRequest("Dữ liệu tài khoản không hợp lệ.");
+                return BadRequest(new { Message = "Dữ liệu tài khoản không hợp lệ." });
             }
             var account = await _context.Accounts.FindAsync(id);
 

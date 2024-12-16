@@ -37,18 +37,18 @@ namespace SRMMS.Controllers
         {
             if (model == null || string.IsNullOrWhiteSpace(model.Table_Name))
             {
-                return BadRequest("Dữ liệu bàn không hợp lệ.");
+                return BadRequest(new { Message = "Dữ liệu bàn không hợp lệ." });
             }
 
             var existingTable = await _context.Tables.FirstOrDefaultAsync(t => t.TableName == model.Table_Name && t.ShiftTable == null);
             if (existingTable != null)
             {
-                return BadRequest("Tên bàn đã tồn tại.");
+                return BadRequest(new { Message = "Tên bàn đã tồn tại." });
             }
 
-            if (model.TableOfPeople <= 0)
+            if (model.TableOfPeople <= 0 || model.TableOfPeople > 20)
             {
-                return BadRequest("Chỗ người tại bàn phải là số nguyên dương và lớn hơn 0.");
+                return BadRequest(new { Message = "Chỗ người tại bàn phải là số nguyên dương và lớn hơn 0 và không vượt quá 20 ." });
             }
 
             var tableLunchShift = new SRMMS.Models.Table
