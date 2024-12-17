@@ -8,10 +8,11 @@ using Microsoft.AspNetCore.SignalR;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Internal;
 using Microsoft.IdentityModel.Tokens;
+using SRMMS.Controllers;
 using SRMMS.DTOs;
 using SRMMS.Models;
 
-namespace SRMMS.Controllers
+namespace SRMMS
 
 {
     public class OrderService
@@ -25,7 +26,7 @@ namespace SRMMS.Controllers
             _orderHubContext = orderHubContext;
         }
 
-       
+
         public async Task<int> CreateOrder(OrderDTO orderDto)
         {
             var table = await _context.Tables.FindAsync(orderDto.TableId);
@@ -37,7 +38,7 @@ namespace SRMMS.Controllers
             if (table.StatusId == 2)
             {
                 var existingOrder = await _context.Orders
-                .Where(o => o.TableId == orderDto.TableId && o.StatusId != 4) 
+                .Where(o => o.TableId == orderDto.TableId && o.StatusId != 4)
                 .Include(o => o.OrderDetails)
                 .FirstOrDefaultAsync();
 
@@ -47,39 +48,39 @@ namespace SRMMS.Controllers
 
                     if (existingOrder.StatusId != 1)
                     {
-                        existingOrder.StatusId = 1; 
+                        existingOrder.StatusId = 1;
                     }
 
                     if (existingOrder.StatusId == 3)
                     {
-                        
+
                         var status = await _context.StatusOrders.FirstOrDefaultAsync(s => s.StatusId == 1);
                         if (status == null)
                         {
                             throw new Exception("Trạng thái đơn hàng không hợp lệ.");
                         }
 
-                        existingOrder.StatusId = status.StatusId; 
+                        existingOrder.StatusId = status.StatusId;
                     }
 
                     await AddOrderDetails(existingOrder, orderDto);
 
-                    
+
                     existingOrder.TotalMoney += orderDto.TotalMoney;
 
-                   
+
                     await _context.SaveChangesAsync();
 
-                   
+
                     await _orderHubContext.Clients.All.SendAsync("ReceiveOrder", existingOrder);
 
-                   
+
                     return existingOrder.OrderId;
                 }
-                else if(existingOrder == null ||  existingOrder.StatusId == 4)
+                else if (existingOrder == null || existingOrder.StatusId == 4)
                 {
-                    
-                    var status = await _context.StatusOrders.FirstOrDefaultAsync(s => s.StatusId == 1); 
+
+                    var status = await _context.StatusOrders.FirstOrDefaultAsync(s => s.StatusId == 1);
                     if (status == null)
                     {
                         throw new Exception("Trạng thái đơn hàng không hợp lệ.");
@@ -89,21 +90,21 @@ namespace SRMMS.Controllers
                     {
                         TableId = orderDto.TableId,
                         TotalMoney = orderDto.TotalMoney,
-                        StatusId = status.StatusId, 
+                        StatusId = status.StatusId,
                         OrderDetails = new List<OrderDetail>()
                     };
 
-                    
+
                     await AddOrderDetails(newOrder, orderDto);
 
-                   
+
                     _context.Orders.Add(newOrder);
                     await _context.SaveChangesAsync();
 
-                   
+
                     await _orderHubContext.Clients.All.SendAsync("ReceiveOrder", newOrder);
 
-                    
+
                     return newOrder.OrderId;
                 }
             }
@@ -114,11 +115,11 @@ namespace SRMMS.Controllers
 
         private async Task AddOrderDetails(Order order, OrderDTO orderDto)
         {
-          
+
             bool hasCombo = false;
             bool hasProduct = false;
 
-           
+
             if (orderDto.ComboDetails != null && orderDto.ComboDetails.Any())
             {
                 foreach (var comboDetail in orderDto.ComboDetails)
@@ -140,16 +141,16 @@ namespace SRMMS.Controllers
                         throw new Exception($"Số lượng combo với ID {comboDetail.ComboId} phải lớn hơn 0.");
                     }
 
-                   
+
                     var orderDetail = order.OrderDetails.FirstOrDefault(od => od.ComboId == comboDetail.ComboId);
                     if (orderDetail != null)
                     {
-                       
+
                         orderDetail.Quantiity += comboDetail.Quantity;
                     }
                     else
                     {
-                        
+
                         orderDetail = new OrderDetail
                         {
                             ComboId = comboDetail.ComboId,
@@ -162,7 +163,7 @@ namespace SRMMS.Controllers
                 hasCombo = true;
             }
 
-            
+
             if (orderDto.ProductDetails != null && orderDto.ProductDetails.Any())
             {
                 foreach (var productDetail in orderDto.ProductDetails)
@@ -184,16 +185,16 @@ namespace SRMMS.Controllers
                         throw new Exception($"Số lượng sản phẩm với ID {productDetail.ProId} phải lớn hơn 0.");
                     }
 
-                    
+
                     var orderDetail = order.OrderDetails.FirstOrDefault(od => od.ProId == productDetail.ProId);
                     if (orderDetail != null)
                     {
-                        
+
                         orderDetail.Quantiity += productDetail.Quantity;
                     }
                     else
                     {
-                       
+
                         orderDetail = new OrderDetail
                         {
                             ProId = productDetail.ProId,
@@ -206,7 +207,7 @@ namespace SRMMS.Controllers
                 hasProduct = true;
             }
 
-           
+
             if (!hasCombo && !hasProduct)
             {
                 throw new Exception("Đơn hàng phải có ít nhất một sản phẩm hoặc combo.");
@@ -238,11 +239,11 @@ namespace SRMMS.Controllers
                 throw new Exception("Không tìm thấy đơn hàng cho bàn này hoặc đơn hàng không ở trạng thái chờ xử lý.");
             }
 
-            
+
             var newProductIds = orderDto.ProductDetails.Select(p => p.ProId).ToList();
             var newComboIds = orderDto.ComboDetails.Select(c => c.ComboId).ToList();
 
-            
+
             var removedProductDetails = existingOrder.OrderDetails
                 .Where(od => od.ProId != null && !newProductIds.Contains(od.ProId.Value))
                 .ToList();
@@ -251,7 +252,7 @@ namespace SRMMS.Controllers
                 existingOrder.OrderDetails.Remove(detail);
             }
 
-           
+
             var removedComboDetails = existingOrder.OrderDetails
                 .Where(od => od.ComboId != null && !newComboIds.Contains(od.ComboId.Value))
                 .ToList();
@@ -260,7 +261,7 @@ namespace SRMMS.Controllers
                 existingOrder.OrderDetails.Remove(detail);
             }
 
-            
+
             foreach (var productDto in orderDto.ProductDetails)
             {
                 var existingProductDetail = existingOrder.OrderDetails
@@ -283,7 +284,7 @@ namespace SRMMS.Controllers
                 }
             }
 
-           
+
             foreach (var comboDto in orderDto.ComboDetails)
             {
                 var existingComboDetail = existingOrder.OrderDetails
@@ -306,16 +307,16 @@ namespace SRMMS.Controllers
                 }
             }
 
-           
-            existingOrder.TotalMoney = (decimal)orderDto.TotalMoney;
 
-           
+            existingOrder.TotalMoney = orderDto.TotalMoney;
+
+
             existingOrder.StatusId = 2;
 
-            
+
             await _context.SaveChangesAsync();
 
-            
+
             await _orderHubContext.Clients.All.SendAsync("ReceiveOrderConfirmation", existingOrder);
 
             return existingOrder.OrderId;
@@ -326,10 +327,10 @@ namespace SRMMS.Controllers
 
         public async Task<int> ChangeOrderStatusToComplete(int orderId)
         {
-            
+
             var existingOrder = await _context.Orders
                 .Where(o => o.OrderId == orderId)
-                .Include(o => o.Table) 
+                .Include(o => o.Table)
                 .FirstOrDefaultAsync();
 
             if (existingOrder == null)
@@ -337,19 +338,19 @@ namespace SRMMS.Controllers
                 throw new Exception("Đơn hàng không tồn tại.");
             }
 
-           
-            if (existingOrder.StatusId != 2) 
+
+            if (existingOrder.StatusId != 2)
             {
                 throw new Exception("Đơn hàng không thể chuyển trạng thái vì không phải trạng thái 'Đang sử dụng'.");
             }
 
-            
+
             existingOrder.StatusId = 3;
 
-            
+
             await _context.SaveChangesAsync();
 
-           
+
             await _orderHubContext.Clients.All.SendAsync("ReceiveOrder", existingOrder);
 
             return existingOrder.OrderId;
@@ -369,10 +370,10 @@ namespace SRMMS.Controllers
                     .ThenInclude(od => od.Pro)
                 .Include(o => o.OrderDetails)
                     .ThenInclude(od => od.Combo)
-                .Where(o => o.StatusId == 2 || o.StatusId == 3) 
+                .Where(o => o.StatusId == 2 || o.StatusId == 3)
                 .AsQueryable();
 
-            
+
             if (!string.IsNullOrEmpty(tableName))
             {
                 string normalizedTableName = tableName.Trim().Replace(" ", "").ToLower();
@@ -387,7 +388,7 @@ namespace SRMMS.Controllers
                 query = query.Where(o => o.Table.TableName.Replace(" ", "").ToLower().Contains(normalizedTableName));
             }
 
-            
+
             if (!string.IsNullOrEmpty(fromDate))
             {
                 if (DateTime.TryParse(fromDate, out var parsedFromDate))
@@ -400,12 +401,12 @@ namespace SRMMS.Controllers
                 }
             }
 
-           
+
             if (!string.IsNullOrEmpty(toDate))
             {
                 if (DateTime.TryParse(toDate, out var parsedToDate))
                 {
-                    parsedToDate = parsedToDate.AddDays(1); 
+                    parsedToDate = parsedToDate.AddDays(1);
                     query = query.Where(o => o.OrderDate.HasValue && o.OrderDate.Value < parsedToDate);
                 }
                 else
@@ -414,21 +415,21 @@ namespace SRMMS.Controllers
                 }
             }
 
-           
+
             var totalOrders = query.Count();
 
 
             var orders = query
-                    .OrderByDescending(o => o.OrderId) 
+                    .OrderByDescending(o => o.OrderId)
                     .Select(o => new GetOrderByTableNameDTO
-                {
-                    OrderId = o.OrderId,
-                    OrderDate = o.OrderDate.Value.ToString("yyyy-MM-dd HH:mm:ss"), 
-                    TotalMoney = o.TotalMoney, 
-                    Status = o.StatusId,
-                    TableId = o.Table.TableId,
-                    TableName = o.Table.TableName,
-                    Products = o.OrderDetails
+                    {
+                        OrderId = o.OrderId,
+                        OrderDate = o.OrderDate.Value.ToString("yyyy-MM-dd HH:mm:ss"),
+                        TotalMoney = o.TotalMoney,
+                        Status = o.StatusId,
+                        TableId = o.Table.TableId,
+                        TableName = o.Table.TableName,
+                        Products = o.OrderDetails
                         .Where(od => od.Pro != null)
                         .Select(od => new GetProductDTO
                         {
@@ -437,7 +438,7 @@ namespace SRMMS.Controllers
                             ProName = od.Pro.ProName,
                             Price = od.Price
                         }).ToList(),
-                    Combos = o.OrderDetails
+                        Combos = o.OrderDetails
                         .Where(od => od.Combo != null)
                         .Select(od => new GetComboDTO
                         {
@@ -446,7 +447,7 @@ namespace SRMMS.Controllers
                             ComboName = od.Combo.ComboName,
                             Price = od.Price
                         }).ToList()
-                })
+                    })
                 .Skip((pageNumber - 1) * pageSize)
                 .Take(pageSize)
                 .ToList();
@@ -461,8 +462,8 @@ namespace SRMMS.Controllers
         int pageNumber = 1,
         int pageSize = 10,
         string? tableName = null,
-        String? fromDate = null,
-        String? toDate = null)
+        string? fromDate = null,
+        string? toDate = null)
         {
             var query = _context.Orders
                 .Include(o => o.Table)
@@ -517,16 +518,16 @@ namespace SRMMS.Controllers
 
 
             var orders = query
-                 .OrderByDescending(o => o.OrderId) 
+                 .OrderByDescending(o => o.OrderId)
                  .Select(o => new GetOrderByOrderIdDTO
-        {
-            OrderId = o.OrderId,
-                    OrderDate = o.OrderDate,
-                    TotalMoney = (double)o.TotalMoney,
-                    Status = o.StatusId,
-                    TableId = o.Table.TableId,
-                    TableName = o.Table.TableName,
-                    Products = o.OrderDetails
+                 {
+                     OrderId = o.OrderId,
+                     OrderDate = o.OrderDate,
+                     TotalMoney = (double)o.TotalMoney,
+                     Status = o.StatusId,
+                     TableId = o.Table.TableId,
+                     TableName = o.Table.TableName,
+                     Products = o.OrderDetails
                         .Where(od => od.Pro != null)
                         .Select(od => new GetProductDTO
                         {
@@ -535,7 +536,7 @@ namespace SRMMS.Controllers
                             ProName = od.Pro.ProName,
                             Price = od.Price
                         }).ToList(),
-                    Combos = o.OrderDetails
+                     Combos = o.OrderDetails
                         .Where(od => od.Combo != null)
                         .Select(od => new GetComboDTO
                         {
@@ -544,7 +545,7 @@ namespace SRMMS.Controllers
                             ComboName = od.Combo.ComboName,
                             Price = od.Price
                         }).ToList(),
-                    Customers = o.PointLists != null
+                     Customers = o.PointLists != null
             ? o.PointLists
                 .Where(pl => pl.Acc != null)
                 .Select(pl => new GetAccountDTO
@@ -555,13 +556,13 @@ namespace SRMMS.Controllers
                     Phone = pl.Acc.Phone
                 }).ToList()
             : new List<GetAccountDTO>(),
-                    DiscountId = o.Code != null ? o.Code.CodeId : null,
-                    DiscountValue = o.Code != null ? o.Code.DiscountValue : null,
-                    PointIds = o.PointLists != null ? o.PointLists.Select(pl => pl.PointId).ToList() : new List<int>(),
-                    PointNumbers = o.PointLists != null
-            ? o.PointLists.Select(pl => (double?)pl.NumberPonit).ToList()
+                     DiscountId = o.Code != null ? o.Code.CodeId : null,
+                     DiscountValue = o.Code != null ? o.Code.DiscountValue : null,
+                     PointIds = o.PointLists != null ? o.PointLists.Select(pl => pl.PointId).ToList() : new List<int>(),
+                     PointNumbers = o.PointLists != null
+            ? o.PointLists.Select(pl => pl.NumberPonit).ToList()
             : new List<double?>()
-                })
+                 })
                 .Skip((pageNumber - 1) * pageSize)
                 .Take(pageSize)
                 .ToList();
@@ -575,7 +576,7 @@ namespace SRMMS.Controllers
     string? tableName = null,
     string? fromDate = null,
     string? toDate = null,
-    int? statusId = null) 
+    int? statusId = null)
         {
             var query = _context.Orders
                 .Include(o => o.Table)
@@ -585,7 +586,7 @@ namespace SRMMS.Controllers
                 .ThenInclude(od => od.Combo)
                 .AsQueryable();
 
-          
+
             if (statusId.HasValue)
             {
                 query = query.Where(o => o.StatusId == statusId.Value);
@@ -633,16 +634,16 @@ namespace SRMMS.Controllers
             var totalOrders = query.Count();
 
             var orders = query
-                .OrderByDescending(o => o.OrderId) 
+                .OrderByDescending(o => o.OrderId)
                .Select(o => new GetOrderByOrderIdDTO
-            {
-                    OrderId = o.OrderId,
-                    OrderDate = o.OrderDate,
-                    TotalMoney = (double)o.TotalMoney,
-                    Status = o.StatusId,
-                    TableId = o.Table.TableId,
-                    TableName = o.Table.TableName,
-                    Products = o.OrderDetails
+               {
+                   OrderId = o.OrderId,
+                   OrderDate = o.OrderDate,
+                   TotalMoney = (double)o.TotalMoney,
+                   Status = o.StatusId,
+                   TableId = o.Table.TableId,
+                   TableName = o.Table.TableName,
+                   Products = o.OrderDetails
                         .Where(od => od.Pro != null)
                         .Select(od => new GetProductDTO
                         {
@@ -651,7 +652,7 @@ namespace SRMMS.Controllers
                             ProName = od.Pro.ProName,
                             Price = od.Price
                         }).ToList(),
-                    Combos = o.OrderDetails
+                   Combos = o.OrderDetails
                         .Where(od => od.Combo != null)
                         .Select(od => new GetComboDTO
                         {
@@ -660,7 +661,7 @@ namespace SRMMS.Controllers
                             ComboName = od.Combo.ComboName,
                             Price = od.Price
                         }).ToList(),
-                    Customers = o.PointLists != null
+                   Customers = o.PointLists != null
                         ? o.PointLists
                             .Where(pl => pl.Acc != null)
                             .Select(pl => new GetAccountDTO
@@ -671,13 +672,13 @@ namespace SRMMS.Controllers
                                 Phone = pl.Acc.Phone
                             }).ToList()
                         : new List<GetAccountDTO>(),
-                    DiscountId = o.Code != null ? o.Code.CodeId : null,
-                    DiscountValue = o.Code != null ? o.Code.DiscountValue : null,
-                    PointIds = o.PointLists != null ? o.PointLists.Select(pl => pl.PointId).ToList() : new List<int>(),
-                    PointNumbers = o.PointLists != null
-                        ? o.PointLists.Select(pl => (double?)pl.NumberPonit).ToList()
+                   DiscountId = o.Code != null ? o.Code.CodeId : null,
+                   DiscountValue = o.Code != null ? o.Code.DiscountValue : null,
+                   PointIds = o.PointLists != null ? o.PointLists.Select(pl => pl.PointId).ToList() : new List<int>(),
+                   PointNumbers = o.PointLists != null
+                        ? o.PointLists.Select(pl => pl.NumberPonit).ToList()
                         : new List<double?>()
-                })
+               })
                 .Skip((pageNumber - 1) * pageSize)
                 .Take(pageSize)
                 .ToList();
@@ -708,15 +709,15 @@ namespace SRMMS.Controllers
             return new GetOrderByOrderIdDTO
             {
                 OrderId = order.OrderId,
-                OrderDate = order.OrderDate.HasValue ? (DateTime)order.OrderDate : null,
+                OrderDate = order.OrderDate.HasValue ? order.OrderDate : null,
                 TotalMoney = (double)order.TotalMoney,
-                Status = order.StatusId, 
+                Status = order.StatusId,
                 TableId = order.Table.TableId,
                 TableName = order.Table.TableName,
 
-                
+
                 Products = order.OrderDetails
-                    .Where(od => od.Pro != null) 
+                    .Where(od => od.Pro != null)
                     .Select(od => new GetProductDTO
                     {
                         ProductId = od.Pro.ProId,
@@ -725,9 +726,9 @@ namespace SRMMS.Controllers
                         Price = od.Price
                     }).ToList(),
 
-                
+
                 Combos = order.OrderDetails
-                    .Where(od => od.Combo != null) 
+                    .Where(od => od.Combo != null)
                     .Select(od => new GetComboDTO
                     {
                         ComboId = od.Combo.ComboId,
@@ -736,9 +737,9 @@ namespace SRMMS.Controllers
                         Price = od.Price
                     }).ToList(),
 
-                
+
                 Customers = order.PointLists?
-                    .Where(pl => pl.Acc != null) 
+                    .Where(pl => pl.Acc != null)
                     .Select(pl => new GetAccountDTO
                     {
                         AccId = pl.Acc.AccId,
@@ -747,10 +748,10 @@ namespace SRMMS.Controllers
                         Phone = pl.Acc.Phone
                     }).ToList() ?? new List<GetAccountDTO>(),
 
-                DiscountId = order.Code?.CodeId, 
-                DiscountValue = order.Code?.DiscountValue, 
+                DiscountId = order.Code?.CodeId,
+                DiscountValue = order.Code?.DiscountValue,
                 PointIds = order.PointLists?.Select(pl => pl.PointId).ToList() ?? new List<int>(),
-                PointNumbers = order.PointLists?.Select(pl => (double?)pl.NumberPonit).ToList() ?? new List<double?>()
+                PointNumbers = order.PointLists?.Select(pl => pl.NumberPonit).ToList() ?? new List<double?>()
             };
         }
 
@@ -760,31 +761,31 @@ namespace SRMMS.Controllers
 
         public List<GetOrderByTableNameDTO> GetOrdersByTable(int tableId)
         {
-           
+
             var tableExists = _context.Tables.Any(t => t.TableId == tableId);
             if (!tableExists)
             {
                 throw new Exception($"Bàn với ID '{tableId}' không tồn tại");
             }
 
-            
+
             var query = _context.Orders
-                .Where(o => o.TableId == tableId) 
-                .Where(o => o.StatusId == 1 || o.StatusId == 2 || o.StatusId == 3) 
+                .Where(o => o.TableId == tableId)
+                .Where(o => o.StatusId == 1 || o.StatusId == 2 || o.StatusId == 3)
                 .Include(o => o.OrderDetails)
                     .ThenInclude(od => od.Pro)
                 .Include(o => o.OrderDetails)
                     .ThenInclude(od => od.Combo)
                 .AsQueryable();
 
-          
+
             var orders = query
                 .Select(o => new GetOrderByTableNameDTO
                 {
                     OrderId = o.OrderId,
                     OrderDate = o.OrderDate.HasValue
                         ? o.OrderDate.Value.ToString("yyyy-MM-dd HH:mm:ss")
-                        : null, 
+                        : null,
                     TotalMoney = o.TotalMoney,
                     Status = o.StatusId,
                     TableId = o.Table.TableId,
@@ -822,10 +823,10 @@ namespace SRMMS.Controllers
                 throw new Exception("Tên bàn không được để trống.");
             }
 
-            
+
             string normalizedTableName = tableName.Trim().Replace(" ", "").ToLower();
 
-            
+
             var tablesExist = _context.Tables
                 .Where(t => t.TableName != null && t.TableName.Replace(" ", "").ToLower().Contains(normalizedTableName))
                 .Any();
@@ -835,17 +836,17 @@ namespace SRMMS.Controllers
                 throw new Exception($"Không tìm thấy bàn với tên chứa '{tableName}'.");
             }
 
-            
+
             var query = _context.Orders
                 .Include(o => o.Table)
                 .Include(o => o.OrderDetails)
                     .ThenInclude(od => od.Pro)
                 .Include(o => o.OrderDetails)
                     .ThenInclude(od => od.Combo)
-                .Where(o => o.Table.TableName != null && o.Table.TableName.Replace(" ", "").ToLower().Contains(normalizedTableName)) 
+                .Where(o => o.Table.TableName != null && o.Table.TableName.Replace(" ", "").ToLower().Contains(normalizedTableName))
                 .AsQueryable();
 
-         
+
             var orders = query
                 .Select(o => new GetOrderByTableNameDTO
                 {
@@ -883,7 +884,7 @@ namespace SRMMS.Controllers
 
         public async Task<OrderCompleteDTO> CompleteOrder(int orderId, CompleteOrderDTO orderComplete)
         {
-            
+
             var order = await _context.Orders
                 .Include(o => o.Table)
                 .FirstOrDefaultAsync(o => o.OrderId == orderId);
@@ -905,7 +906,7 @@ namespace SRMMS.Controllers
 
             double? discountValue = null;
 
-            
+
             if (orderComplete.discountId.HasValue)
             {
                 var discount = await _context.DiscountCodes.FirstOrDefaultAsync(d => d.CodeId == orderComplete.discountId.Value);
@@ -916,7 +917,7 @@ namespace SRMMS.Controllers
                 }
 
                 if (!(discount.Status ?? false) || discount.StartDate > DateTime.Now ||
-                    (discount.EndDate.HasValue && discount.EndDate.Value < DateTime.Now))
+                    discount.EndDate.HasValue && discount.EndDate.Value < DateTime.Now)
                 {
                     throw new Exception("Mã giảm giá không hợp lệ hoặc đã hết hạn.");
                 }
@@ -1002,7 +1003,7 @@ namespace SRMMS.Controllers
                     _context.PointLists.Update(pointRecord);
                 }
 
-               
+
             }
 
             if (orderComplete.accId.HasValue)
@@ -1017,7 +1018,7 @@ namespace SRMMS.Controllers
                 var conversionSettings = await _context.ConversionPoints.FirstOrDefaultAsync();
                 if (conversionSettings != null)
                 {
-                    var pointsEarned = (long)(order.TotalMoney / conversionSettings.MoneyToPointRate); 
+                    var pointsEarned = (long)(order.TotalMoney / conversionSettings.MoneyToPointRate);
                     var pointRecord = await _context.PointLists
                         .Where(p => p.AccId == orderComplete.accId.Value)
                         .FirstOrDefaultAsync();
@@ -1047,7 +1048,7 @@ namespace SRMMS.Controllers
                 order.Table.BookingId = null;
             }
 
-            order.StatusId = 4; 
+            order.StatusId = 4;
 
             await _context.SaveChangesAsync();
 
@@ -1169,7 +1170,7 @@ namespace SRMMS.Controllers
                     DiscountId = o.Code != null ? o.Code.CodeId : null,
                     DiscountValue = o.Code != null ? o.Code.DiscountValue : null,
                     PointIds = o.PointLists != null ? o.PointLists.Select(pl => pl.PointId).ToList() : new List<int>(),
-                    PointNumbers = o.PointLists != null ? o.PointLists.Select(pl => (double?)pl.NumberPonit).ToList() : new List<double?>()
+                    PointNumbers = o.PointLists != null ? o.PointLists.Select(pl => pl.NumberPonit).ToList() : new List<double?>()
                 })
                 .ToListAsync();
 
