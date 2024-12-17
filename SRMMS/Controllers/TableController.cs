@@ -98,7 +98,7 @@ namespace SRMMS.Controllers
 
             if (model.TableOfPeople <= 0 || model.TableOfPeople > 20)
             {
-                return BadRequest("Chỗ người tại bàn phải là số nguyên dương , lớn hơn 0 và không vượt quá 20 .");
+                return BadRequest(new { Message = "Chỗ người tại bàn phải là số nguyên dương , lớn hơn 0 và không vượt quá 20 ." });
             }
 
             table.TableName = model.Table_Name;
