@@ -49,13 +49,13 @@ public class CategoryController : ControllerBase
 
         if (await _context.Categories.AnyAsync(c => c.CatName == categoryDto.CatName))
         {
-            return BadRequest("Category đã tồn tại ");
+            return BadRequest(new { Message = "Category đã tồn tại " });
         }
 
 
         var newCategory = new Category
         {
-            CatName = categoryDto.CatName,
+            CatName = categoryDto.CatName.Trim(),
             Description = categoryDto.Description
 
         };
@@ -179,17 +179,17 @@ public class CategoryController : ControllerBase
         }
 
         if (!string.IsNullOrEmpty(categoryDto.CatName) &&
-            existingCategory.CatName != categoryDto.CatName)
+            existingCategory.CatName != categoryDto.CatName.Trim())
         {
             var categoryWithSameName = await _context.Categories
-                .AnyAsync(c => c.CatName == categoryDto.CatName);
+                .AnyAsync(c => c.CatName == categoryDto.CatName.Trim());
 
             if (categoryWithSameName)
             {
-                return BadRequest("Một danh mục có tên này đã tồn tại.");
+                return BadRequest(new { Message = "Một danh mục có tên này đã tồn tại." });
             }
 
-            existingCategory.CatName = categoryDto.CatName;
+            existingCategory.CatName = categoryDto.CatName.Trim();
         }
 
         if (!string.IsNullOrEmpty(categoryDto.Description))
