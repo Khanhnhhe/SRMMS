@@ -201,85 +201,74 @@ namespace SRMMS.Controllers
         // PUT: api/DiscountCodes/5
         // To protect from overposting attacks, see https://go.microsoft.com/fwlink/?linkid=2123754
         [HttpPut("update/{id}")]
-        public async Task<IActionResult> PutDiscountCode(int id, UpdateDiscountDTO discountCodeDto)
+        public async Task<ActionResult<DiscountCodeDto>> UpdateDiscountCode(int id, DiscountCodeCreateDto discountCodeDto)
         {
             if (_context.DiscountCodes == null)
             {
                 return Problem("Entity set 'SRMMSContext.DiscountCodes' is null.");
             }
 
-            var discountCode = await _context.DiscountCodes.FindAsync(id);
-            if (discountCode == null)
+            var existingDiscountCode = await _context.DiscountCodes.FindAsync(id);
+            if (existingDiscountCode == null)
             {
-                return BadRequest(new { message = $"Không tìm thấy mã giảm giá với ID {id}" });
+                return NotFound(new { message = "Mã giảm giá không tồn tại." });
             }
 
-            if (!string.IsNullOrWhiteSpace(discountCodeDto.CodeDetail))
+            // Check if the new CodeDetail already exists (if it's different from the existing one)
+            if (existingDiscountCode.CodeDetail != discountCodeDto.CodeDetail)
             {
-                discountCode.CodeDetail = discountCodeDto.CodeDetail.Trim();
-            }
+                var isCodeDetailExists = await _context.DiscountCodes
+                    .AnyAsync(dc => dc.CodeDetail == discountCodeDto.CodeDetail);
 
-
-            if (discountCodeDto.DiscountValue.HasValue)
-            {
-                if (discountCodeDto.DiscountValue <= 0)
+                if (isCodeDetailExists)
                 {
-                    return BadRequest(new { message = "Giá trị giảm giá phải lớn hơn 0." });
-                }
-
-                if (discountCodeDto.DiscountType == DiscountType.Percentage && discountCodeDto.DiscountValue > 100)
-                {
-                    return BadRequest(new { message = "Giảm giá phần trăm không được vượt quá 100%." });
-                }
-                discountCode.DiscountValue = discountCodeDto.DiscountValue.Value;
-            }
-
-            if (discountCodeDto.StartDate.HasValue)
-            {
-                discountCode.StartDate = discountCodeDto.StartDate.Value.Date;
-
-                if (discountCodeDto.EndDate.HasValue && discountCodeDto.StartDate > discountCodeDto.EndDate)
-                {
-                    return BadRequest(new { message = "Ngày bắt đầu phải trước hoặc bằng ngày kết thúc." });
+                    return Conflict(new { message = "Mã giảm giá đã tồn tại. Vui lòng sử dụng mã khác." });
                 }
             }
 
-            if (discountCodeDto.EndDate.HasValue)
+            // Validate input
+            if (string.IsNullOrWhiteSpace(discountCodeDto.CodeDetail))
             {
-                discountCode.EndDate = discountCodeDto.EndDate.Value.Date;
-
-                if (discountCode.StartDate.HasValue && discountCode.StartDate > discountCodeDto.EndDate)
-                {
-                    return BadRequest(new { message = "Ngày kết thúc phải sau hoặc bằng ngày bắt đầu." });
-                }
+                return BadRequest(new { message = "Chi tiết mã giảm giá không được để trống." });
             }
 
-            if (discountCode.EndDate.HasValue && discountCode.EndDate.Value.Date <= DateTime.Today)
+            if (discountCodeDto.DiscountValue <= 0)
             {
-                discountCode.Status = false;
+                return BadRequest(new { message = "Giá trị giảm giá phải lớn hơn 0." });
             }
 
-            if (discountCodeDto.Status.HasValue)
+            if (discountCodeDto.StartDate == null || discountCodeDto.EndDate == null)
             {
-                discountCode.Status = discountCodeDto.Status.Value;
+                return BadRequest(new { message = "Ngày bắt đầu hoặc ngày kết thúc không được để trống." });
             }
 
-            if (discountCodeDto.DiscountType != 0)
+            if (!IsDateRangeValid(discountCodeDto.StartDate, discountCodeDto.EndDate))
             {
-                discountCode.DiscountType = (int)discountCodeDto.DiscountType;
+                return BadRequest(new { message = "Ngày bắt đầu phải trước hoặc bằng ngày kết thúc." });
             }
 
-            _context.Entry(discountCode).State = EntityState.Modified;
+            if (discountCodeDto.DiscountType == DiscountType.Percentage && discountCodeDto.DiscountValue > 100)
+            {
+                return BadRequest(new { message = "Giảm giá phần trăm không được vượt quá 100%." });
+            }
+
+            // Update the existing discount code
+            existingDiscountCode.CodeDetail = discountCodeDto.CodeDetail;
+            existingDiscountCode.DiscountValue = discountCodeDto.DiscountValue;
+            existingDiscountCode.StartDate = discountCodeDto.StartDate;
+            existingDiscountCode.EndDate = discountCodeDto.EndDate;
+            existingDiscountCode.Status = discountCodeDto.Status;
+            existingDiscountCode.DiscountType = (int?)discountCodeDto.DiscountType;
 
             try
             {
                 await _context.SaveChangesAsync();
             }
-            catch (DbUpdateConcurrencyException)
+            catch (DbUpdateException)
             {
-                if (!DiscountCodeExists(id))
+                if (!DiscountCodeExists(existingDiscountCode.CodeId))
                 {
-                    return NotFound(new { message = $"Không tìm thấy mã giảm giá với ID {id}" });
+                    return NotFound(new { message = "Mã giảm giá không tồn tại." });
                 }
                 else
                 {
@@ -287,8 +276,20 @@ namespace SRMMS.Controllers
                 }
             }
 
-            return NoContent();
+            var responseDto = new DiscountCodeDto
+            {
+                CodeId = existingDiscountCode.CodeId,
+                CodeDetail = existingDiscountCode.CodeDetail,
+                DiscountValue = existingDiscountCode.DiscountValue,
+                StartDate = existingDiscountCode?.StartDate.Value.ToString("yyyy-MM-dd hh:mm:ss"),
+                EndDate = existingDiscountCode?.EndDate.Value.ToString("yyyy-MM-dd hh:mm:ss"),
+                Status = existingDiscountCode.Status,
+                DiscountType = existingDiscountCode.DiscountType ?? 0
+            };
+
+            return Ok(responseDto);
         }
+
 
 
         // POST: api/DiscountCodes
