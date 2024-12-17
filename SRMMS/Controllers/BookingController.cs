@@ -309,7 +309,23 @@ namespace SRMMS.Controllers
                 return BadRequest(new { Message = "Không tìm thấy đặt chỗ." });
             }
 
-            existingBooking.DayBooking = bookingDto.DayBooking ?? existingBooking.DayBooking;
+            DateTime now = DateTime.Now;
+
+
+            if (bookingDto.DayBooking.HasValue &&
+                (bookingDto.DayBooking.Value < now.Date ||
+                (bookingDto.DayBooking.Value == now.Date &&
+                !string.IsNullOrEmpty(bookingDto.HourBooking) &&
+                TimeSpan.TryParse(bookingDto.HourBooking, out TimeSpan parsedHourBooking) &&
+                parsedHourBooking <= now.TimeOfDay)))
+            {
+                return BadRequest(new { Message = "Ngày và giờ đặt chỗ không hợp lệ. Vui lòng chọn ngày và giờ sau thời gian hiện tại." });
+            }
+
+            if (bookingDto.DayBooking.HasValue)
+            {
+                existingBooking.DayBooking = bookingDto.DayBooking.Value;
+            }
 
             if (!string.IsNullOrEmpty(bookingDto.HourBooking))
             {
