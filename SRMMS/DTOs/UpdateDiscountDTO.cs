@@ -5,10 +5,12 @@
        
         public string? CodeDetail { get; set; }
         public double? DiscountValue { get; set; }
-        public DateOnly? StartDate { get; set; }
-        public DateOnly? EndDate { get; set; }
+        public DateTime? StartDate { get; set; }
+        public DateTime? EndDate { get; set; }
         public bool? Status { get; set; }
 
-        public int DiscountType { get; set; }
+        public DiscountType DiscountType { get; set; }
     }
+
+    
 }
