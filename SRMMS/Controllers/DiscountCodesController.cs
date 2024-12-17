@@ -211,42 +211,85 @@ namespace SRMMS.Controllers
             var discountCode = await _context.DiscountCodes.FindAsync(id);
             if (discountCode == null)
             {
-                return BadRequest(new
-                {
-                    message = $"Không tìm thấy mã giảm giá với ID {id}"
-                });
+                return BadRequest(new { message = $"Không tìm thấy mã giảm giá với ID {id}" });
+            }
+
+            if (!string.IsNullOrWhiteSpace(discountCodeDto.CodeDetail))
+            {
+                discountCode.CodeDetail = discountCodeDto.CodeDetail.Trim();
             }
 
 
-            if (discountCodeDto.CodeDetail != null)
-                discountCode.CodeDetail = discountCodeDto.CodeDetail;
-
             if (discountCodeDto.DiscountValue.HasValue)
+            {
+                if (discountCodeDto.DiscountValue <= 0)
+                {
+                    return BadRequest(new { message = "Giá trị giảm giá phải lớn hơn 0." });
+                }
+
+                if (discountCodeDto.DiscountType == DiscountType.Percentage && discountCodeDto.DiscountValue > 100)
+                {
+                    return BadRequest(new { message = "Giảm giá phần trăm không được vượt quá 100%." });
+                }
                 discountCode.DiscountValue = discountCodeDto.DiscountValue.Value;
+            }
 
             if (discountCodeDto.StartDate.HasValue)
-                discountCode.StartDate = discountCodeDto.StartDate.Value.ToDateTime(TimeOnly.MinValue).Date;
+            {
+                discountCode.StartDate = discountCodeDto.StartDate.Value.Date;
+
+                if (discountCodeDto.EndDate.HasValue && discountCodeDto.StartDate > discountCodeDto.EndDate)
+                {
+                    return BadRequest(new { message = "Ngày bắt đầu phải trước hoặc bằng ngày kết thúc." });
+                }
+            }
 
             if (discountCodeDto.EndDate.HasValue)
-                discountCode.EndDate = discountCodeDto.EndDate.Value.ToDateTime(TimeOnly.MinValue).Date;
+            {
+                discountCode.EndDate = discountCodeDto.EndDate.Value.Date;
 
-            if (discountCode.EndDate.HasValue && discountCode.EndDate.Value.Date == DateTime.Today)
+                if (discountCode.StartDate.HasValue && discountCode.StartDate > discountCodeDto.EndDate)
+                {
+                    return BadRequest(new { message = "Ngày kết thúc phải sau hoặc bằng ngày bắt đầu." });
+                }
+            }
+
+            if (discountCode.EndDate.HasValue && discountCode.EndDate.Value.Date <= DateTime.Today)
             {
                 discountCode.Status = false;
             }
 
             if (discountCodeDto.Status.HasValue)
+            {
                 discountCode.Status = discountCodeDto.Status.Value;
+            }
 
             if (discountCodeDto.DiscountType != 0)
             {
-                discountCode.DiscountType = discountCodeDto.DiscountType;
+                discountCode.DiscountType = (int)discountCodeDto.DiscountType;
             }
 
-            await _context.SaveChangesAsync();
+            _context.Entry(discountCode).State = EntityState.Modified;
+
+            try
+            {
+                await _context.SaveChangesAsync();
+            }
+            catch (DbUpdateConcurrencyException)
+            {
+                if (!DiscountCodeExists(id))
+                {
+                    return NotFound(new { message = $"Không tìm thấy mã giảm giá với ID {id}" });
+                }
+                else
+                {
+                    throw;
+                }
+            }
 
             return NoContent();
         }
+
 
         // POST: api/DiscountCodes
         // To protect from overposting attacks, see https://go.microsoft.com/fwlink/?linkid=2123754
@@ -263,7 +306,7 @@ namespace SRMMS.Controllers
 
             if (isCodeDetailExists)
             {
-                return Conflict(new { message = "CodeDetail đã tồn tại. Vui lòng sử dụng mã khác." });
+                return Conflict(new { message = "Mã giảm giá đã tồn tại. Vui lòng sử dụng mã khác." });
             }
           
             if (string.IsNullOrWhiteSpace(discountCodeDto.CodeDetail))
