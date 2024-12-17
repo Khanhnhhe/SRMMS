@@ -298,7 +298,7 @@ namespace SRMMS.Controllers
         {
             
             var employeeCount = await _context.Accounts
-                .CountAsync(a => a.RoleId == 2 || a.RoleId == 3 || a.RoleId == 4);
+                .CountAsync(a => a.RoleId == 2 || a.RoleId == 3 || a.RoleId == 4 || a.RoleId == 6);
 
             
             var customerCount = await _context.Accounts
