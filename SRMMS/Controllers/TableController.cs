@@ -48,7 +48,7 @@ namespace SRMMS.Controllers
 
             if (model.TableOfPeople <= 0 || model.TableOfPeople > 20)
             {
-                return BadRequest(new { Message = "Chỗ người tại bàn phải là số nguyên dương và lớn hơn 0 và không vượt quá 20 ." });
+                return BadRequest(new { Message = "Chỗ người tại bàn phải là số nguyên dương , lớn hơn 0 và không vượt quá 20 ." });
             }
 
             var tableLunchShift = new SRMMS.Models.Table
@@ -96,9 +96,9 @@ namespace SRMMS.Controllers
                 return BadRequest("Id không tồn tại");
             }
 
-            if (model.TableOfPeople <= 0)
+            if (model.TableOfPeople <= 0 || model.TableOfPeople > 20)
             {
-                return BadRequest("Chỗ người tại bàn phải là số nguyên dương và lớn hơn 0.");
+                return BadRequest(new { Message = "Chỗ người tại bàn phải là số nguyên dương , lớn hơn 0 và không vượt quá 20 ." });
             }
 
             table.TableName = model.Table_Name;
