@@ -134,6 +134,7 @@ namespace SRMMS.Controllers
         [HttpGet("/api/booking/getList")]
         public async Task<ActionResult<IEnumerable<Booking>>> SearchBookings(
         string? nameBooking = "",
+        string? phoneBooking = "",
         DateTime? bookingDate = null,
         int? statusId = null,
         int pageNumber = 1,
@@ -146,6 +147,13 @@ namespace SRMMS.Controllers
                 var trimmedNameBooking = nameBooking.Trim();
                 query = query.Where(b =>
                     !string.IsNullOrEmpty(b.NameBooking) && b.NameBooking.Contains(trimmedNameBooking));
+            }
+
+            if (!string.IsNullOrWhiteSpace(phoneBooking))
+            {
+                var trimmedPhoneBooking = phoneBooking.Trim();
+                query = query.Where(b =>
+                    !string.IsNullOrEmpty(b.PhoneBooking) && b.PhoneBooking.Contains(trimmedPhoneBooking));
             }
 
             if (bookingDate.HasValue)
